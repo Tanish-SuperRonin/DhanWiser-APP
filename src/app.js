@@ -5,6 +5,7 @@ import userRoutes from './routes/users.js';  // ADD THIS LINE
 import serverRoutes from './routes/servers.js';
 import channelRoutes from './routes/channels.js';    // ADD THIS
 import expenseRoutes from './routes/expenses.js';    // ADD THIS
+import settlementRoutes from './routes/settlements.js';
 
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/servers', serverRoutes);
 app.use('/api/channels', channelRoutes);    // ADD THIS
 app.use('/api/expenses', expenseRoutes);    // ADD THIS
+app.use('/api/settlements', settlementRoutes);
 
 // Request logging (development)
 if (process.env.NODE_ENV === 'development') {
