@@ -503,5 +503,90 @@ export const serverController = {
         error: error.message
       });
     }
+  },
+    async sendReminders(req, res) {
+    try {
+      const { id } = req.params;
+      const { reminderThreshold } = req.body;
+      const userId = req.user.userId;
+
+      // Check if user is admin
+      const memberCheck = await pool.query(
+        'SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2',
+        [id, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not a member of this server'
+        });
+      }
+
+      if (memberCheck.rows[0].role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only admins can send reminders'
+        });
+      }
+
+      // Import reminderService
+      const { reminderService } = await import('../services/reminderService.js');
+
+      const result = await reminderService.sendBalanceReminders(
+        id, 
+        reminderThreshold || 100
+      );
+
+      res.json({
+        success: true,
+        message: result.message,
+        data: {
+          remindersSent: result.remindersSent,
+          totalDebtors: result.totalDebtors
+        }
+      });
+    } catch (error) {
+      console.error('Send reminders error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    }
+  },
+
+  // Get users who need reminders
+  async getUsersNeedingReminders(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.userId;
+
+      // Check if user is member
+      const memberCheck = await pool.query(
+        'SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2',
+        [id, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not a member of this server'
+        });
+      }
+
+      const { reminderService } = await import('../services/reminderService.js');
+      
+      const result = await reminderService.getUsersNeedingReminders(id, 100);
+
+      res.json(result);
+    } catch (error) {
+      console.error('Get users needing reminders error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    }
   }
 };

@@ -1,11 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';  // ADD THIS LINE
+import userRoutes from './routes/users.js';   
 import serverRoutes from './routes/servers.js';
-import channelRoutes from './routes/channels.js';    // ADD THIS
-import expenseRoutes from './routes/expenses.js';    // ADD THIS
+import channelRoutes from './routes/channels.js';    
+import expenseRoutes from './routes/expenses.js';    
 import settlementRoutes from './routes/settlements.js';
+import notificationRoutes from './routes/notifications.js';
 
 
 const app = express();
@@ -15,9 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/servers', serverRoutes);
-app.use('/api/channels', channelRoutes);    // ADD THIS
-app.use('/api/expenses', expenseRoutes);    // ADD THIS
+app.use('/api/channels', channelRoutes);    
+app.use('/api/expenses', expenseRoutes);    
 app.use('/api/settlements', settlementRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Request logging (development)
 if (process.env.NODE_ENV === 'development') {
@@ -43,7 +45,7 @@ app.get('/test', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);  // This line is already there
+app.use('/api/users', userRoutes);  
 
 // 404 handler
 app.use((req, res) => {

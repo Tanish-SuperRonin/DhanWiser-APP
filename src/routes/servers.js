@@ -47,9 +47,14 @@ router.get('/invitations', serverController.getMyInvitations);
 router.post('/invite', inviteUserValidation, validate, serverController.inviteUser);
 router.post('/invitations/:id/respond', respondInvitationValidation, validate, serverController.respondToInvitation);
 
+// Reminder routes
+router.get('/:id/reminders/pending', serverController.getUsersNeedingReminders);
+router.post('/:id/reminders/send', serverController.sendReminders);
+
 // Dynamic :id routes (MUST BE LAST)
 router.get('/:id', serverController.getServerDetails);
 router.delete('/:id/leave', serverController.leaveServer);
 router.delete('/:id', serverController.deleteServer);
+
 
 export default router;

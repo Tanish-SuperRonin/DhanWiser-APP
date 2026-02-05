@@ -265,31 +265,63 @@ export const expenseController = {
         });
       }
 
-      // Calculate net balances for each user
+      // Calculate net balances for each user including settlements
       const result = await pool.query(
-        `SELECT 
-           ep.user_id,
-           u.username,
-           u.full_name,
-           SUM(ep.amount_paid) as total_paid,
-           SUM(ep.amount_owed) as total_owed,
-           SUM(ep.amount_paid - ep.amount_owed) as net_balance
-         FROM expense_participants ep
-         JOIN expenses e ON ep.expense_id = e.id
-         JOIN users u ON ep.user_id = u.id
-         WHERE e.server_id = $1
-         GROUP BY ep.user_id, u.username, u.full_name
+        `WITH expense_balances AS (
+           SELECT 
+             ep.user_id,
+             u.username,
+             u.full_name,
+             SUM(ep.amount_paid) as total_paid,
+             SUM(ep.amount_owed) as total_owed,
+             SUM(ep.amount_paid - ep.amount_owed) as expense_balance
+           FROM expense_participants ep
+           JOIN expenses e ON ep.expense_id = e.id
+           JOIN users u ON ep.user_id = u.id
+           WHERE e.server_id = $1
+           GROUP BY ep.user_id, u.username, u.full_name
+         ),
+         settlement_balances AS (
+           SELECT 
+             user_id,
+             SUM(amount) as settled_amount
+           FROM (
+             -- Payments made (reduces what you owe)
+             SELECT payer_id as user_id, amount
+             FROM settlements
+             WHERE server_id = $1 AND status = 'approved'
+             
+             UNION ALL
+             
+             -- Payments received (reduces what others owe you)
+             SELECT receiver_id as user_id, -amount
+             FROM settlements
+             WHERE server_id = $1 AND status = 'approved'
+           ) combined
+           GROUP BY user_id
+         )
+         SELECT 
+           eb.user_id,
+           eb.username,
+           eb.full_name,
+           eb.total_paid,
+           eb.total_owed,
+           COALESCE(sb.settled_amount, 0) as settled_amount,
+           eb.expense_balance + COALESCE(sb.settled_amount, 0) as net_balance
+         FROM expense_balances eb
+         LEFT JOIN settlement_balances sb ON eb.user_id = sb.user_id
          ORDER BY net_balance DESC`,
         [serverId]
       );
 
-      // Simplify settlements (who should pay whom)
+      // Format balances
       const balances = result.rows.map(row => ({
         userId: row.user_id,
         username: row.username,
         fullName: row.full_name,
         totalPaid: parseFloat(row.total_paid),
         totalOwed: parseFloat(row.total_owed),
+        settledAmount: parseFloat(row.settled_amount),
         netBalance: parseFloat(row.net_balance)
       }));
 
