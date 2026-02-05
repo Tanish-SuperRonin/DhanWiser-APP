@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';   
+import userRoutes from './routes/users.js';  // ADD THIS LINE
 import serverRoutes from './routes/servers.js';
 import channelRoutes from './routes/channels.js';    
 import expenseRoutes from './routes/expenses.js';    
@@ -16,8 +16,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/servers', serverRoutes);
-app.use('/api/channels', channelRoutes);    
-app.use('/api/expenses', expenseRoutes);    
+app.use('/api/channels', channelRoutes);    // ADD THIS
+app.use('/api/expenses', expenseRoutes);    // ADD THIS
 app.use('/api/settlements', settlementRoutes);
 app.use('/api/notifications', notificationRoutes);
 
