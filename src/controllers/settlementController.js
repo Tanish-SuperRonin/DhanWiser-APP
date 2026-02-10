@@ -7,6 +7,27 @@ export const settlementController = {
       const { serverId, receiverId, amount, notes } = req.body;
       const payerId = req.user.userId;
 
+      // Import validators
+      const { validators } = await import('../utils/validators.js');
+
+      // Validate amount
+      const amountValidation = validators.validateSettlementAmount(amount);
+      if (!amountValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: amountValidation.error
+        });
+      }
+
+      // Validate notes
+      const notesValidation = validators.validateDescription(notes);
+      if (!notesValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: notesValidation.error
+        });
+      }
+
       // Verify both users are members of the server
       const memberCheck = await pool.query(
         `SELECT user_id FROM server_members 

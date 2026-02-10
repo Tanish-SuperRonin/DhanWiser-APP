@@ -8,6 +8,54 @@ export const expenseController = {
       const { channelId, title, description, totalAmount, expenseDate, participants } = req.body;
       const userId = req.user.userId;
 
+      // Import validators
+      const { validators } = await import('../utils/validators.js');
+
+      // Validate expense amount
+      const amountValidation = validators.validateExpenseAmount(totalAmount);
+      if (!amountValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: amountValidation.error
+        });
+      }
+
+      // Validate expense date
+      const dateValidation = validators.validateExpenseDate(expenseDate);
+      if (!dateValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: dateValidation.error
+        });
+      }
+
+      // Validate title
+      const titleValidation = validators.validateName(title, 'Expense title');
+      if (!titleValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: titleValidation.error
+        });
+      }
+
+      // Validate description
+      const descValidation = validators.validateDescription(description);
+      if (!descValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: descValidation.error
+        });
+      }
+
+      // Validate expense split
+      const splitValidation = validators.validateExpenseSplit(participants, totalAmount);
+      if (!splitValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: splitValidation.error
+        });
+      }
+
       await client.query('BEGIN');
 
       // Get channel and verify membership
@@ -273,8 +321,7 @@ export const expenseController = {
              u.username,
              u.full_name,
              SUM(ep.amount_paid) as total_paid,
-             SUM(ep.amount_owed) as total_owed,
-             SUM(ep.amount_paid - ep.amount_owed) as expense_balance
+             SUM(ep.amount_owed) as total_owed
            FROM expense_participants ep
            JOIN expenses e ON ep.expense_id = e.id
            JOIN users u ON ep.user_id = u.id
@@ -284,16 +331,16 @@ export const expenseController = {
          settlement_balances AS (
            SELECT 
              user_id,
-             SUM(amount) as settled_amount
+             SUM(amount) as total_settled
            FROM (
-             -- Payments made (reduces what you owe)
+             -- Payments made by this user (they paid someone)
              SELECT payer_id as user_id, amount
              FROM settlements
              WHERE server_id = $1 AND status = 'approved'
              
              UNION ALL
              
-             -- Payments received (reduces what others owe you)
+             -- Payments received by this user (someone paid them)
              SELECT receiver_id as user_id, -amount
              FROM settlements
              WHERE server_id = $1 AND status = 'approved'
@@ -306,24 +353,28 @@ export const expenseController = {
            eb.full_name,
            eb.total_paid,
            eb.total_owed,
-           COALESCE(sb.settled_amount, 0) as settled_amount,
-           eb.expense_balance + COALESCE(sb.settled_amount, 0) as net_balance
+           COALESCE(sb.total_settled, 0) as total_settled,
+           (eb.total_paid - eb.total_owed + COALESCE(sb.total_settled, 0)) as balance
          FROM expense_balances eb
          LEFT JOIN settlement_balances sb ON eb.user_id = sb.user_id
-         ORDER BY net_balance DESC`,
+         ORDER BY balance DESC`,
         [serverId]
       );
 
-      // Format balances
-      const balances = result.rows.map(row => ({
-        userId: row.user_id,
-        username: row.username,
-        fullName: row.full_name,
-        totalPaid: parseFloat(row.total_paid),
-        totalOwed: parseFloat(row.total_owed),
-        settledAmount: parseFloat(row.settled_amount),
-        netBalance: parseFloat(row.net_balance)
-      }));
+      // Format balances with clear terminology
+      const balances = result.rows.map(row => {
+        const balance = parseFloat(row.balance);
+        return {
+          userId: row.user_id,
+          username: row.username,
+          fullName: row.full_name,
+          totalPaid: parseFloat(row.total_paid),
+          totalOwed: parseFloat(row.total_owed),
+          totalSettled: parseFloat(row.total_settled),
+          balance: balance,
+          status: balance > 0.01 ? 'gets_back' : balance < -0.01 ? 'owes' : 'settled'
+        };
+      });
 
       // Calculate suggested settlements
       const settlements = calculateOptimalSettlements(balances);
@@ -350,15 +401,24 @@ export const expenseController = {
 function calculateOptimalSettlements(balances) {
   const settlements = [];
   
-  // Separate debtors (negative balance) and creditors (positive balance)
-  const debtors = balances.filter(b => b.netBalance < -0.01).map(b => ({ ...b }));
-  const creditors = balances.filter(b => b.netBalance > 0.01).map(b => ({ ...b }));
+  // Separate debtors (negative balance = owes money) and creditors (positive balance = gets money back)
+  const debtors = balances.filter(b => b.balance < -0.01).map(b => ({ 
+    userId: b.userId,
+    username: b.username,
+    balance: Math.abs(b.balance) // Convert to positive for easier calculation
+  }));
+  
+  const creditors = balances.filter(b => b.balance > 0.01).map(b => ({ 
+    userId: b.userId,
+    username: b.username,
+    balance: b.balance
+  }));
 
   let i = 0, j = 0;
 
   while (i < debtors.length && j < creditors.length) {
-    const debt = Math.abs(debtors[i].netBalance);
-    const credit = creditors[j].netBalance;
+    const debt = debtors[i].balance;
+    const credit = creditors[j].balance;
     const amount = Math.min(debt, credit);
 
     if (amount > 0.01) {
@@ -375,11 +435,11 @@ function calculateOptimalSettlements(balances) {
       });
     }
 
-    debtors[i].netBalance += amount;
-    creditors[j].netBalance -= amount;
+    debtors[i].balance -= amount;
+    creditors[j].balance -= amount;
 
-    if (Math.abs(debtors[i].netBalance) < 0.01) i++;
-    if (Math.abs(creditors[j].netBalance) < 0.01) j++;
+    if (Math.abs(debtors[i].balance) < 0.01) i++;
+    if (Math.abs(creditors[j].balance) < 0.01) j++;
   }
 
   return settlements;

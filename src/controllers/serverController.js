@@ -8,8 +8,30 @@ export const serverController = {
       const { name, description } = req.body;
       const userId = req.user.userId;
 
-      await client.query('BEGIN');
+      // Import validators
+      const { validators } = await import('../utils/validators.js');
 
+      // Validate server name
+      const nameValidation = validators.validateName(name, 'Server name');
+      if (!nameValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: nameValidation.error
+        });
+      }
+
+      // Validate description
+      const descValidation = validators.validateDescription(description);
+      if (!descValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: descValidation.error
+        });
+      }
+
+      await client.query('BEGIN');
+      
+      // ... rest of function
       // Create server
       const serverResult = await client.query(
         `INSERT INTO servers (name, description, created_by) 

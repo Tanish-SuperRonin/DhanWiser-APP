@@ -3,15 +3,57 @@ import { authService } from '../services/authService.js';
 
 export const authController = {
   // Signup
+ // Signup
   async signup(req, res) {
     try {
       const { username, email, password, fullName, upiId } = req.body;
+
+      // Import validators
+      const { validators } = await import('../utils/validators.js');
+
+      // Validate username (additional to express-validator)
+      const usernameValidation = validators.validateUsername(username);
+      if (!usernameValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: usernameValidation.error
+        });
+      }
+
+      // Validate email
+      const emailValidation = validators.validateEmail(email);
+      if (!emailValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: emailValidation.error
+        });
+      }
+
+      // Validate password
+      const passwordValidation = validators.validatePassword(password);
+      if (!passwordValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: passwordValidation.error
+        });
+      }
+
+      // Validate UPI ID
+      const upiValidation = validators.validateUpiId(upiId);
+      if (!upiValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: upiValidation.error
+        });
+      }
 
       // Check if user exists
       const userExists = await pool.query(
         'SELECT * FROM users WHERE email = $1 OR username = $2',
         [email, username]
       );
+      
+      // ... rest of the function
 
       if (userExists.rows.length > 0) {
         return res.status(400).json({

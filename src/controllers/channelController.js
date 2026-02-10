@@ -2,10 +2,34 @@ import { pool } from '../config/database.js';
 
 export const channelController = {
   // Create a channel in a server
-  async createChannel(req, res) {
+ async createChannel(req, res) {
     try {
       const { serverId, name, description } = req.body;
       const userId = req.user.userId;
+
+      // Import validators
+      const { validators } = await import('../utils/validators.js');
+
+      // Validate channel name
+      const nameValidation = validators.validateName(name, 'Channel name');
+      if (!nameValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: nameValidation.error
+        });
+      }
+
+      // Validate description
+      const descValidation = validators.validateDescription(description);
+      if (!descValidation.valid) {
+        return res.status(400).json({
+          success: false,
+          message: descValidation.error
+        });
+      }
+
+      // Check if user is a member of the server
+      // ... rest of function
 
       // Check if user is a member of the server
       const memberCheck = await pool.query(
