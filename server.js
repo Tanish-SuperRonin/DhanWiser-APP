@@ -1,22 +1,12 @@
 import 'dotenv/config';
 import app from './src/app.js';
 import { pool } from './src/config/database.js';
-
+import { initializeDatabase } from './src/config/initDb.js';
 
 const PORT = process.env.PORT || 5000;
 
-// Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('❌ Database connection failed:', err);
-    process.exit(1);
-  } else {
-    console.log('✅ Database connected at:', res.rows[0].now);
-  }
-});
-
-// Start server
-app.listen(PORT, () => {
+// Start server first, then connect to database
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`
 ╔═══════════════════════════════════════╗
 ║     🚀 DhanWiser API Server          ║
@@ -26,4 +16,16 @@ app.listen(PORT, () => {
 ║  Health: http://localhost:${PORT}/health
 ╚═══════════════════════════════════════╝
   `);
+
+  // Test database connection
+  try {
+    const res = await pool.query('SELECT NOW()');
+    console.log('✅ Database connected at:', res.rows[0].now);
+
+    // Initialize database tables (safe - uses CREATE TABLE IF NOT EXISTS)
+    await initializeDatabase();
+  } catch (err) {
+    console.error('❌ Database connection failed:', err.message);
+    process.exit(1);
+  }
 });
