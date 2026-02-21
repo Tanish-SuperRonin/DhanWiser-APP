@@ -1,21 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../theme/colors.dart';
+import '../providers/server_provider.dart';
+import '../services/expense_service.dart';
+import '../models/expense_model.dart';
+import '../models/balance_model.dart';
 
 class ServerDetailScreen extends StatefulWidget {
-  const ServerDetailScreen({Key? key}) : super(key: key);
+  final int serverId;
+  final String serverName;
+  final String members;
+  final String imageUrl;
+
+  const ServerDetailScreen({
+    super.key,
+    this.serverId = 0,
+    this.serverName = 'Server',
+    this.members = '0 members',
+    this.imageUrl = '',
+  });
 
   @override
   State<ServerDetailScreen> createState() => _ServerDetailScreenState();
 }
 
-class _ServerDetailScreenState extends State<ServerDetailScreen> with SingleTickerProviderStateMixin {
+class _ServerDetailScreenState extends State<ServerDetailScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<ExpenseModel> _expenses = [];
+  List<BalanceModel> _balances = [];
+  List<SuggestedSettlement> _suggestions = [];
+  bool _loadingExpenses = true;
+  bool _loadingBalances = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final serverProvider = Provider.of<ServerProvider>(context, listen: false);
+    await serverProvider.fetchServerDetails(widget.serverId);
+
+    try {
+      _expenses = await ExpenseService.getServerExpenses(widget.serverId);
+    } catch (_) {}
+    _loadingExpenses = false;
+
+    try {
+      final balanceData = await ExpenseService.getServerBalances(widget.serverId);
+      _balances = balanceData['balances'] as List<BalanceModel>;
+      _suggestions = balanceData['suggestedSettlements'] as List<SuggestedSettlement>;
+    } catch (_) {}
+    _loadingBalances = false;
+
+    if (mounted) setState(() {});
   }
 
   @override
@@ -27,103 +69,159 @@ class _ServerDetailScreenState extends State<ServerDetailScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final surfaceColor = isDark ? DhanWiserColors.surfaceDark : DhanWiserColors.surfaceLight;
-    final textColor = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final subTextColor = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
-    final borderColor = isDark ? DhanWiserColors.gray700 : DhanWiserColors.gray200;
+    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
+    final surface = isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white;
+    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
+    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+
+    // Deterministic gradient from server name
+    final grads = [
+      [const Color(0xFF4ECDC4), const Color(0xFF7EDDD6)],
+      [const Color(0xFF95E1D3), const Color(0xFFA8E6CF)],
+      [const Color(0xFFFFB5A7), const Color(0xFFFFCDBD)],
+      [const Color(0xFFFFD97D), const Color(0xFFFFE5A0)],
+    ];
+    final grad = grads[widget.serverName.hashCode.abs() % grads.length];
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bg,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              backgroundColor: surfaceColor,
+              backgroundColor: bg,
               elevation: 0,
               pinned: true,
-              expandedHeight: 180, // Reduced height
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: textColor),
-                onPressed: () => Navigator.pop(context),
+              expandedHeight: 200,
+              leading: Padding(
+                padding: const EdgeInsets.all(8),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
               ),
               actions: [
-                IconButton(
-                  icon: Icon(Icons.settings_outlined, color: textColor),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: Icon(Icons.share_outlined, color: textColor),
-                  onPressed: () {},
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // Background Image with Gradient Overlay
-                    Image.network(
-                      'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(color: DhanWiserColors.primary),
-                    ),
-                    Container(
+                Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/add-expense',
+                        arguments: {'serverId': widget.serverId}),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.7),
-                          ],
-                        ),
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 60, // Adjusted from 70 to give space for TabBar
-                      left: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                          const SizedBox(width: 4),
                           Text(
-                            'Goa Trip 2024',
+                            'Expense',
                             style: GoogleFonts.inter(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.people, color: Colors.white.withOpacity(0.8), size: 16),
-                              const SizedBox(width: 4),
-                              Text(
-                                '5 members',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                  ],
+                  ),
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: grad,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Consumer<ServerProvider>(
+                      builder: (context, serverProv, _) {
+                        final detail = serverProv.currentServerDetail;
+                        final name = detail?.server.name ?? widget.serverName;
+                        final memberCount = detail?.members.length ?? 0;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 20, bottom: 56, right: 20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Server icon
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                name,
+                                style: GoogleFonts.inter(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$memberCount members',
+                                style: GoogleFonts.inter(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
                 child: Container(
-                  color: surfaceColor,
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
                   child: TabBar(
                     controller: _tabController,
                     labelColor: DhanWiserColors.primary,
-                    unselectedLabelColor: subTextColor,
+                    unselectedLabelColor: sub,
                     indicatorColor: DhanWiserColors.primary,
                     indicatorWeight: 3,
-                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    indicatorSize: TabBarIndicatorSize.label,
+                    dividerColor: Colors.transparent,
+                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 14),
                     tabs: const [
                       Tab(text: 'Expenses'),
                       Tab(text: 'Balances'),
@@ -138,255 +236,393 @@ class _ServerDetailScreenState extends State<ServerDetailScreen> with SingleTick
         body: TabBarView(
           controller: _tabController,
           children: [
-            // EXPENSES TAB
-            _buildExpensesTab(context, surfaceColor, textColor, subTextColor, borderColor),
-
-            // BALANCES TAB (Placeholder)
-            Center(child: Text('Balances View', style: GoogleFonts.inter(color: subTextColor))),
-
-             // MEMBERS TAB (Placeholder)
-            Center(child: Text('Members View', style: GoogleFonts.inter(color: subTextColor))),
+            _buildExpensesTab(isDark, surface, text, sub),
+            _buildBalancesTab(isDark, surface, text, sub),
+            _buildMembersTab(isDark, surface, text, sub),
           ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/add-expense'),
-        backgroundColor: DhanWiserColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Add Expense',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildExpensesTab(BuildContext context, Color surfaceColor, Color textColor, Color subTextColor, Color borderColor) {
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Stats Overview
-            Container(
-              padding: const EdgeInsets.all(20),
+  // ── EXPENSES TAB ──
+  Widget _buildExpensesTab(bool isDark, Color surface, Color text, Color sub) {
+    if (_loadingExpenses) {
+      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+    }
+
+    if (_expenses.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.receipt_long_outlined,
+        title: 'No expenses yet',
+        subtitle: 'Tap + to add the first one',
+      );
+    }
+
+    final categoryIcons = [Icons.restaurant_rounded, Icons.directions_car_rounded, Icons.home_rounded, Icons.movie_rounded, Icons.shopping_cart_rounded, Icons.lightbulb_rounded, Icons.sports_esports_rounded, Icons.coffee_rounded];
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      itemCount: _expenses.length,
+      itemBuilder: (context, index) {
+        final e = _expenses[index];
+        final catIcon = categoryIcons[e.title.hashCode.abs() % categoryIcons.length];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(catIcon, color: DhanWiserColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      e.title,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: text,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Paid by ${e.createdByUsername}',
+                      style: GoogleFonts.inter(fontSize: 12, color: sub),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '₹${e.totalAmount.toStringAsFixed(0)}',
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: text,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── BALANCES TAB ──
+  Widget _buildBalancesTab(bool isDark, Color surface, Color text, Color sub) {
+    if (_loadingBalances) {
+      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+    }
+
+    if (_balances.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.account_balance_outlined,
+        title: 'All settled up!',
+        subtitle: 'No outstanding balances',
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Balance cards
+          ..._balances.map((b) {
+            final isPositive = b.balance >= 0;
+            final color = isPositive ? DhanWiserColors.teal : DhanWiserColors.coral;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: surfaceColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: borderColor),
+                color: surface,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Center(
+                      child: Text(
+                        b.fullName.isNotEmpty ? b.fullName[0].toUpperCase() : '?',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Total Spending',
+                          b.fullName,
                           style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: subTextColor,
+                            fontWeight: FontWeight.w600,
+                            color: text,
+                            fontSize: 15,
                           ),
                         ),
-                        const SizedBox(height: 4),
                         Text(
-                          '₹45,200',
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
+                          '@${b.username}',
+                          style: GoogleFonts.inter(fontSize: 12, color: sub),
                         ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 40, color: borderColor),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Your Share',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: subTextColor,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '₹9,040',
-                            style: GoogleFonts.inter(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: DhanWiserColors.primary,
-                            ),
-                          ),
-                        ],
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '₹${b.balance.abs().toStringAsFixed(0)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
                       ),
+                      Text(
+                        isPositive ? 'gets back' : 'owes',
+                        style: GoogleFonts.inter(fontSize: 11, color: color.withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          // Suggestions
+          if (_suggestions.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              'SETTLE UP',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: sub,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ..._suggestions.map((s) => Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.1 : 0.04),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    s.fromUsername,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Icon(Icons.arrow_forward_rounded, size: 16, color: DhanWiserColors.primary),
+                  ),
+                  Text(
+                    s.toUsername,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '₹${s.amount.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w700,
+                      color: DhanWiserColors.primary,
+                      fontSize: 15,
                     ),
                   ),
                 ],
               ),
-            ),
-            
-            const SizedBox(height: 32),
-
-            // Date Header: Today
-            Text(
-              'Today',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: subTextColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            _buildExpenseItem(
-              context,
-              'Dinner at Titlie',
-              'Paid by Rahul',
-              '₹4,500',
-              Icons.restaurant,
-              DhanWiserColors.primary,
-              true,
-            ),
-            _buildExpenseItem(
-              context,
-              'Cab to Baga',
-              'Paid by You',
-              '₹850',
-              Icons.local_taxi,
-              Color(0xFFF59E0B),
-              false,
-            ),
-
-            const SizedBox(height: 24),
-             // Date Header: Yesterday
-            Text(
-              'Yesterday',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: subTextColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-             _buildExpenseItem(
-              context,
-              'Villa Booking Advance',
-              'Paid by Smit',
-              '₹15,000',
-              Icons.home,
-              Color(0xFF10B981),
-              true,
-            ),
-             _buildExpenseItem(
-              context,
-              'Drinks & Snacks',
-              'Paid by Priya',
-              '₹2,400',
-              Icons.local_bar,
-              Color(0xFFEC4899),
-              false,
-            ),
-            
-            // Padding for FAB
-            const SizedBox(height: 80),
+            )),
           ],
-        ),
-      );
-  }
-
-  Widget _buildExpenseItem(
-    BuildContext context,
-    String title,
-    String subtitle,
-    String amount,
-    IconData icon,
-    Color iconColor,
-    bool isLent, // To show if user lent or borrowed, simplifying here
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? DhanWiserColors.surfaceDark : DhanWiserColors.surfaceLight;
-    final textColor = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final subTextColor = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
-    final borderColor = isDark ? DhanWiserColors.gray700 : DhanWiserColors.gray200;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          const SizedBox(height: 80),
         ],
       ),
-      child: Row(
+    );
+  }
+
+  // ── MEMBERS TAB ──
+  Widget _buildMembersTab(bool isDark, Color surface, Color text, Color sub) {
+    return Consumer<ServerProvider>(
+      builder: (context, serverProv, _) {
+        if (serverProv.isLoading) {
+          return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+        }
+
+        final members = serverProv.currentServerDetail?.members ?? [];
+        if (members.isEmpty) {
+          return _buildEmptyState(
+            icon: Icons.people_outline_rounded,
+            title: 'No members',
+            subtitle: 'Invite friends to this group',
+          );
+        }
+
+        final memberColors = [
+          DhanWiserColors.primary,
+          DhanWiserColors.teal,
+          DhanWiserColors.coral,
+          DhanWiserColors.warning,
+          const Color(0xFF74B9FF),
+        ];
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          itemCount: members.length,
+          itemBuilder: (context, index) {
+            final m = members[index];
+            final color = memberColors[index % memberColors.length];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: surface,
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Center(
+                      child: Text(
+                        m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          m.fullName,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 15),
+                        ),
+                        Text(
+                          '@${m.username}',
+                          style: GoogleFonts.inter(fontSize: 12, color: sub),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (m.role == 'admin')
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Admin',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: DhanWiserColors.primary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
+            child: Icon(icon, size: 30, color: DhanWiserColors.primary.withValues(alpha: 0.6)),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: subTextColor,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight,
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                amount,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: textColor,
-                ),
-              ),
-              Text(
-                isLent ? 'you lent' : 'you borrowed',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: isLent ? DhanWiserColors.success : DhanWiserColors.error,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight,
+            ),
           ),
         ],
       ),

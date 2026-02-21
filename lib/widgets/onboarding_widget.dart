@@ -8,11 +8,11 @@ class OnboardingCard extends StatelessWidget {
   final bool isDark;
 
   const OnboardingCard({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.floatingIcon,
     required this.isDark,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +91,7 @@ class OnboardingCard extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
