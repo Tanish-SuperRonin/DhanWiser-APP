@@ -51,6 +51,18 @@ npm run dev
 
 Server will run on http://localhost:5000
 
+## Live API
+
+🌐 **Base URL:** https://dhanwiser-app.onrender.com
+
+### Endpoints
+- Health Check: `GET /health`
+- Signup: `POST /api/auth/signup`
+- Login: `POST /api/auth/login`
+- [... and 35+ more]
+
+Full API documentation coming soon!
+
 ## API Endpoints
 
 ### Authentication
