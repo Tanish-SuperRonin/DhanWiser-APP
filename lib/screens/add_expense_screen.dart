@@ -37,12 +37,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void initState() {
     super.initState();
     _selectedServerId = widget.serverId;
-    if (_selectedServerId == null) {
-      Provider.of<ServerProvider>(context, listen: false).fetchServers();
-    } else {
-      Provider.of<ServerProvider>(context, listen: false)
-          .fetchServerDetails(_selectedServerId!);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_selectedServerId == null) {
+        Provider.of<ServerProvider>(context, listen: false).fetchServers();
+      } else {
+        Provider.of<ServerProvider>(context, listen: false)
+            .fetchServerDetails(_selectedServerId!);
+      }
+    });
   }
 
   Future<void> _saveExpense() async {

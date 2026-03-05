@@ -19,17 +19,28 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
     final serverProvider = Provider.of<ServerProvider>(context, listen: false);
     final notifProvider =
         Provider.of<NotificationProvider>(context, listen: false);
-    await Future.wait([
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final futures = <Future>[
       serverProvider.fetchServers(),
       notifProvider.fetchUnreadCount(),
-    ]);
+    ];
+
+    // Reload profile if user data is missing (e.g. Render cold start on app launch)
+    if (authProvider.currentUser == null) {
+      futures.add(authProvider.initialize());
+    }
+
+    await Future.wait(futures);
   }
 
   @override

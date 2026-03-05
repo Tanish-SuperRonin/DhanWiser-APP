@@ -1,16 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  // Use 10.0.2.2 for Android emulator to reach host machine's localhost
-  // Use localhost for iOS simulator or web
+  // Render free-tier cold starts can take 30-60s
+  static const Duration _timeout = Duration(seconds: 90);
+  // Render-deployed backend
   static String get baseUrl {
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api';
-    }
-    return 'http://localhost:5000/api';
+    return 'https://dhanwiser-app.onrender.com/api';
   }
 
   static const _storage = FlutterSecureStorage();
@@ -60,7 +57,7 @@ class ApiClient {
         Uri.parse('$baseUrl/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      ).timeout(_timeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -81,7 +78,7 @@ class ApiClient {
     var response = await http.get(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
-    );
+    ).timeout(_timeout);
 
     // Auto-refresh on 403
     if (response.statusCode == 403 && withAuth) {
@@ -91,7 +88,7 @@ class ApiClient {
         response = await http.get(
           Uri.parse('$baseUrl$endpoint'),
           headers: newHeaders,
-        );
+        ).timeout(_timeout);
       }
     }
 
@@ -106,7 +103,7 @@ class ApiClient {
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
-    );
+    ).timeout(_timeout);
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
@@ -116,7 +113,7 @@ class ApiClient {
           Uri.parse('$baseUrl$endpoint'),
           headers: newHeaders,
           body: body != null ? jsonEncode(body) : null,
-        );
+        ).timeout(_timeout);
       }
     }
 
@@ -131,7 +128,7 @@ class ApiClient {
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
-    );
+    ).timeout(_timeout);
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
@@ -141,7 +138,7 @@ class ApiClient {
           Uri.parse('$baseUrl$endpoint'),
           headers: newHeaders,
           body: body != null ? jsonEncode(body) : null,
-        );
+        ).timeout(_timeout);
       }
     }
 
@@ -155,7 +152,7 @@ class ApiClient {
     var response = await http.delete(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
-    );
+    ).timeout(_timeout);
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
@@ -164,7 +161,7 @@ class ApiClient {
         response = await http.delete(
           Uri.parse('$baseUrl$endpoint'),
           headers: newHeaders,
-        );
+        ).timeout(_timeout);
       }
     }
 
