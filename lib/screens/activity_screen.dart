@@ -59,18 +59,20 @@ class _ActivityScreenState extends State<ActivityScreen>
     setState(() => _respondingIds.add(invitationId));
     try {
       final serverProv = Provider.of<ServerProvider>(context, listen: false);
+      final notifProv =
+          Provider.of<NotificationProvider>(context, listen: false);
       await serverProv.respondToInvitation(invitationId, action);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(action == 'accept'
-                ? 'Joined the group!'
-                : 'Invitation declined'),
+            content: Text(
+                action == 'accept' ? 'Joined the group!' : 'Invitation declined'),
             backgroundColor:
                 action == 'accept' ? DhanWiserColors.mint : DhanWiserColors.coral,
           ),
         );
         await _loadInvitations();
+        await notifProv.fetchNotifications();
       }
     } catch (e) {
       if (mounted) {
@@ -88,25 +90,41 @@ class _ActivityScreenState extends State<ActivityScreen>
 
   IconData _getIconForType(String type) {
     switch (type) {
-      case 'expense_added': return Icons.receipt_long_rounded;
-      case 'settlement_requested': return Icons.handshake_rounded;
-      case 'settlement_approved': return Icons.check_circle_rounded;
-      case 'settlement_rejected': return Icons.cancel_rounded;
-      case 'server_invitation': return Icons.mail_rounded;
-      case 'server_joined': return Icons.group_add_rounded;
-      default: return Icons.notifications_rounded;
+      case 'expense_added':
+        return Icons.receipt_long_rounded;
+      case 'settlement_requested':
+        return Icons.handshake_rounded;
+      case 'settlement_approved':
+        return Icons.check_circle_rounded;
+      case 'settlement_rejected':
+        return Icons.cancel_rounded;
+      case 'invitation':
+      case 'server_invitation':
+        return Icons.mail_rounded;
+      case 'server_joined':
+        return Icons.group_add_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
   Color _getColorForType(String type) {
     switch (type) {
-      case 'expense_added': return DhanWiserColors.primary;
-      case 'settlement_requested': return DhanWiserColors.warning;
-      case 'settlement_approved': return DhanWiserColors.mint;
-      case 'settlement_rejected': return DhanWiserColors.coral;
-      case 'server_invitation': return DhanWiserColors.primaryLight;
-      case 'server_joined': return DhanWiserColors.teal;
-      default: return DhanWiserColors.primary;
+      case 'expense_added':
+        return DhanWiserColors.primary;
+      case 'settlement_requested':
+        return DhanWiserColors.warning;
+      case 'settlement_approved':
+        return DhanWiserColors.mint;
+      case 'settlement_rejected':
+        return DhanWiserColors.coral;
+      case 'invitation':
+      case 'server_invitation':
+        return DhanWiserColors.primaryLight;
+      case 'server_joined':
+        return DhanWiserColors.teal;
+      default:
+        return DhanWiserColors.primary;
     }
   }
 
@@ -123,9 +141,14 @@ class _ActivityScreenState extends State<ActivityScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final bg =
+        isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
+    final text = isDark
+        ? DhanWiserColors.textPrimaryDark
+        : DhanWiserColors.textPrimaryLight;
+    final sub = isDark
+        ? DhanWiserColors.textSecondaryDark
+        : DhanWiserColors.textSecondaryLight;
 
     return Scaffold(
       backgroundColor: bg,
@@ -133,7 +156,6 @@ class _ActivityScreenState extends State<ActivityScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Row(
@@ -144,7 +166,9 @@ class _ActivityScreenState extends State<ActivityScreen>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.surfaceElevatedDark : DhanWiserColors.gray100,
+                        color: isDark
+                            ? DhanWiserColors.surfaceElevatedDark
+                            : DhanWiserColors.gray100,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.arrow_back_rounded, color: text, size: 20),
@@ -164,14 +188,14 @@ class _ActivityScreenState extends State<ActivityScreen>
               ),
             ),
             const SizedBox(height: 16),
-
-            // ── Tab bar ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isDark ? DhanWiserColors.surfaceDark : DhanWiserColors.gray100,
+                  color: isDark
+                      ? DhanWiserColors.surfaceDark
+                      : DhanWiserColors.gray100,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: TabBar(
@@ -183,8 +207,10 @@ class _ActivityScreenState extends State<ActivityScreen>
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelColor: Colors.white,
                   unselectedLabelColor: sub,
-                  labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-                  unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 13),
+                  labelStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600, fontSize: 13),
+                  unselectedLabelStyle: GoogleFonts.inter(
+                      fontWeight: FontWeight.w400, fontSize: 13),
                   dividerColor: Colors.transparent,
                   padding: const EdgeInsets.all(3),
                   tabs: [
@@ -197,14 +223,16 @@ class _ActivityScreenState extends State<ActivityScreen>
                           if (_invitations.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 1),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '${_invitations.length}',
-                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700),
+                                style: GoogleFonts.inter(
+                                    fontSize: 11, fontWeight: FontWeight.w700),
                               ),
                             ),
                           ],
@@ -216,8 +244,6 @@ class _ActivityScreenState extends State<ActivityScreen>
               ),
             ),
             const SizedBox(height: 16),
-
-            // ── Tab Views ──
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -233,7 +259,6 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  // ── NOTIFICATIONS TAB ──
   Widget _buildNotificationsTab(bool isDark, Color text, Color sub) {
     return Consumer<NotificationProvider>(
       builder: (context, notifProv, _) {
@@ -253,17 +278,20 @@ class _ActivityScreenState extends State<ActivityScreen>
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                    color: DhanWiserColors.primary
+                        .withValues(alpha: isDark ? 0.12 : 0.06),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(Icons.notifications_rounded, color: DhanWiserColors.primary, size: 28),
+                  child: Icon(Icons.notifications_rounded,
+                      color: DhanWiserColors.primary, size: 28),
                 ),
                 const SizedBox(height: 16),
-                Text('No activity yet', style: GoogleFonts.inter(
-                  fontSize: 17, fontWeight: FontWeight.w600, color: text)),
+                Text('No activity yet',
+                    style: GoogleFonts.inter(
+                        fontSize: 17, fontWeight: FontWeight.w600, color: text)),
                 const SizedBox(height: 4),
-                Text('Your notifications will appear here', style: GoogleFonts.inter(
-                  fontSize: 14, color: sub)),
+                Text('Your notifications will appear here',
+                    style: GoogleFonts.inter(fontSize: 14, color: sub)),
               ],
             ),
           );
@@ -277,7 +305,10 @@ class _ActivityScreenState extends State<ActivityScreen>
             itemCount: notifications.length,
             itemBuilder: (context, index) {
               return _buildNotificationItem(
-                notifications[index], isDark, text, sub,
+                notifications[index],
+                isDark,
+                text,
+                sub,
               );
             },
           ),
@@ -286,10 +317,10 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  // ── INVITATIONS TAB ──
   Widget _buildInvitationsTab(bool isDark, Color text, Color sub) {
     if (_loadingInvitations) {
-      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+      return Center(
+          child: CircularProgressIndicator(color: DhanWiserColors.primary));
     }
 
     if (_invitations.isEmpty) {
@@ -301,17 +332,20 @@ class _ActivityScreenState extends State<ActivityScreen>
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: DhanWiserColors.primaryLight.withValues(alpha: isDark ? 0.12 : 0.06),
+                color: DhanWiserColors.primaryLight
+                    .withValues(alpha: isDark ? 0.12 : 0.06),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(Icons.mail_outline_rounded, color: DhanWiserColors.primaryLight, size: 28),
+              child: Icon(Icons.mail_outline_rounded,
+                  color: DhanWiserColors.primaryLight, size: 28),
             ),
             const SizedBox(height: 16),
-            Text('No invitations', style: GoogleFonts.inter(
-              fontSize: 17, fontWeight: FontWeight.w600, color: text)),
+            Text('No invitations',
+                style: GoogleFonts.inter(
+                    fontSize: 17, fontWeight: FontWeight.w600, color: text)),
             const SizedBox(height: 4),
-            Text('Group invitations will appear here', style: GoogleFonts.inter(
-              fontSize: 14, color: sub)),
+            Text('Group invitations will appear here',
+                style: GoogleFonts.inter(fontSize: 14, color: sub)),
           ],
         ),
       );
@@ -330,14 +364,13 @@ class _ActivityScreenState extends State<ActivityScreen>
     );
   }
 
-  Widget _buildInvitationItem(ServerInvitation invitation, bool isDark, Color text, Color sub) {
+  Widget _buildInvitationItem(
+      ServerInvitation invitation, bool isDark, Color text, Color sub) {
     final isResponding = _respondingIds.contains(invitation.id);
-    final initial = invitation.serverName.isNotEmpty
-        ? invitation.serverName[0].toUpperCase()
-        : 'G';
-    final time = invitation.createdAt != null
-        ? _formatTime(invitation.createdAt!)
-        : '';
+    final initial =
+        invitation.serverName.isNotEmpty ? invitation.serverName[0].toUpperCase() : 'G';
+    final time =
+        invitation.createdAt != null ? _formatTime(invitation.createdAt!) : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -360,22 +393,30 @@ class _ActivityScreenState extends State<ActivityScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Group info
           Row(
             children: [
               Container(
-                width: 48, height: 48,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [DhanWiserColors.primary, DhanWiserColors.primaryLight],
+                    colors: [
+                      DhanWiserColors.primary,
+                      DhanWiserColors.primaryLight
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
-                  child: Text(initial, style: GoogleFonts.inter(
-                    color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20)),
+                  child: Text(
+                    initial,
+                    style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -386,7 +427,9 @@ class _ActivityScreenState extends State<ActivityScreen>
                     Text(
                       invitation.serverName,
                       style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600, color: text, fontSize: 16),
+                          fontWeight: FontWeight.w600,
+                          color: text,
+                          fontSize: 16),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -400,7 +443,6 @@ class _ActivityScreenState extends State<ActivityScreen>
                 Text(time, style: GoogleFonts.inter(fontSize: 12, color: sub)),
             ],
           ),
-
           if (invitation.serverDescription != null &&
               invitation.serverDescription!.isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -411,10 +453,7 @@ class _ActivityScreenState extends State<ActivityScreen>
               overflow: TextOverflow.ellipsis,
             ),
           ],
-
           const SizedBox(height: 14),
-
-          // Accept / Decline buttons
           Row(
             children: [
               Expanded(
@@ -454,7 +493,8 @@ class _ActivityScreenState extends State<ActivityScreen>
                     style: ElevatedButton.styleFrom(
                       backgroundColor: DhanWiserColors.mint,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: DhanWiserColors.mint.withValues(alpha: 0.5),
+                      disabledBackgroundColor:
+                          DhanWiserColors.mint.withValues(alpha: 0.5),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -462,9 +502,10 @@ class _ActivityScreenState extends State<ActivityScreen>
                     ),
                     child: isResponding
                         ? const SizedBox(
-                            width: 18, height: 18,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
+                                color: Colors.white, strokeWidth: 2),
                           )
                         : Text(
                             'Accept & Join',
@@ -487,9 +528,14 @@ class _ActivityScreenState extends State<ActivityScreen>
       AppNotification notification, bool isDark, Color text, Color sub) {
     final notifIcon = _getIconForType(notification.type);
     final color = _getColorForType(notification.type);
-    final time = notification.createdAt != null
-        ? _formatTime(notification.createdAt!)
-        : '';
+    final time =
+        notification.createdAt != null ? _formatTime(notification.createdAt!) : '';
+    final isInvitationNotification =
+        (notification.type == 'server_invitation' ||
+                notification.type == 'invitation') &&
+            notification.relatedId != null;
+    final isResponding = isInvitationNotification &&
+        _respondingIds.contains(notification.relatedId!);
 
     return Dismissible(
       key: Key(notification.id.toString()),
@@ -502,10 +548,12 @@ class _ActivityScreenState extends State<ActivityScreen>
           color: DhanWiserColors.coral.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Icon(Icons.delete_outline_rounded, color: DhanWiserColors.coral, size: 22),
+        child:
+            Icon(Icons.delete_outline_rounded, color: DhanWiserColors.coral, size: 22),
       ),
       onDismissed: (_) async {
-        final notifProv = Provider.of<NotificationProvider>(context, listen: false);
+        final notifProv =
+            Provider.of<NotificationProvider>(context, listen: false);
         try {
           await NotificationService.deleteNotification(notification.id);
           notifProv.fetchNotifications();
@@ -513,8 +561,8 @@ class _ActivityScreenState extends State<ActivityScreen>
       },
       child: GestureDetector(
         onTap: () {
-          // If it's a server_invitation notification, switch to invitations tab
-          if (notification.type == 'server_invitation') {
+          if (notification.type == 'server_invitation' ||
+              notification.type == 'invitation') {
             _tabController.animateTo(1);
             _loadInvitations();
           }
@@ -536,67 +584,154 @@ class _ActivityScreenState extends State<ActivityScreen>
               ),
             ],
           ),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: isDark ? 0.12 : 0.06),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(notifIcon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      notification.message,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: notification.isRead ? FontWeight.w400 : FontWeight.w500,
-                        color: text,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: isDark ? 0.12 : 0.06),
+                      borderRadius: BorderRadius.circular(13),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
+                    child: Icon(notifIcon, color: color, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (time.isNotEmpty)
-                          Text(time, style: GoogleFonts.inter(fontSize: 12, color: sub)),
-                        if (notification.type == 'server_invitation') ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            'Tap to view →',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: DhanWiserColors.primary,
-                              fontWeight: FontWeight.w500,
+                        Text(
+                          notification.message,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight:
+                                notification.isRead ? FontWeight.w400 : FontWeight.w500,
+                            color: text,
+                            height: 1.4,
+                          ),
+                          maxLines: isInvitationNotification ? 3 : 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            if (time.isNotEmpty)
+                              Text(time,
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12, color: sub)),
+                            if (notification.type == 'server_invitation' ||
+                                notification.type == 'invitation') ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                isInvitationNotification
+                                    ? 'Respond here or tap to view'
+                                    : 'Tap to view ->',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: DhanWiserColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!notification.isRead)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 8),
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (isInvitationNotification) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 38,
+                        child: OutlinedButton(
+                          onPressed: isResponding
+                              ? null
+                              : () => _respondToInvitation(
+                                    notification.relatedId!,
+                                    'reject',
+                                  ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: DhanWiserColors.coral.withValues(alpha: 0.3),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
-                      ],
+                          child: Text(
+                            'Decline',
+                            style: GoogleFonts.inter(
+                              color: DhanWiserColors.coral,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 38,
+                        child: ElevatedButton(
+                          onPressed: isResponding
+                              ? null
+                              : () => _respondToInvitation(
+                                    notification.relatedId!,
+                                    'accept',
+                                  ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DhanWiserColors.mint,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor:
+                                DhanWiserColors.mint.withValues(alpha: 0.5),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: isResponding
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  'Accept',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              if (!notification.isRead)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 8),
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
+              ],
             ],
           ),
         ),
