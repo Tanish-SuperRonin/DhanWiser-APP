@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
+import '../providers/server_provider.dart';
 
 class FriendDiscoveryScreen extends StatefulWidget {
   const FriendDiscoveryScreen({super.key});
@@ -16,6 +18,17 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
   List<PublicUser> _searchResults = [];
   bool _isSearching = false;
   String? _searchError;
+
+  // Track invite state per user: null=not invited, 'loading', 'sent', 'error'
+  final Map<int, String> _inviteStates = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ServerProvider>(context, listen: false).fetchServers();
+    });
+  }
 
   Future<void> _performSearch(String query) async {
     if (query.trim().isEmpty) {
@@ -44,6 +57,128 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           _isSearching = false;
           _searchError = 'Failed to search. Check connection.';
         });
+      }
+    }
+  }
+
+  void _showInviteDialog(PublicUser user) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
+    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final serverProv = Provider.of<ServerProvider>(context, listen: false);
+    final servers = serverProv.servers;
+
+    if (servers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Create a group first before inviting friends'),
+          backgroundColor: DhanWiserColors.coral,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? DhanWiserColors.gray600 : DhanWiserColors.gray300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Invite ${user.fullName}',
+                style: GoogleFonts.inter(
+                  fontSize: 18, fontWeight: FontWeight.w700, color: text,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Select a group to invite @${user.username} to:',
+                style: GoogleFonts.inter(fontSize: 14, color: sub),
+              ),
+              const SizedBox(height: 16),
+              ...servers.map((server) {
+                final initial = server.name.isNotEmpty ? server.name[0].toUpperCase() : 'G';
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  leading: Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: DhanWiserColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Center(
+                      child: Text(initial, style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700, color: DhanWiserColors.primary, fontSize: 18)),
+                    ),
+                  ),
+                  title: Text(server.name, style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600, color: text, fontSize: 15)),
+                  subtitle: Text('${server.memberCount} members', style: GoogleFonts.inter(
+                    fontSize: 12, color: sub)),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16, color: sub),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _sendInvite(user, server.id, server.name);
+                  },
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _sendInvite(PublicUser user, int serverId, String serverName) async {
+    setState(() => _inviteStates[user.id] = 'loading');
+    try {
+      final serverProv = Provider.of<ServerProvider>(context, listen: false);
+      final success = await serverProv.inviteUser(serverId, user.id);
+      if (mounted) {
+        if (success) {
+          setState(() => _inviteStates[user.id] = 'sent');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invited ${user.fullName} to $serverName'),
+              backgroundColor: DhanWiserColors.mint,
+            ),
+          );
+        } else {
+          setState(() => _inviteStates[user.id] = 'error');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(serverProv.error ?? 'Failed to invite'),
+              backgroundColor: DhanWiserColors.coral,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _inviteStates[user.id] = 'error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: $e'),
+            backgroundColor: DhanWiserColors.coral,
+          ),
+        );
       }
     }
   }
@@ -140,6 +275,63 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
             // ── Results ──
             Expanded(child: _buildResults(isDark, surface, text, sub)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInviteButton(PublicUser user, Color text) {
+    final state = _inviteStates[user.id];
+
+    if (state == 'loading') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: DhanWiserColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: SizedBox(
+          width: 18, height: 18,
+          child: CircularProgressIndicator(
+            color: DhanWiserColors.primary, strokeWidth: 2),
+        ),
+      );
+    }
+
+    if (state == 'sent') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: DhanWiserColors.mint.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_rounded, color: DhanWiserColors.mint, size: 16),
+            const SizedBox(width: 4),
+            Text('Sent', style: GoogleFonts.inter(
+              color: DhanWiserColors.mint, fontSize: 13, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () => _showInviteDialog(user),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: DhanWiserColors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Invite',
+          style: GoogleFonts.inter(
+            color: DhanWiserColors.primary,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -258,21 +450,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: DhanWiserColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'Invite',
-                  style: GoogleFonts.inter(
-                    color: DhanWiserColors.primary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              _buildInviteButton(user, text),
             ],
           ),
         );

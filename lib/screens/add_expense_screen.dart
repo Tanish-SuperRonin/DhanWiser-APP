@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/server_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/expense_service.dart';
+import '../models/server_model.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final int? serverId;
@@ -21,7 +23,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   String _splitType = 'equally';
   int? _selectedServerId;
   int? _selectedChannelId;
+  int? _paidByUserId;
   bool _isSaving = false;
+
+  // Per-member custom amounts
+  final Map<int, TextEditingController> _customAmountControllers = {};
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Food', 'icon': Icons.restaurant_rounded},
@@ -38,13 +44,72 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     super.initState();
     _selectedServerId = widget.serverId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final serverProv = Provider.of<ServerProvider>(context, listen: false);
       if (_selectedServerId == null) {
-        Provider.of<ServerProvider>(context, listen: false).fetchServers();
+        serverProv.fetchServers();
       } else {
-        Provider.of<ServerProvider>(context, listen: false)
-            .fetchServerDetails(_selectedServerId!);
+        serverProv.fetchServerDetails(_selectedServerId!).then((_) {
+          // Auto-select the first channel
+          final prov = Provider.of<ServerProvider>(context, listen: false);
+          if (prov.channels.isNotEmpty && mounted) {
+            setState(() => _selectedChannelId = prov.channels.first.id);
+          }
+        });
       }
+      // Default payer = current user
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      _paidByUserId = auth.currentUser?.id;
     });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    for (final c in _customAmountControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  List<ServerMember> _getMembers() {
+    final serverProv = Provider.of<ServerProvider>(context, listen: false);
+    return serverProv.currentServerDetail?.members ?? [];
+  }
+
+  List<Map<String, dynamic>> _buildParticipants() {
+    final members = _getMembers();
+    if (members.isEmpty) return [];
+
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    if (amount <= 0) return [];
+
+    if (_splitType == 'equally') {
+      final rounded = double.parse((amount / members.length).toStringAsFixed(2));
+      // Last person absorbs rounding difference so sum == amount exactly
+      final remainder = double.parse(
+          (amount - rounded * (members.length - 1)).toStringAsFixed(2));
+      return List.generate(members.length, (i) {
+        final m = members[i];
+        final owed = (i == members.length - 1) ? remainder : rounded;
+        return {
+          'userId': m.userId,
+          'amountPaid': m.userId == _paidByUserId ? amount : 0.0,
+          'amountOwed': owed,
+        };
+      });
+    } else {
+      // Custom split
+      return members.map((m) {
+        final controller = _customAmountControllers[m.userId];
+        final owed = double.tryParse(controller?.text.trim() ?? '0') ?? 0;
+        return {
+          'userId': m.userId,
+          'amountPaid': m.userId == _paidByUserId ? amount : 0.0,
+          'amountOwed': owed,
+        };
+      }).toList();
+    }
   }
 
   Future<void> _saveExpense() async {
@@ -64,20 +129,65 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       return;
     }
 
+    // If members not yet loaded, fetch on-demand
+    var members = _getMembers();
+    if (members.isEmpty) {
+      try {
+        final serverProv = Provider.of<ServerProvider>(context, listen: false);
+        await serverProv.fetchServerDetails(_selectedServerId!);
+        members = _getMembers();
+      } catch (_) {}
+    }
+    if (members.isEmpty) {
+      _showError('No members found in this group');
+      return;
+    }
+
+    // Validate custom split sums to total
+    if (_splitType == 'custom') {
+      double sum = 0;
+      for (final m in members) {
+        final controller = _customAmountControllers[m.userId];
+        sum += double.tryParse(controller?.text.trim() ?? '0') ?? 0;
+      }
+      if ((sum - amount).abs() > 0.01) {
+        _showError('Custom amounts (₹${sum.toStringAsFixed(2)}) must equal total (₹${amount.toStringAsFixed(2)})');
+        return;
+      }
+    }
+
     setState(() => _isSaving = true);
 
     try {
-      final serverProv = Provider.of<ServerProvider>(context, listen: false);
-      final channels = serverProv.channels;
-      final channelId = _selectedChannelId ??
-          (channels.isNotEmpty ? channels.first.id : _selectedServerId!);
+      // Always fetch channel freshly — avoids timing race condition.
+      // The backend auto-creates a "General" channel if none exists.
+      int channelId;
+      if (_selectedChannelId != null) {
+        channelId = _selectedChannelId!;
+      } else {
+        final serverProv = Provider.of<ServerProvider>(context, listen: false);
+        var channels = serverProv.channels;
+        if (channels.isEmpty) {
+          // Fetch fresh from server (backend will auto-create General channel)
+          await serverProv.fetchServerDetails(_selectedServerId!);
+          channels = serverProv.channels;
+        }
+        if (channels.isEmpty) {
+          if (mounted) _showError('Could not load channels. Please try again.');
+          return;
+        }
+        channelId = channels.first.id;
+        if (mounted) setState(() => _selectedChannelId = channelId);
+      }
+
+      final participants = _buildParticipants();
 
       await ExpenseService.addExpense(
         channelId: channelId,
         title: title,
         totalAmount: amount,
         expenseDate: DateTime.now().toIso8601String(),
-        participants: [],
+        participants: participants,
       );
 
       if (mounted) {
@@ -96,6 +206,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
   }
 
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -103,6 +214,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         backgroundColor: DhanWiserColors.coral,
       ),
     );
+  }
+
+  void _onServerSelected(int serverId) {
+    setState(() {
+      _selectedServerId = serverId;
+      _selectedChannelId = null; // reset channel when switching servers
+    });
+    Provider.of<ServerProvider>(context, listen: false)
+        .fetchServerDetails(serverId).then((_) {
+      // Auto-select the first channel once server details are loaded
+      final serverProv = Provider.of<ServerProvider>(context, listen: false);
+      if (serverProv.channels.isNotEmpty && mounted) {
+        setState(() => _selectedChannelId = serverProv.channels.first.id);
+      }
+    });
+  }
+
+  void _initCustomControllers(List<ServerMember> members) {
+    for (final m in members) {
+      if (!_customAmountControllers.containsKey(m.userId)) {
+        _customAmountControllers[m.userId] = TextEditingController();
+      }
+    }
   }
 
   @override
@@ -174,6 +308,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                               controller: _amountController,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               textAlign: TextAlign.center,
+                              onChanged: (_) => setState(() {}),
                               style: GoogleFonts.inter(
                                 fontSize: 48,
                                 fontWeight: FontWeight.w800,
@@ -281,7 +416,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                     child: Text(s.name),
                                   );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedServerId = val),
+                                onChanged: (val) {
+                                  if (val != null) _onServerSelected(val);
+                                },
                               ),
                             ),
                           );
@@ -289,6 +426,74 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                       const SizedBox(height: 20),
                     ],
+
+                    // ── Auto-select channel (hidden from user) ──
+                    if (_selectedServerId != null)
+                      Consumer<ServerProvider>(
+                        builder: (context, serverProv, _) {
+                          final chList = serverProv.channels;
+                          if (chList.isNotEmpty) {
+                            // Auto-select first channel if not already set
+                            if (_selectedChannelId == null ||
+                                !chList.any((c) => c.id == _selectedChannelId)) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted) {
+                                  setState(() => _selectedChannelId = chList.first.id);
+                                }
+                              });
+                            }
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+
+                    // ── Paid by selector ──
+                    if (_selectedServerId != null)
+                      Consumer<ServerProvider>(
+                        builder: (context, serverProv, _) {
+                          final members = serverProv.currentServerDetail?.members ?? [];
+                          if (members.isEmpty) return const SizedBox.shrink();
+
+                          // Set default paidBy if not set
+                          if (_paidByUserId == null && members.isNotEmpty) {
+                            final auth = Provider.of<AuthProvider>(context, listen: false);
+                            _paidByUserId = auth.currentUser?.id ?? members.first.userId;
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Paid by', sub),
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<int>(
+                                    isExpanded: true,
+                                    value: members.any((m) => m.userId == _paidByUserId)
+                                        ? _paidByUserId
+                                        : members.first.userId,
+                                    dropdownColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+                                    style: GoogleFonts.inter(color: text, fontSize: 15),
+                                    items: members.map((m) {
+                                      return DropdownMenuItem(
+                                        value: m.userId,
+                                        child: Text('${m.fullName} (@${m.username})'),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) => setState(() => _paidByUserId = val),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          );
+                        },
+                      ),
 
                     // ── Split type ──
                     _buildLabel('Split', sub),
@@ -300,7 +505,47 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         _buildSplitChip('Custom', 'custom', Icons.tune_rounded, isDark, text),
                       ],
                     ),
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 20),
+
+                    // ── Split details ──
+                    if (_selectedServerId != null)
+                      Consumer<ServerProvider>(
+                        builder: (context, serverProv, _) {
+                          final members = serverProv.currentServerDetail?.members ?? [];
+                          if (members.isEmpty) {
+                            if (serverProv.isLoading) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Center(child: CircularProgressIndicator(
+                                  color: DhanWiserColors.primary, strokeWidth: 2)),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          }
+
+                          _initCustomControllers(members);
+                          final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+                          final perPerson = members.isNotEmpty ? amount / members.length : 0.0;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel(
+                                _splitType == 'equally'
+                                    ? 'Split equally (₹${perPerson.toStringAsFixed(2)} each)'
+                                    : 'Custom amounts (must total ₹${amount.toStringAsFixed(2)})',
+                                sub,
+                              ),
+                              const SizedBox(height: 10),
+                              ...members.map((m) {
+                                return _buildMemberSplitRow(m, perPerson, isDark, text, sub);
+                              }),
+                            ],
+                          );
+                        },
+                      ),
+
+                    const SizedBox(height: 20),
 
                     // ── Save button ──
                     SizedBox(
@@ -340,6 +585,86 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMemberSplitRow(ServerMember member, double equalAmount, bool isDark, Color text, Color sub) {
+    final initial = member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?';
+    final isPayer = member.userId == _paidByUserId;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: isPayer
+            ? Border.all(color: DhanWiserColors.primary.withValues(alpha: 0.3), width: 1)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.08 : 0.02),
+            blurRadius: 6, offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(
+              color: DhanWiserColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(initial, style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700, color: DhanWiserColors.primary, fontSize: 14)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(member.fullName, style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600, color: text, fontSize: 14)),
+                if (isPayer)
+                  Text('Payer', style: GoogleFonts.inter(
+                    fontSize: 11, color: DhanWiserColors.primary, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          if (_splitType == 'equally')
+            Text(
+              '₹${equalAmount.toStringAsFixed(2)}',
+              style: GoogleFonts.inter(
+                fontSize: 15, fontWeight: FontWeight.w600, color: text),
+            )
+          else
+            SizedBox(
+              width: 90,
+              child: TextField(
+                controller: _customAmountControllers[member.userId],
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                textAlign: TextAlign.right,
+                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: text),
+                decoration: InputDecoration(
+                  hintText: '0',
+                  hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 15),
+                  prefixText: '₹',
+                  prefixStyle: GoogleFonts.inter(color: sub, fontSize: 15),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  filled: true,
+                  fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

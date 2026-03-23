@@ -21,7 +21,9 @@ class _SettlementScreenState extends State<SettlementScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
@@ -161,92 +163,296 @@ class _SettlementScreenState extends State<SettlementScreen>
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _pendingSettlements.length,
-      itemBuilder: (context, index) {
-        final s = _pendingSettlements[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      color: DhanWiserColors.primary,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _pendingSettlements.length,
+        itemBuilder: (context, index) {
+          final s = _pendingSettlements[index];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Payer → Receiver + amount
+                Row(
+                  children: [
+                    _buildUserChip(s.payerUsername, DhanWiserColors.coral, isDark),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Icon(Icons.arrow_forward_rounded,
+                          size: 16, color: sub),
+                    ),
+                    _buildUserChip(s.receiverUsername, DhanWiserColors.teal, isDark),
+                    const Spacer(),
+                    Text(
+                      '₹${s.amount.toStringAsFixed(0)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: text,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // ── Proof/Notes section ──
+                if (s.notes != null && s.notes!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: DhanWiserColors.primary.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.receipt_long_rounded,
+                                size: 14, color: DhanWiserColors.primary),
+                            const SizedBox(width: 6),
+                            Text('Payment Proof',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: DhanWiserColors.primary,
+                                )),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          s.notes!,
+                          style: GoogleFonts.inter(fontSize: 13, color: text, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // ── Server name ──
+                if (s.serverName != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Group: ${s.serverName}',
+                    style: GoogleFonts.inter(fontSize: 12, color: sub),
+                  ),
+                ],
+
+                const SizedBox(height: 14),
+
+                // Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 40,
+                        child: OutlinedButton(
+                          onPressed: () => _showRejectDialog(s),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: DhanWiserColors.coral.withValues(alpha: 0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text('Reject', style: GoogleFonts.inter(
+                            color: DhanWiserColors.coral, fontWeight: FontWeight.w600, fontSize: 13)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 40,
+                        child: ElevatedButton(
+                          onPressed: () => _showApproveDialog(s),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DhanWiserColors.mint,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text('Approve', style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Approve confirmation dialog ──
+  void _showApproveDialog(SettlementModel settlement) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
+    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Confirm Payment',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: text, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Payer → Receiver
-              Row(
-                children: [
-                  _buildUserChip(s.payerUsername, DhanWiserColors.coral, isDark),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Icon(Icons.arrow_forward_rounded,
-                        size: 16, color: sub),
-                  ),
-                  _buildUserChip(s.receiverUsername, DhanWiserColors.teal, isDark),
-                  const Spacer(),
-                  Text(
-                    '₹${s.amount.toStringAsFixed(0)}',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: text,
-                    ),
-                  ),
-                ],
+              Text(
+                '${settlement.payerFullName} says they paid you ₹${settlement.amount.toStringAsFixed(0)}.',
+                style: GoogleFonts.inter(fontSize: 14, color: text, height: 1.5),
               ),
+              if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: DhanWiserColors.primary.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Their proof:',
+                          style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600, color: DhanWiserColors.primary)),
+                      const SizedBox(height: 4),
+                      Text(settlement.notes!,
+                          style: GoogleFonts.inter(fontSize: 13, color: text, height: 1.4)),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
-              // Actions
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: OutlinedButton(
-                        onPressed: () => _handleReject(s.id),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: DhanWiserColors.coral.withValues(alpha: 0.3)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text('Reject', style: GoogleFonts.inter(
-                          color: DhanWiserColors.coral, fontWeight: FontWeight.w600, fontSize: 13)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () => _handleApprove(s.id),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: DhanWiserColors.mint,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text('Approve', style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600, fontSize: 13)),
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                'Did you actually receive this payment? Only approve if you can confirm.',
+                style: GoogleFonts.inter(fontSize: 13, color: sub, height: 1.4),
               ),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel',
+                  style: GoogleFonts.inter(color: sub, fontWeight: FontWeight.w500)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _handleApprove(settlement.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DhanWiserColors.mint,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text('Yes, I Received It',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── Reject dialog with reason ──
+  void _showRejectDialog(SettlementModel settlement) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
+    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Reject Settlement',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: text, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${settlement.payerFullName} claims to have paid ₹${settlement.amount.toStringAsFixed(0)}.',
+                style: GoogleFonts.inter(fontSize: 14, color: text, height: 1.5),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                style: GoogleFonts.inter(color: text, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Reason for rejection',
+                  labelStyle: GoogleFonts.inter(color: sub, fontSize: 14),
+                  hintText: 'e.g. I didn\'t receive this payment',
+                  hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.5), fontSize: 13),
+                  filled: true,
+                  fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(14),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel',
+                  style: GoogleFonts.inter(color: sub, fontWeight: FontWeight.w500)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _handleReject(settlement.id, reason: reasonController.text.trim());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DhanWiserColors.coral,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text('Reject',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+          ],
         );
       },
     );
@@ -298,24 +504,47 @@ class _SettlementScreenState extends State<SettlementScreen>
   Future<void> _handleApprove(int id) async {
     try {
       await SettlementService.approveSettlement(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Settlement approved!'),
+            backgroundColor: DhanWiserColors.mint,
+          ),
+        );
+      }
       await _loadData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to approve: $e')),
+          SnackBar(
+            content: Text('Failed to approve: $e'),
+            backgroundColor: DhanWiserColors.coral,
+          ),
         );
       }
     }
   }
 
-  Future<void> _handleReject(int id) async {
+  Future<void> _handleReject(int id, {String? reason}) async {
     try {
-      await SettlementService.rejectSettlement(id);
+      await SettlementService.rejectSettlement(id,
+          reason: (reason != null && reason.isNotEmpty) ? reason : null);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Settlement rejected'),
+            backgroundColor: DhanWiserColors.coral,
+          ),
+        );
+      }
       await _loadData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to reject: $e')),
+          SnackBar(
+            content: Text('Failed to reject: $e'),
+            backgroundColor: DhanWiserColors.coral,
+          ),
         );
       }
     }

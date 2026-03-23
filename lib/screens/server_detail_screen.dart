@@ -3,7 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/server_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/expense_service.dart';
+import '../services/settlement_service.dart';
 import '../models/expense_model.dart';
 import '../models/balance_model.dart';
 
@@ -60,6 +62,192 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     _loadingBalances = false;
 
     if (mounted) setState(() {});
+  }
+
+  void _showSettleUpDialog(SuggestedSettlement suggestion) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
+    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final transactionIdController = TextEditingController();
+    final notesController = TextEditingController();
+    bool isSending = false;
+
+    // Check if current user is the payer
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = auth.currentUser?.id;
+    final fromUserId = suggestion.from['userId'] ?? suggestion.from['id'];
+
+    if (currentUserId != fromUserId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Only ${suggestion.fromUsername} can initiate this settlement'),
+          backgroundColor: DhanWiserColors.coral,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20, 16, 20,
+                MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40, height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? DhanWiserColors.gray600 : DhanWiserColors.gray300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Settle Up',
+                    style: GoogleFonts.inter(
+                      fontSize: 20, fontWeight: FontWeight.w700, color: text),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You owe ₹${suggestion.amount.toStringAsFixed(0)} to ${suggestion.toUsername}',
+                    style: GoogleFonts.inter(fontSize: 15, color: sub),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Transaction ID
+                  Text('Transaction ID / UPI Ref *',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: transactionIdController,
+                    style: GoogleFonts.inter(color: text, fontSize: 15),
+                    decoration: InputDecoration(
+                      hintText: 'e.g. UPI123456789',
+                      hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 14),
+                      filled: true,
+                      fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                      prefixIcon: Icon(Icons.receipt_long_rounded, color: sub, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Notes
+                  Text('Payment details (optional)',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: notesController,
+                    maxLines: 2,
+                    style: GoogleFonts.inter(color: text, fontSize: 15),
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Paid via Google Pay, screenshot attached',
+                      hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 13),
+                      filled: true,
+                      fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.all(14),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Submit button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isSending ? null : () async {
+                        final txnId = transactionIdController.text.trim();
+                        if (txnId.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Please enter a transaction ID'),
+                              backgroundColor: DhanWiserColors.coral,
+                            ),
+                          );
+                          return;
+                        }
+                        setSheetState(() => isSending = true);
+
+                        // Combine transaction ID and notes into proof string
+                        String proof = 'Transaction ID: $txnId';
+                        final notes = notesController.text.trim();
+                        if (notes.isNotEmpty) proof += '\n$notes';
+
+                        try {
+                          final toUserId = suggestion.to['userId'] ?? suggestion.to['id'];
+                          await SettlementService.initiateSettlement(
+                            serverId: widget.serverId,
+                            receiverId: toUserId,
+                            amount: suggestion.amount,
+                            notes: proof,
+                          );
+                          if (mounted) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Settlement sent! Waiting for ${suggestion.toUsername} to approve.'),
+                                backgroundColor: DhanWiserColors.mint,
+                              ),
+                            );
+                            await _loadData();
+                          }
+                        } catch (e) {
+                          setSheetState(() => isSending = false);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed: $e'),
+                                backgroundColor: DhanWiserColors.coral,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: DhanWiserColors.mint,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        disabledBackgroundColor: DhanWiserColors.mint.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isSending
+                          ? const SizedBox(width: 22, height: 22,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                          : Text('Send Settlement Request',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -453,25 +641,44 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
               ),
               child: Row(
                 children: [
-                  Text(
-                    s.fromUsername,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(
+                          s.fromUsername,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Icon(Icons.arrow_forward_rounded, size: 16, color: DhanWiserColors.primary),
+                        ),
+                        Text(
+                          s.toUsername,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Icon(Icons.arrow_forward_rounded, size: 16, color: DhanWiserColors.primary),
-                  ),
-                  Text(
-                    s.toUsername,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
-                  ),
-                  const Spacer(),
                   Text(
                     '₹${s.amount.toStringAsFixed(0)}',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       color: DhanWiserColors.primary,
                       fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => _showSettleUpDialog(s),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.mint,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text('Settle',
+                        style: GoogleFonts.inter(
+                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
