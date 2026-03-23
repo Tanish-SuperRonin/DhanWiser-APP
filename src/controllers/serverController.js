@@ -419,6 +419,13 @@ export const serverController = {
         });
       }
 
+      // Remove the original invitation notification after it has been handled
+      await client.query(
+        `DELETE FROM notifications
+         WHERE user_id = $1 AND related_id = $2 AND type = 'invitation'`,
+        [userId, id]
+      );
+
       await client.query('COMMIT');
 
       res.json({
