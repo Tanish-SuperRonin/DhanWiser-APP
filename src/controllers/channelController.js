@@ -2,7 +2,7 @@ import { pool } from '../config/database.js';
 
 export const channelController = {
   // Create a channel in a server
- async createChannel(req, res) {
+  async createChannel(req, res) {
     try {
       const { serverId, name, description } = req.body;
       const userId = req.user.userId;
@@ -92,6 +92,21 @@ export const channelController = {
           success: false,
           message: 'You are not a member of this server'
         });
+      }
+
+      // Check how many channels exist — backfill a default if none
+      const channelCount = await pool.query(
+        'SELECT COUNT(*) as cnt FROM channels WHERE server_id = $1',
+        [serverId]
+      );
+
+      if (parseInt(channelCount.rows[0].cnt) === 0) {
+        // Auto-create a default "General" channel for old servers
+        await pool.query(
+          `INSERT INTO channels (server_id, name, description, created_by)
+           VALUES ($1, 'General', 'Default channel for expenses', $2)`,
+          [serverId, userId]
+        );
       }
 
       // Get channels with expense count

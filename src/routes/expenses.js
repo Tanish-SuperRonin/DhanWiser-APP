@@ -14,7 +14,7 @@ const addExpenseValidation = [
   body('channelId').isInt({ min: 1 }).withMessage('Valid channel ID required'),
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title required'),
   body('totalAmount').isFloat({ min: 0.01 }).withMessage('Valid amount required'),
-  body('expenseDate').isDate().withMessage('Valid date required'),
+  body('expenseDate').isISO8601().withMessage('Valid date required'),
   body('participants').isArray({ min: 1 }).withMessage('At least one participant required'),
   body('participants.*.userId').isInt({ min: 1 }),
   body('participants.*.amountPaid').isFloat({ min: 0 }),

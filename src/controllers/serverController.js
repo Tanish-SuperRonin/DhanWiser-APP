@@ -30,7 +30,7 @@ export const serverController = {
       }
 
       await client.query('BEGIN');
-      
+
       // ... rest of function
       // Create server
       const serverResult = await client.query(
@@ -47,6 +47,13 @@ export const serverController = {
         `INSERT INTO server_members (server_id, user_id, role) 
          VALUES ($1, $2, $3)`,
         [server.id, userId, 'admin']
+      );
+
+      // Auto-create a default "General" channel so expenses can be added immediately
+      await client.query(
+        `INSERT INTO channels (server_id, name, description, created_by)
+         VALUES ($1, $2, $3, $4)`,
+        [server.id, 'General', 'Default channel for expenses', userId]
       );
 
       await client.query('COMMIT');
@@ -526,7 +533,7 @@ export const serverController = {
       });
     }
   },
-    async sendReminders(req, res) {
+  async sendReminders(req, res) {
     try {
       const { id } = req.params;
       const { reminderThreshold } = req.body;
@@ -556,7 +563,7 @@ export const serverController = {
       const { reminderService } = await import('../services/reminderService.js');
 
       const result = await reminderService.sendBalanceReminders(
-        id, 
+        id,
         reminderThreshold || 100
       );
 
@@ -598,7 +605,7 @@ export const serverController = {
       }
 
       const { reminderService } = await import('../services/reminderService.js');
-      
+
       const result = await reminderService.getUsersNeedingReminders(id, 100);
 
       res.json(result);
