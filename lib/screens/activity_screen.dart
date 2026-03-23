@@ -560,11 +560,25 @@ class _ActivityScreenState extends State<ActivityScreen>
         } catch (_) {}
       },
       child: GestureDetector(
-        onTap: () {
+        onTap: () async {
           if (notification.type == 'server_invitation' ||
               notification.type == 'invitation') {
             _tabController.animateTo(1);
             _loadInvitations();
+            return;
+          }
+
+          if (notification.type == 'settlement_request' &&
+              notification.relatedId != null) {
+            final handled = await Navigator.pushNamed(
+              context,
+              '/settlement-request',
+              arguments: {'settlementId': notification.relatedId},
+            );
+
+            if (handled == true && mounted) {
+              await _loadNotifications();
+            }
           }
         },
         child: Container(
@@ -624,12 +638,15 @@ class _ActivityScreenState extends State<ActivityScreen>
                                   style: GoogleFonts.inter(
                                       fontSize: 12, color: sub)),
                             if (notification.type == 'server_invitation' ||
-                                notification.type == 'invitation') ...[
+                                notification.type == 'invitation' ||
+                                notification.type == 'settlement_request') ...[
                               const SizedBox(width: 8),
                               Text(
                                 isInvitationNotification
                                     ? 'Respond here or tap to view'
-                                    : 'Tap to view ->',
+                                    : notification.type == 'settlement_request'
+                                        ? 'Tap to review ->'
+                                        : 'Tap to view ->',
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   color: DhanWiserColors.primary,

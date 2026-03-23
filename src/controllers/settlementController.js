@@ -280,6 +280,12 @@ export const settlementController = {
         [id]
       );
 
+      await pool.query(
+        `DELETE FROM notifications
+         WHERE user_id = $1 AND related_id = $2 AND type = 'settlement_request'`,
+        [userId, id]
+      );
+
       // Create notification for payer
       await pool.query(
         `INSERT INTO notifications (user_id, type, title, message, related_id)
@@ -355,6 +361,12 @@ export const settlementController = {
          SET status = 'rejected', approved_at = CURRENT_TIMESTAMP, notes = $1
          WHERE id = $2`,
         [noteWithReason, id]
+      );
+
+      await pool.query(
+        `DELETE FROM notifications
+         WHERE user_id = $1 AND related_id = $2 AND type = 'settlement_request'`,
+        [userId, id]
       );
 
       // Create notification for payer

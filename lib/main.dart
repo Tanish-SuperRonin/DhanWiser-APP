@@ -22,6 +22,7 @@ import "package:dhanwiser_fixed/screens/profile_screen.dart";
 import "package:dhanwiser_fixed/screens/friend_discovery_screen.dart";
 import "package:dhanwiser_fixed/screens/activity_screen.dart";
 import "package:dhanwiser_fixed/screens/settlement_screen.dart";
+import "package:dhanwiser_fixed/screens/settlement_request_screen.dart";
 import "package:dhanwiser_fixed/screens/settings_screen.dart";
 import "package:dhanwiser_fixed/screens/expense_detail_screen.dart";
 
@@ -127,6 +128,14 @@ class MyApp extends StatelessWidget {
                 amount: args?['amount'] ?? '₹0',
                 date: args?['date'] ?? '',
                 paidBy: args?['paidBy'] ?? 'Unknown',
+              ),
+            );
+          }
+          if (settings.name == '/settlement-request') {
+            final args = settings.arguments as Map<String, dynamic>?;
+            return MaterialPageRoute(
+              builder: (context) => SettlementRequestScreen(
+                settlementId: args?['settlementId'] ?? 0,
               ),
             );
           }
