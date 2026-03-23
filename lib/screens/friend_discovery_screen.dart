@@ -19,6 +19,10 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
   bool _isSearching = false;
   String? _searchError;
 
+  // Optional pre-selected group (when opened from server detail invite button)
+  int? _preSelectedServerId;
+  String? _preSelectedServerName;
+
   // Track invite state per user: null=not invited, 'loading', 'sent', 'error'
   final Map<int, String> _inviteStates = {};
 
@@ -27,6 +31,12 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ServerProvider>(context, listen: false).fetchServers();
+      // Read route args for pre-selected server
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic>) {
+        _preSelectedServerId = args['serverId'] as int?;
+        _preSelectedServerName = args['serverName'] as String?;
+      }
     });
   }
 
@@ -62,6 +72,12 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
   }
 
   void _showInviteDialog(PublicUser user) {
+    // If called from a specific group context, skip group picker
+    if (_preSelectedServerId != null && _preSelectedServerName != null) {
+      _sendInvite(user, _preSelectedServerId!, _preSelectedServerName!);
+      return;
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
     final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;

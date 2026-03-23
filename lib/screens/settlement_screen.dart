@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../theme/colors.dart';
+import '../providers/auth_provider.dart';
 import '../services/settlement_service.dart';
 import '../models/settlement_model.dart';
 
@@ -260,46 +262,75 @@ class _SettlementScreenState extends State<SettlementScreen>
 
                 const SizedBox(height: 14),
 
-                // Actions
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 40,
-                        child: OutlinedButton(
-                          onPressed: () => _showRejectDialog(s),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: DhanWiserColors.coral.withValues(alpha: 0.3)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text('Reject', style: GoogleFonts.inter(
-                            color: DhanWiserColors.coral, fontWeight: FontWeight.w600, fontSize: 13)),
+                // ── Actions: only show to receiver ──
+                Builder(builder: (ctx) {
+                  final auth = Provider.of<AuthProvider>(ctx, listen: false);
+                  final currentUser = auth.currentUser;
+                  final isReceiver = currentUser != null &&
+                      (currentUser.username == s.receiverUsername ||
+                          currentUser.id == s.receiverId);
+
+                  if (!isReceiver) {
+                    // Payer sees a waiting badge
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.warning.withValues(alpha: isDark ? 0.12 : 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Waiting for ${s.receiverUsername} to approve',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: DhanWiserColors.warning,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: SizedBox(
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: () => _showApproveDialog(s),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: DhanWiserColors.mint,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: OutlinedButton(
+                            onPressed: () => _showRejectDialog(s),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: DhanWiserColors.coral.withValues(alpha: 0.3)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
+                            child: Text('Reject', style: GoogleFonts.inter(
+                              color: DhanWiserColors.coral, fontWeight: FontWeight.w600, fontSize: 13)),
                           ),
-                          child: Text('Approve', style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600, fontSize: 13)),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: () => _showApproveDialog(s),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: DhanWiserColors.mint,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text('Approve', style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600, fontSize: 13)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
               ],
             ),
           );

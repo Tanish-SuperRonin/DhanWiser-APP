@@ -46,19 +46,34 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _loadingExpenses = true;
+        _loadingBalances = true;
+      });
+    } else {
+      _loadingExpenses = true;
+      _loadingBalances = true;
+    }
+
     final serverProvider = Provider.of<ServerProvider>(context, listen: false);
     await serverProvider.fetchServerDetails(widget.serverId);
 
     try {
       _expenses = await ExpenseService.getServerExpenses(widget.serverId);
-    } catch (_) {}
+    } catch (_) {
+      _expenses = [];
+    }
     _loadingExpenses = false;
 
     try {
       final balanceData = await ExpenseService.getServerBalances(widget.serverId);
       _balances = balanceData['balances'] as List<BalanceModel>;
       _suggestions = balanceData['suggestedSettlements'] as List<SuggestedSettlement>;
-    } catch (_) {}
+    } catch (_) {
+      _balances = [];
+      _suggestions = [];
+    }
     _loadingBalances = false;
 
     if (mounted) setState(() {});
@@ -300,8 +315,14 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/add-expense',
-                        arguments: {'serverId': widget.serverId}),
+                    onTap: () async {
+                      await Navigator.pushNamed(
+                        context,
+                        '/add-expense',
+                        arguments: {'serverId': widget.serverId},
+                      );
+                      await _loadData();
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
@@ -526,6 +547,14 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
     }
 
+    final authProv = Provider.of<AuthProvider>(context, listen: false);
+    final serverProv = Provider.of<ServerProvider>(context, listen: false);
+    final currentUserId = authProv.currentUser?.id;
+    final members = serverProv.currentServerDetail?.members ?? [];
+    final isAdmin = members.any(
+      (m) => m.userId == currentUserId && m.role == 'admin',
+    );
+
     if (_balances.isEmpty) {
       return _buildEmptyState(
         icon: Icons.account_balance_outlined,
@@ -619,9 +648,42 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             );
           }),
 
+          // Admin Reminders Action
+          if (isAdmin && _balances.any((b) => b.balance < 0)) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final serverProv = Provider.of<ServerProvider>(context, listen: false);
+                  final success = await serverProv.sendReminders(widget.serverId);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success ? 'Reminders sent!' : 'Failed to send reminders'),
+                        backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                label: Text(
+                  'Send Reminders',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: DhanWiserColors.primary,
+                  side: BorderSide(color: DhanWiserColors.primary.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+            ),
+          ],
+
           // Suggestions
           if (_suggestions.isNotEmpty) ...[
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               'SETTLE UP',
               style: GoogleFonts.inter(
@@ -693,13 +755,18 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   // ── MEMBERS TAB ──
   Widget _buildMembersTab(bool isDark, Color surface, Color text, Color sub) {
-    return Consumer<ServerProvider>(
-      builder: (context, serverProv, _) {
+    return Consumer2<ServerProvider, AuthProvider>(
+      builder: (context, serverProv, authProv, _) {
         if (serverProv.isLoading) {
           return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
         }
 
         final members = serverProv.currentServerDetail?.members ?? [];
+        final currentUserId = authProv.currentUser?.id;
+        final isAdmin = members.any(
+          (m) => m.userId == currentUserId && m.role == 'admin',
+        );
+
         if (members.isEmpty) {
           return _buildEmptyState(
             icon: Icons.people_outline_rounded,
@@ -716,82 +783,119 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           const Color(0xFF74B9FF),
         ];
 
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          itemCount: members.length,
-          itemBuilder: (context, index) {
-            final m = members[index];
-            final color = memberColors[index % memberColors.length];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+        return Column(
+          children: [
+            // ── Invite button (admin only) ──
+            if (isAdmin)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await Navigator.pushNamed(
+                        context,
+                        '/friend-discovery',
+                        arguments: {'serverId': widget.serverId, 'serverName': widget.serverName},
+                      );
+                      await _loadData();
+                    },
+                    icon: const Icon(Icons.person_add_rounded, size: 18),
+                    label: Text(
+                      'Invite Members',
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: DhanWiserColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
                   ),
-                ],
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
+
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                itemCount: members.length,
+                itemBuilder: (context, index) {
+                  final m = members[index];
+                  final color = memberColors[index % memberColors.length];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Center(
-                      child: Text(
-                        m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          m.fullName,
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 15),
-                        ),
-                        Text(
-                          '@${m.username}',
-                          style: GoogleFonts.inter(fontSize: 12, color: sub),
+                      color: surface,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                  ),
-                  if (m.role == 'admin')
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Admin',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: DhanWiserColors.primary,
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Center(
+                            child: Text(
+                              m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700,
+                                color: color,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                m.fullName,
+                                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 15),
+                              ),
+                              Text(
+                                '@${m.username}',
+                                style: GoogleFonts.inter(fontSize: 12, color: sub),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (m.role == 'admin')
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: DhanWiserColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Admin',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: DhanWiserColors.primary,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                ],
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );

@@ -27,6 +27,9 @@ class SettlementModel {
   String get payerFullName => payer?['fullName'] ?? 'Unknown';
   String get receiverUsername => receiver?['username'] ?? 'Unknown';
   String get receiverFullName => receiver?['fullName'] ?? 'Unknown';
+  int? get receiverId => receiver?['id'] ?? receiver?['userId'];
+  int? get payerId => payer?['id'] ?? payer?['userId'];
+
 
   factory SettlementModel.fromJson(Map<String, dynamic> json) {
     return SettlementModel(

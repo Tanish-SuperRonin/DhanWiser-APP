@@ -215,12 +215,21 @@ class _CreateServerScreenState extends State<CreateServerScreen>
 
                               try {
                                 final serverProv = Provider.of<ServerProvider>(context, listen: false);
-                                await serverProv.createServer(name);
+                                final success = await serverProv.createServer(
+                                  name,
+                                  isPrivate: _isPrivate,
+                                );
                                 if (mounted) {
-                                  scaffold.showSnackBar(
-                                    SnackBar(content: Text('$name created!'), backgroundColor: DhanWiserColors.mint),
-                                  );
-                                  nav.pop();
+                                  if (success) {
+                                    scaffold.showSnackBar(
+                                      SnackBar(content: Text('$name created!'), backgroundColor: DhanWiserColors.mint),
+                                    );
+                                    nav.pop();
+                                  } else {
+                                    scaffold.showSnackBar(
+                                      SnackBar(content: Text(serverProv.error ?? 'Failed to create group'), backgroundColor: DhanWiserColors.coral),
+                                    );
+                                  }
                                 }
                               } catch (e) {
                                 if (mounted) {

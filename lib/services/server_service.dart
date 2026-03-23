@@ -7,10 +7,12 @@ class ServerService {
   static Future<Map<String, dynamic>> createServer({
     required String name,
     String? description,
+    bool isPrivate = false,
   }) async {
     return await ApiClient.post('/servers', body: {
       'name': name,
       if (description != null) 'description': description,
+      'isLocked': isPrivate,
     });
   }
 
@@ -60,6 +62,11 @@ class ServerService {
   // Delete a server
   static Future<void> deleteServer(int serverId) async {
     await ApiClient.delete('/servers/$serverId');
+  }
+
+  // Send reminders
+  static Future<Map<String, dynamic>> sendReminders(int serverId) async {
+    return await ApiClient.post('/servers/$serverId/reminders/send', body: {});
   }
 
   // Get channels for a server

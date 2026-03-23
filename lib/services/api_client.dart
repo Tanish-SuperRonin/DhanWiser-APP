@@ -177,7 +177,7 @@ class ApiClient {
     } else {
       throw ApiException(
         statusCode: response.statusCode,
-        message: body['message'] ?? 'Something went wrong',
+        message: body['error'] ?? body['message'] ?? 'Something went wrong',
       );
     }
   }

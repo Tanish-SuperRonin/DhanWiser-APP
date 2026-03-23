@@ -52,18 +52,31 @@ class ServerProvider extends ChangeNotifier {
   }
 
   // Create a server
-  Future<bool> createServer(String name, {String? description}) async {
+  Future<bool> createServer(String name, {String? description, bool isPrivate = false}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await ServerService.createServer(name: name, description: description);
-      await fetchServers(); // Refresh list
+      await ServerService.createServer(name: name, description: description, isPrivate: isPrivate);
+      _error = null;
+
+      // Refresh the server list
+      try {
+        await fetchServers();
+      } catch (fetchError) {
+        // If fetch fails, we still created the server successfully
+        _error = 'Server created but failed to refresh list: $fetchError';
+        print('Error fetching servers after creation: $fetchError');
+      }
+
+      _isLoading = false;
+      notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
+      print('Error creating server: $e');
       return false;
     }
   }
@@ -125,6 +138,18 @@ class ServerProvider extends ChangeNotifier {
     try {
       await ServerService.leaveServer(serverId);
       await fetchServers();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Send reminders
+  Future<bool> sendReminders(int serverId) async {
+    try {
+      await ServerService.sendReminders(serverId);
       return true;
     } catch (e) {
       _error = e.toString();

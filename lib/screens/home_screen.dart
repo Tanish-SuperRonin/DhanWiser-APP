@@ -24,6 +24,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  /// Navigate to a route, then reload home data when the user returns
+  void _navigateAndRefresh(String route, {Object? arguments}) {
+    Navigator.pushNamed(context, route, arguments: arguments)
+        .then((_) => _loadData());
+  }
+
   Future<void> _loadData() async {
     final serverProvider = Provider.of<ServerProvider>(context, listen: false);
     final notifProvider =
@@ -386,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: actions.map((action) {
             return Expanded(
               child: GestureDetector(
-                onTap: () => Navigator.pushNamed(context, action.route),
+                onTap: () => _navigateAndRefresh(action.route),
                 child: Column(
                   children: [
                     Container(
@@ -438,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/create-server'),
+              onTap: () => _navigateAndRefresh('/create-server'),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
@@ -500,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final grad = gradients[idx % gradients.length];
 
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/server-detail', arguments: {
+      onTap: () => _navigateAndRefresh('/server-detail', arguments: {
         'serverId': id,
         'serverName': name,
         'members': members,
@@ -648,7 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
           TextButton(
-            onPressed: () => Navigator.pushNamed(context, '/create-server'),
+            onPressed: () => _navigateAndRefresh('/create-server'),
             style: TextButton.styleFrom(
               backgroundColor: DhanWiserColors.primary,
               foregroundColor: Colors.white,
