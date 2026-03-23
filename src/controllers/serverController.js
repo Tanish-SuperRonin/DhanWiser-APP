@@ -51,9 +51,9 @@ export const serverController = {
 
       // Auto-create a default "General" channel so expenses can be added immediately
       await client.query(
-        `INSERT INTO channels (server_id, name, description, created_by)
-         VALUES ($1, $2, $3, $4)`,
-        [server.id, 'General', 'Default channel for expenses', userId]
+        `INSERT INTO channels (server_id, name, description)
+         VALUES ($1, $2, $3)`,
+        [server.id, 'General', 'Default channel for expenses']
       );
 
       await client.query('COMMIT');

@@ -103,9 +103,9 @@ export const channelController = {
       if (parseInt(channelCount.rows[0].cnt) === 0) {
         // Auto-create a default "General" channel for old servers
         await pool.query(
-          `INSERT INTO channels (server_id, name, description, created_by)
-           VALUES ($1, 'General', 'Default channel for expenses', $2)`,
-          [serverId, userId]
+          `INSERT INTO channels (server_id, name, description)
+           VALUES ($1, 'General', 'Default channel for expenses')`,
+          [serverId]
         );
       }
 
