@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -170,7 +171,20 @@ class ApiClient {
 
   // Process response
   static Map<String, dynamic> _processResponse(http.Response response) {
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final dynamic decodedBody;
+    try {
+      decodedBody =
+          response.body.isNotEmpty ? jsonDecode(response.body) : <String, dynamic>{};
+    } on FormatException {
+      throw ApiException(
+        statusCode: response.statusCode,
+        message: 'Invalid server response. Please try again.',
+      );
+    }
+
+    final body = decodedBody is Map<String, dynamic>
+        ? decodedBody
+        : <String, dynamic>{};
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/api_client.dart';
@@ -6,7 +7,7 @@ import '../services/api_client.dart';
 class AuthProvider extends ChangeNotifier {
   UserModel? _currentUser;
   bool _isAuthenticated = false;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
 
   UserModel? get currentUser => _currentUser;
@@ -16,9 +17,6 @@ class AuthProvider extends ChangeNotifier {
 
   // Initialize — check if user has valid token
   Future<void> initialize() async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
       final hasToken = await AuthService.isLoggedIn();
       if (hasToken) {
@@ -31,8 +29,6 @@ class AuthProvider extends ChangeNotifier {
       _isAuthenticated = false;
       _currentUser = null;
     }
-
-    _isLoading = false;
     notifyListeners();
   }
 
@@ -67,6 +63,11 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    } on TimeoutException {
+      _error = 'Request timed out. Please try again.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     } catch (e) {
       _error = 'Connection error. Is the server running?';
       _isLoading = false;
@@ -97,6 +98,11 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on ApiException catch (e) {
       _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } on TimeoutException {
+      _error = 'Request timed out. Please try again.';
       _isLoading = false;
       notifyListeners();
       return false;
