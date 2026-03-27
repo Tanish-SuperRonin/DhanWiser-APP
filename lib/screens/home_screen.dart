@@ -5,6 +5,9 @@ import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/server_provider.dart';
 import '../providers/notification_provider.dart';
+import '../services/expense_service.dart';
+import '../models/balance_model.dart';
+import '../models/server_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,6 +18,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  bool _loadingBalanceSummary = true;
+  double _netBalance = 0;
+  double _youOwe = 0;
+  double _owedToYou = 0;
 
   @override
   void initState() {
@@ -24,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  /// Navigate to a route, then reload home data when the user returns
   void _navigateAndRefresh(String route, {Object? arguments}) {
     Navigator.pushNamed(context, route, arguments: arguments)
         .then((_) => _loadData());
@@ -36,27 +42,107 @@ class _HomeScreenState extends State<HomeScreen> {
         Provider.of<NotificationProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    final futures = <Future>[
-      serverProvider.fetchServers(),
-      notifProvider.fetchUnreadCount(),
-    ];
+    try {
+      final futures = <Future>[
+        serverProvider.fetchServers(),
+        notifProvider.fetchUnreadCount(),
+      ];
 
-    // Reload profile if user data is missing (e.g. Render cold start on app launch)
-    if (authProvider.currentUser == null) {
-      futures.add(authProvider.initialize());
+      if (authProvider.currentUser == null) {
+        futures.add(authProvider.initialize());
+      }
+
+      await Future.wait(futures);
+      await _loadBalanceSummary(serverProvider.servers, authProvider);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _netBalance = 0;
+        _youOwe = 0;
+        _owedToYou = 0;
+        _loadingBalanceSummary = false;
+      });
+    }
+  }
+
+  Future<void> _loadBalanceSummary(
+      List<ServerModel> servers, AuthProvider authProvider) async {
+    if (!mounted) return;
+
+    setState(() {
+      _loadingBalanceSummary = true;
+    });
+
+    final currentUser = authProvider.currentUser;
+    if (currentUser == null || servers.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _netBalance = 0;
+        _youOwe = 0;
+        _owedToYou = 0;
+        _loadingBalanceSummary = false;
+      });
+      return;
     }
 
-    await Future.wait(futures);
+    double netBalance = 0;
+    double oweTotal = 0;
+    double owedTotal = 0;
+
+    for (final server in servers) {
+      try {
+        final balanceData = await ExpenseService.getServerBalances(server.id);
+        final balances = balanceData['balances'] as List<BalanceModel>;
+
+        BalanceModel? userBalance;
+        for (final balance in balances) {
+          if (balance.userId == currentUser.id ||
+              balance.username == currentUser.username ||
+              balance.fullName == currentUser.fullName) {
+            userBalance = balance;
+            break;
+          }
+        }
+
+        if (userBalance == null) continue;
+
+        netBalance += userBalance.balance;
+        if (userBalance.balance < -0.01) {
+          oweTotal += userBalance.balance.abs();
+        } else if (userBalance.balance > 0.01) {
+          owedTotal += userBalance.balance;
+        }
+      } catch (_) {
+        // Skip one server failing instead of breaking the full card.
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _netBalance = netBalance;
+      _youOwe = oweTotal;
+      _owedToYou = owedTotal;
+      _loadingBalanceSummary = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final surface = isDark ? DhanWiserColors.surfaceDark : DhanWiserColors.surfaceLight;
-    final elevated = isDark ? DhanWiserColors.surfaceElevatedDark : DhanWiserColors.surfaceElevatedLight;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final bg =
+        isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
+    final surface = isDark
+        ? DhanWiserColors.surfaceDark
+        : DhanWiserColors.surfaceLight;
+    final elevated = isDark
+        ? DhanWiserColors.surfaceElevatedDark
+        : DhanWiserColors.surfaceElevatedLight;
+    final text = isDark
+        ? DhanWiserColors.textPrimaryDark
+        : DhanWiserColors.textPrimaryLight;
+    final sub = isDark
+        ? DhanWiserColors.textSecondaryDark
+        : DhanWiserColors.textSecondaryLight;
 
     return Scaffold(
       backgroundColor: bg,
@@ -72,20 +158,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-
-                  // ── Header ──
                   _buildHeader(text, sub),
                   const SizedBox(height: 28),
-
-                  // ── Balance Overview ──
-                  _buildBalanceCard(isDark, surface),
+                  _buildBalanceCard(isDark),
                   const SizedBox(height: 28),
-
-                  // ── Quick Actions Grid ──
                   _buildQuickActionsGrid(isDark, surface, text, sub),
                   const SizedBox(height: 28),
-
-                  // ── Your Groups ──
                   _buildGroupsSection(isDark, surface, elevated, text, sub),
                   const SizedBox(height: 100),
                 ],
@@ -94,8 +172,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-
-      // ── FAB ──
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
@@ -126,15 +202,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-
-      // ── Bottom Nav ──
       bottomNavigationBar: _buildBottomNav(isDark, surface, sub),
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // HEADER
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Widget _buildHeader(Color text, Color sub) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
@@ -167,8 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-
-            // Notification bell
             Consumer<NotificationProvider>(
               builder: (context, notif, _) {
                 return GestureDetector(
@@ -212,11 +281,10 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             const SizedBox(width: 8),
-
-            // Profile avatar
             Consumer<AuthProvider>(
               builder: (context, auth, _) {
-                final initial = (auth.currentUser?.fullName ?? 'U')[0].toUpperCase();
+                final initial =
+                    (auth.currentUser?.fullName ?? 'U')[0].toUpperCase();
                 return GestureDetector(
                   onTap: () => Navigator.pushNamed(context, '/profile'),
                   child: Container(
@@ -224,7 +292,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 44,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [DhanWiserColors.primary, DhanWiserColors.primaryLight],
+                        colors: [
+                          DhanWiserColors.primary,
+                          DhanWiserColors.primaryLight
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -250,10 +321,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // BALANCE CARD
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Widget _buildBalanceCard(bool isDark, Color surface) {
+  Widget _buildBalanceCard(bool isDark) {
+    final balanceColor = _netBalance < -0.01
+        ? DhanWiserColors.coral
+        : _netBalance > 0.01
+            ? DhanWiserColors.teal
+            : (isDark ? Colors.white : DhanWiserColors.textPrimaryLight);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -277,37 +351,47 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          // Total balance header
           Text(
             'Net Balance',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight,
+              color: isDark
+                  ? DhanWiserColors.textSecondaryDark
+                  : DhanWiserColors.textSecondaryLight,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 6),
-          Consumer<ServerProvider>(
-            builder: (context, serverProv, _) {
-              return Text(
-                '₹0.00',
-                style: GoogleFonts.inter(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : DhanWiserColors.textPrimaryLight,
-                  letterSpacing: -1.5,
+          _loadingBalanceSummary
+              ? SizedBox(
+                  height: 46,
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: DhanWiserColors.primary,
+                        strokeWidth: 2.4,
+                      ),
+                    ),
+                  ),
+                )
+              : Text(
+                  _formatCurrency(_netBalance, withDecimals: true),
+                  style: GoogleFonts.inter(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    color: balanceColor,
+                    letterSpacing: -1.5,
+                  ),
                 ),
-              );
-            },
-          ),
           const SizedBox(height: 20),
-          // Owe / Owed row
           Row(
             children: [
               Expanded(
                 child: _buildBalanceItem(
                   'You owe',
-                  '₹0',
+                  _formatCurrency(_youOwe, withDecimals: true),
                   DhanWiserColors.coral,
                   Icons.arrow_upward_rounded,
                   isDark,
@@ -316,12 +400,14 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 width: 1,
                 height: 48,
-                color: isDark ? DhanWiserColors.gray700 : DhanWiserColors.gray200,
+                color: isDark
+                    ? DhanWiserColors.gray700
+                    : DhanWiserColors.gray200,
               ),
               Expanded(
                 child: _buildBalanceItem(
                   'Owed to you',
-                  '₹0',
+                  _formatCurrency(_owedToYou, withDecimals: true),
                   DhanWiserColors.teal,
                   Icons.arrow_downward_rounded,
                   isDark,
@@ -355,7 +441,9 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight,
+                color: isDark
+                    ? DhanWiserColors.textSecondaryDark
+                    : DhanWiserColors.textSecondaryLight,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -374,15 +462,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // QUICK ACTIONS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Widget _buildQuickActionsGrid(bool isDark, Color surface, Color text, Color sub) {
+  Widget _buildQuickActionsGrid(
+      bool isDark, Color surface, Color text, Color sub) {
     final actions = [
-      _QuickAction('New Group', Icons.group_add_rounded, DhanWiserColors.primary, '/create-server'),
-      _QuickAction('Find Friends', Icons.person_search_rounded, DhanWiserColors.teal, '/friend-discovery'),
-      _QuickAction('Settle Up', Icons.handshake_rounded, DhanWiserColors.warning, '/settlement'),
-      _QuickAction('Settings', Icons.tune_rounded, DhanWiserColors.gray400, '/settings'),
+      _QuickAction('New Group', Icons.group_add_rounded,
+          DhanWiserColors.primary, '/create-server'),
+      _QuickAction('Find Friends', Icons.person_search_rounded,
+          DhanWiserColors.teal, '/friend-discovery'),
+      _QuickAction('Settle Up', Icons.handshake_rounded,
+          DhanWiserColors.warning, '/settlement'),
+      _QuickAction(
+          'Settings', Icons.tune_rounded, DhanWiserColors.gray400, '/settings'),
     ];
 
     return Column(
@@ -424,10 +514,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // GROUPS SECTION
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Widget _buildGroupsSection(bool isDark, Color surface, Color elevated, Color text, Color sub) {
+  Widget _buildGroupsSection(
+      bool isDark, Color surface, Color elevated, Color text, Color sub) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -446,7 +534,8 @@ class _HomeScreenState extends State<HomeScreen> {
             GestureDetector(
               onTap: () => _navigateAndRefresh('/create-server'),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: DhanWiserColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
@@ -464,7 +553,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 16),
-
         Consumer<ServerProvider>(
           builder: (context, serverProv, _) {
             if (serverProv.isLoading) {
@@ -478,8 +566,14 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
               children: serverProv.servers.map((server) {
                 return _buildGroupCard(
-                  context, isDark, surface, text, sub,
-                  server.id, server.name, '${server.memberCount} members',
+                  context,
+                  isDark,
+                  surface,
+                  text,
+                  sub,
+                  server.id,
+                  server.name,
+                  '${server.memberCount} members',
                   server.role == 'admin',
                 );
               }).toList(),
@@ -492,8 +586,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGroupCard(BuildContext context, bool isDark, Color surface,
       Color text, Color sub, int id, String name, String members, bool isAdmin) {
-    // Deterministic icon/color from name
-    final groupIcons = [Icons.home_rounded, Icons.flight_rounded, Icons.restaurant_rounded, Icons.work_rounded, Icons.sports_esports_rounded, Icons.shopping_cart_rounded, Icons.celebration_rounded, Icons.coffee_rounded];
+    final groupIcons = [
+      Icons.home_rounded,
+      Icons.flight_rounded,
+      Icons.restaurant_rounded,
+      Icons.work_rounded,
+      Icons.sports_esports_rounded,
+      Icons.shopping_cart_rounded,
+      Icons.celebration_rounded,
+      Icons.coffee_rounded
+    ];
     final gradients = [
       [const Color(0xFFFFAD60), const Color(0xFFFFCF9D)],
       [const Color(0xFFB5EAD7), const Color(0xFFA8E6CF)],
@@ -528,7 +630,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            // Icon avatar
             Container(
               width: 52,
               height: 52,
@@ -564,7 +665,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (isAdmin) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: DhanWiserColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -658,14 +760,16 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextButton.styleFrom(
               backgroundColor: DhanWiserColors.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
             child: Text(
               'Create Your First Group',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+              style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
         ],
@@ -680,7 +784,9 @@ class _HomeScreenState extends State<HomeScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           height: 84,
           decoration: BoxDecoration(
-            color: isDark ? DhanWiserColors.surfaceElevatedDark : DhanWiserColors.gray100,
+            color: isDark
+                ? DhanWiserColors.surfaceElevatedDark
+                : DhanWiserColors.gray100,
             borderRadius: BorderRadius.circular(20),
           ),
         );
@@ -688,9 +794,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // BOTTOM NAV
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Widget _buildBottomNav(bool isDark, Color surface, Color sub) {
     return Container(
       decoration: BoxDecoration(
@@ -710,11 +813,15 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.search_rounded, Icons.search_rounded, 'Explore'),
-              const SizedBox(width: 56), // space for FAB
-              _buildNavItem(3, Icons.receipt_long_rounded, Icons.receipt_long_outlined, 'Activity'),
-              _buildNavItem(4, Icons.person_rounded, Icons.person_outline_rounded, 'Me'),
+              _buildNavItem(
+                  0, Icons.home_rounded, Icons.home_outlined, 'Home'),
+              _buildNavItem(
+                  1, Icons.search_rounded, Icons.search_rounded, 'Explore'),
+              const SizedBox(width: 56),
+              _buildNavItem(3, Icons.receipt_long_rounded,
+                  Icons.receipt_long_outlined, 'Activity'),
+              _buildNavItem(
+                  4, Icons.person_rounded, Icons.person_outline_rounded, 'Me'),
             ],
           ),
         ),
@@ -722,7 +829,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+  Widget _buildNavItem(
+      int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final isActive = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
@@ -744,7 +852,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(
               isActive ? activeIcon : inactiveIcon,
-              color: isActive ? DhanWiserColors.primary : DhanWiserColors.gray400,
+              color:
+                  isActive ? DhanWiserColors.primary : DhanWiserColors.gray400,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -753,11 +862,12 @@ class _HomeScreenState extends State<HomeScreen> {
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? DhanWiserColors.primary : DhanWiserColors.gray400,
+                color: isActive
+                    ? DhanWiserColors.primary
+                    : DhanWiserColors.gray400,
               ),
             ),
             const SizedBox(height: 2),
-            // Active indicator pill
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: isActive ? 20 : 0,
@@ -773,14 +883,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // HELPERS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  String _formatCurrency(double value, {bool withDecimals = false}) {
+    final normalized = value.abs() < 0.01 ? 0.0 : value;
+    final number = withDecimals
+        ? normalized.toStringAsFixed(2)
+        : normalized.toStringAsFixed(0);
+    return '₹$number';
   }
 }
 

@@ -7,6 +7,7 @@ class SettlementModel {
   final double amount;
   final String status; // pending, approved, rejected
   final String? notes;
+  final String? proofImage;
   final DateTime? initiatedAt;
   final DateTime? approvedAt;
 
@@ -19,6 +20,7 @@ class SettlementModel {
     required this.amount,
     this.status = 'pending',
     this.notes,
+    this.proofImage,
     this.initiatedAt,
     this.approvedAt,
   });
@@ -41,6 +43,7 @@ class SettlementModel {
       amount: (json['amount'] ?? 0).toDouble(),
       status: json['status'] ?? 'pending',
       notes: json['notes'],
+      proofImage: json['proofImage'],
       initiatedAt: json['initiatedAt'] != null
           ? DateTime.parse(json['initiatedAt'])
           : null,

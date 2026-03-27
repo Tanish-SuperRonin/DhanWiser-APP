@@ -14,7 +14,8 @@ const initiateSettlementValidation = [
   body('serverId').isInt({ min: 1 }).withMessage('Valid server ID required'),
   body('receiverId').isInt({ min: 1 }).withMessage('Valid receiver ID required'),
   body('amount').isFloat({ min: 0.01 }).withMessage('Valid amount required'),
-  body('notes').optional().trim().isLength({ max: 500 })
+  body('notes').optional().trim().isLength({ max: 500 }),
+  body('proofImage').optional().isString().isLength({ max: 4000000 })
 ];
 
 const rejectSettlementValidation = [

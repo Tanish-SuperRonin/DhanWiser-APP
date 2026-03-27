@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -252,6 +255,10 @@ class _SettlementScreenState extends State<SettlementScreen>
                 ],
 
                 // ── Server name ──
+                if (s.proofImage != null && s.proofImage!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildProofImage(s.proofImage!, text, sub, isDark),
+                ],
                 if (s.serverName != null) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -385,6 +392,11 @@ class _SettlementScreenState extends State<SettlementScreen>
                     ],
                   ),
                 ),
+              ],
+              if (settlement.proofImage != null &&
+                  settlement.proofImage!.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                _buildProofImage(settlement.proofImage!, text, sub, isDark),
               ],
               const SizedBox(height: 14),
               Text(
@@ -530,6 +542,77 @@ class _SettlementScreenState extends State<SettlementScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildProofImage(String proofImage, Color text, Color sub, bool isDark) {
+    final imageBytes = _decodeProofImage(proofImage);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: DhanWiserColors.primary.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.image_outlined, size: 16, color: DhanWiserColors.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Payment screenshot',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: DhanWiserColors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (imageBytes != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                imageBytes,
+                width: double.infinity,
+                height: 220,
+                fit: BoxFit.cover,
+              ),
+            )
+          else
+            Text(
+              'This screenshot could not be displayed.',
+              style: GoogleFonts.inter(fontSize: 13, color: sub),
+            ),
+          if (imageBytes != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Approve only after checking the uploaded proof.',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: text.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Uint8List? _decodeProofImage(String proofImage) {
+    try {
+      final parts = proofImage.split(',');
+      if (parts.length < 2) return null;
+      return base64Decode(parts.last);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _handleApprove(int id) async {

@@ -8,12 +8,14 @@ class SettlementService {
     required int receiverId,
     required double amount,
     String? notes,
+    String? proofImage,
   }) async {
     return await ApiClient.post('/settlements', body: {
       'serverId': serverId,
       'receiverId': receiverId,
       'amount': amount,
       if (notes != null) 'notes': notes,
+      if (proofImage != null) 'proofImage': proofImage,
     });
   }
 

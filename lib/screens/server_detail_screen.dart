@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
@@ -86,6 +89,9 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     final transactionIdController = TextEditingController();
     final notesController = TextEditingController();
     bool isSending = false;
+    Uint8List? proofBytes;
+    String? proofImage;
+    String? proofFileName;
 
     // Check if current user is the payer
     final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -187,6 +193,128 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   ),
                   const SizedBox(height: 20),
 
+                  Text('Screenshot proof (optional)',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: isSending
+                        ? null
+                        : () async {
+                            final picked = await FilePicker.platform.pickFiles(
+                              type: FileType.image,
+                              withData: true,
+                            );
+                            final file = picked?.files.single;
+                            if (file == null || file.bytes == null) {
+                              return;
+                            }
+                            if (file.bytes!.length > 2 * 1024 * 1024) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Please choose an image smaller than 2 MB.',
+                                  ),
+                                  backgroundColor: DhanWiserColors.coral,
+                                ),
+                              );
+                              return;
+                            }
+
+                            final extension = (file.extension ?? 'png').toLowerCase();
+                            final mimeType = extension == 'jpg' || extension == 'jpeg'
+                                ? 'image/jpeg'
+                                : extension == 'webp'
+                                    ? 'image/webp'
+                                    : 'image/png';
+
+                            setSheetState(() {
+                              proofBytes = file.bytes;
+                              proofFileName = file.name;
+                              proofImage =
+                                  'data:$mimeType;base64,${base64Encode(file.bytes!)}';
+                            });
+                          },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: proofBytes != null
+                              ? DhanWiserColors.primary.withValues(alpha: 0.35)
+                              : Colors.transparent,
+                        ),
+                      ),
+                      child: proofBytes == null
+                          ? Row(
+                              children: [
+                                Icon(Icons.add_photo_alternate_outlined, color: sub, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Attach payment screenshot',
+                                    style: GoogleFonts.inter(color: sub, fontSize: 14),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.memory(
+                                    proofBytes!,
+                                    height: 140,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Icon(Icons.image_outlined,
+                                        color: DhanWiserColors.primary, size: 18),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        proofFileName ?? 'Screenshot attached',
+                                        style: GoogleFonts.inter(
+                                          color: text,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: isSending
+                                          ? null
+                                          : () {
+                                              setSheetState(() {
+                                                proofBytes = null;
+                                                proofImage = null;
+                                                proofFileName = null;
+                                              });
+                                            },
+                                      child: Text(
+                                        'Remove',
+                                        style: GoogleFonts.inter(
+                                          color: DhanWiserColors.coral,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
                   // Submit button
                   SizedBox(
                     width: double.infinity,
@@ -217,6 +345,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                             receiverId: toUserId,
                             amount: suggestion.amount,
                             notes: proof,
+                            proofImage: proofImage,
                           );
                           if (mounted) {
                             Navigator.pop(ctx);

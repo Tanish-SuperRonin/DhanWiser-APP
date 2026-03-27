@@ -4,7 +4,7 @@ export const settlementController = {
   // Initiate a settlement (payer marks they've paid)
   async initiateSettlement(req, res) {
     try {
-      const { serverId, receiverId, amount, notes } = req.body;
+      const { serverId, receiverId, amount, notes, proofImage } = req.body;
       const payerId = req.user.userId;
 
       // Import validators
@@ -26,6 +26,19 @@ export const settlementController = {
           success: false,
           message: notesValidation.error
         });
+      }
+
+      if (proofImage) {
+        const isValidImage = typeof proofImage === 'string' &&
+          proofImage.startsWith('data:image/') &&
+          proofImage.includes(';base64,');
+
+        if (!isValidImage) {
+          return res.status(400).json({
+            success: false,
+            message: 'Settlement proof must be a valid image'
+          });
+        }
       }
 
       // Verify both users are members of the server
@@ -52,10 +65,12 @@ export const settlementController = {
 
       // Create settlement
       const result = await pool.query(
-        `INSERT INTO settlements (server_id, payer_id, receiver_id, amount, status, notes)
-         VALUES ($1, $2, $3, $4, 'pending', $5)
-         RETURNING id, server_id, payer_id, receiver_id, amount, status, notes, initiated_at`,
-        [serverId, payerId, receiverId, amount, notes || null]
+        `INSERT INTO settlements (
+           server_id, payer_id, receiver_id, amount, status, notes, proof_image
+         )
+         VALUES ($1, $2, $3, $4, 'pending', $5, $6)
+         RETURNING id, server_id, payer_id, receiver_id, amount, status, notes, proof_image, initiated_at`,
+        [serverId, payerId, receiverId, amount, notes || null, proofImage || null]
       );
 
       const settlement = result.rows[0];
@@ -100,6 +115,7 @@ export const settlementController = {
           amount: parseFloat(settlement.amount),
           status: settlement.status,
           notes: settlement.notes,
+          proofImage: settlement.proof_image,
           initiatedAt: settlement.initiated_at
         }
       });
@@ -135,7 +151,7 @@ export const settlementController = {
 
       // Build query
       let query = `
-        SELECT s.id, s.amount, s.status, s.notes, s.initiated_at, s.approved_at,
+        SELECT s.id, s.amount, s.status, s.notes, s.proof_image, s.initiated_at, s.approved_at,
                u1.id as payer_id, u1.username as payer_username, u1.full_name as payer_name,
                u2.id as receiver_id, u2.username as receiver_username, u2.full_name as receiver_name
         FROM settlements s
@@ -173,6 +189,7 @@ export const settlementController = {
             amount: parseFloat(settlement.amount),
             status: settlement.status,
             notes: settlement.notes,
+            proofImage: settlement.proof_image,
             initiatedAt: settlement.initiated_at,
             approvedAt: settlement.approved_at
           })),
@@ -195,12 +212,14 @@ export const settlementController = {
       const userId = req.user.userId;
 
       const result = await pool.query(
-        `SELECT s.id, s.server_id, s.amount, s.notes, s.initiated_at,
+        `SELECT s.id, s.server_id, s.amount, s.notes, s.proof_image, s.initiated_at,
                 srv.name as server_name,
-                u.id as payer_id, u.username as payer_username, u.full_name as payer_name
+                u.id as payer_id, u.username as payer_username, u.full_name as payer_name,
+                receiver.id as receiver_id, receiver.username as receiver_username, receiver.full_name as receiver_name
          FROM settlements s
          JOIN servers srv ON s.server_id = srv.id
          JOIN users u ON s.payer_id = u.id
+         JOIN users receiver ON s.receiver_id = receiver.id
          WHERE s.receiver_id = $1 AND s.status = 'pending'
          ORDER BY s.initiated_at DESC`,
         [userId]
@@ -218,8 +237,14 @@ export const settlementController = {
               username: settlement.payer_username,
               fullName: settlement.payer_name
             },
+            receiver: {
+              id: settlement.receiver_id,
+              username: settlement.receiver_username,
+              fullName: settlement.receiver_name
+            },
             amount: parseFloat(settlement.amount),
             notes: settlement.notes,
+            proofImage: settlement.proof_image,
             initiatedAt: settlement.initiated_at
           })),
           count: result.rows.length
@@ -417,7 +442,7 @@ export const settlementController = {
 
       // Get approved settlements only
       const result = await pool.query(
-        `SELECT s.id, s.amount, s.notes, s.initiated_at, s.approved_at,
+        `SELECT s.id, s.amount, s.notes, s.proof_image, s.initiated_at, s.approved_at,
                 u1.username as payer_username, u1.full_name as payer_name,
                 u2.username as receiver_username, u2.full_name as receiver_name
          FROM settlements s
@@ -446,6 +471,7 @@ export const settlementController = {
             },
             amount: parseFloat(s.amount),
             notes: s.notes,
+            proofImage: s.proof_image,
             initiatedAt: s.initiated_at,
             approvedAt: s.approved_at
           })),
