@@ -98,6 +98,8 @@ class _ActivityScreenState extends State<ActivityScreen>
         return Icons.check_circle_rounded;
       case 'settlement_rejected':
         return Icons.cancel_rounded;
+      case 'payment_reminder':
+        return Icons.notifications_active_rounded;
       case 'invitation':
       case 'server_invitation':
         return Icons.mail_rounded;
@@ -118,6 +120,8 @@ class _ActivityScreenState extends State<ActivityScreen>
         return DhanWiserColors.mint;
       case 'settlement_rejected':
         return DhanWiserColors.coral;
+      case 'payment_reminder':
+        return DhanWiserColors.warning;
       case 'invitation':
       case 'server_invitation':
         return DhanWiserColors.primaryLight;

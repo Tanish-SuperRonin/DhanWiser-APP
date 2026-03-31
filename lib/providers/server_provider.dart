@@ -146,10 +146,52 @@ class ServerProvider extends ChangeNotifier {
     }
   }
 
+  // Delete server
+  Future<bool> deleteServer(int serverId) async {
+    try {
+      await ServerService.deleteServer(serverId);
+      await fetchServers();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Send reminders
   Future<bool> sendReminders(int serverId) async {
     try {
       await ServerService.sendReminders(serverId);
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getReminderSettings(int serverId) async {
+    try {
+      return await ServerService.getReminderSettings(serverId);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<bool> updateReminderSettings({
+    required int serverId,
+    required bool reminderEnabled,
+    required int reminderIntervalDays,
+  }) async {
+    try {
+      await ServerService.updateReminderSettings(
+        serverId: serverId,
+        reminderEnabled: reminderEnabled,
+        reminderIntervalDays: reminderIntervalDays,
+      );
       return true;
     } catch (e) {
       _error = e.toString();

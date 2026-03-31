@@ -576,13 +576,16 @@ class _SettlementScreenState extends State<SettlementScreen>
           ),
           const SizedBox(height: 10),
           if (imageBytes != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                imageBytes,
-                width: double.infinity,
-                height: 220,
-                fit: BoxFit.cover,
+            GestureDetector(
+              onTap: () => _showProofPreview(imageBytes),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(
+                  imageBytes,
+                  width: double.infinity,
+                  height: 220,
+                  fit: BoxFit.cover,
+                ),
               ),
             )
           else
@@ -593,7 +596,7 @@ class _SettlementScreenState extends State<SettlementScreen>
           if (imageBytes != null) ...[
             const SizedBox(height: 8),
             Text(
-              'Approve only after checking the uploaded proof.',
+              'Tap the screenshot to open it full screen before approving.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: text.withValues(alpha: 0.75),
@@ -613,6 +616,42 @@ class _SettlementScreenState extends State<SettlementScreen>
     } catch (_) {
       return null;
     }
+  }
+
+  void _showProofPreview(Uint8List imageBytes) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (ctx) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 4,
+                  child: Image.memory(
+                    imageBytes,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 20,
+                right: 20,
+                child: SafeArea(
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _handleApprove(int id) async {

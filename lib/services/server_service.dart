@@ -64,6 +64,28 @@ class ServerService {
     await ApiClient.delete('/servers/$serverId');
   }
 
+  // Get reminder settings
+  static Future<Map<String, dynamic>> getReminderSettings(int serverId) async {
+    final response = await ApiClient.get('/servers/$serverId/reminder-settings');
+    return response['data'] as Map<String, dynamic>;
+  }
+
+  // Update reminder settings
+  static Future<Map<String, dynamic>> updateReminderSettings({
+    required int serverId,
+    required bool reminderEnabled,
+    required int reminderIntervalDays,
+  }) async {
+    final response = await ApiClient.put(
+      '/servers/$serverId/reminder-settings',
+      body: {
+        'reminderEnabled': reminderEnabled,
+        'reminderIntervalDays': reminderIntervalDays,
+      },
+    );
+    return response['data'] as Map<String, dynamic>;
+  }
+
   // Send reminders
   static Future<Map<String, dynamic>> sendReminders(int serverId) async {
     return await ApiClient.post('/servers/$serverId/reminders/send', body: {});

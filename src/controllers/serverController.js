@@ -540,6 +540,114 @@ export const serverController = {
       });
     }
   },
+
+  async getReminderSettings(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.userId;
+
+      const memberCheck = await pool.query(
+        'SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2',
+        [id, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not a member of this server'
+        });
+      }
+
+      const serverResult = await pool.query(
+        `SELECT reminder_enabled, reminder_interval_days
+         FROM servers
+         WHERE id = $1`,
+        [id]
+      );
+
+      if (serverResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Server not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          reminderEnabled: serverResult.rows[0].reminder_enabled ?? true,
+          reminderIntervalDays: serverResult.rows[0].reminder_interval_days ?? 7,
+          canEdit: memberCheck.rows[0].role === 'admin',
+        }
+      });
+    } catch (error) {
+      console.error('Get reminder settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    }
+  },
+
+  async updateReminderSettings(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.userId;
+      const { reminderEnabled, reminderIntervalDays } = req.body;
+
+      const memberCheck = await pool.query(
+        'SELECT role FROM server_members WHERE server_id = $1 AND user_id = $2',
+        [id, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not a member of this server'
+        });
+      }
+
+      if (memberCheck.rows[0].role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Only admins can update reminder settings'
+        });
+      }
+
+      const result = await pool.query(
+        `UPDATE servers
+         SET reminder_enabled = $1,
+             reminder_interval_days = $2
+         WHERE id = $3
+         RETURNING reminder_enabled, reminder_interval_days`,
+        [reminderEnabled ?? true, reminderIntervalDays ?? 7, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Server not found'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Reminder settings updated',
+        data: {
+          reminderEnabled: result.rows[0].reminder_enabled,
+          reminderIntervalDays: result.rows[0].reminder_interval_days,
+        }
+      });
+    } catch (error) {
+      console.error('Update reminder settings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    }
+  },
   async sendReminders(req, res) {
     try {
       const { id } = req.params;
@@ -571,7 +679,7 @@ export const serverController = {
 
       const result = await reminderService.sendBalanceReminders(
         id,
-        reminderThreshold || 100
+        { reminderThreshold: reminderThreshold || 0, cooldownDays: 1 }
       );
 
       res.json({

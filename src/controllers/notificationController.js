@@ -4,6 +4,9 @@ export const notificationController = {
   // Get all notifications for current user
   async getMyNotifications(req, res) {
     try {
+      const { reminderService } = await import('../services/reminderService.js');
+      await reminderService.processAutomaticReminders();
+
       const userId = req.user.userId;
       const { unreadOnly } = req.query;
 
@@ -184,6 +187,9 @@ export const notificationController = {
   // Get unread count (quick check for badge)
   async getUnreadCount(req, res) {
     try {
+      const { reminderService } = await import('../services/reminderService.js');
+      await reminderService.processAutomaticReminders();
+
       const userId = req.user.userId;
 
       const result = await pool.query(
@@ -213,8 +219,8 @@ export const notificationController = {
       const userId = req.user.userId;
       const { type } = req.params;
 
-      // Valid types: 'invitation', 'settlement_request', 'settlement_approved', 'settlement_rejected', 'expense_added'
-      const validTypes = ['invitation', 'settlement_request', 'settlement_approved', 'settlement_rejected', 'expense_added'];
+      // Valid types: 'invitation', 'settlement_request', 'settlement_approved', 'settlement_rejected', 'expense_added', 'payment_reminder'
+      const validTypes = ['invitation', 'settlement_request', 'settlement_approved', 'settlement_rejected', 'expense_added', 'payment_reminder'];
 
       if (!validTypes.includes(type)) {
         return res.status(400).json({

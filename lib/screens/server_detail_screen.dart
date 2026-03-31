@@ -82,6 +82,311 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     if (mounted) setState(() {});
   }
 
+  Future<void> _showReminderSettingsSheet() async {
+    final serverProv = Provider.of<ServerProvider>(context, listen: false);
+    final settings = await serverProv.getReminderSettings(widget.serverId);
+
+    if (!mounted) return;
+
+    if (settings == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(serverProv.error ?? 'Failed to load reminder settings'),
+          backgroundColor: DhanWiserColors.coral,
+        ),
+      );
+      return;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark
+        ? DhanWiserColors.textPrimaryDark
+        : DhanWiserColors.textPrimaryLight;
+    final sub = isDark
+        ? DhanWiserColors.textSecondaryDark
+        : DhanWiserColors.textSecondaryLight;
+
+    bool reminderEnabled = settings['reminderEnabled'] ?? true;
+    double intervalDays =
+        ((settings['reminderIntervalDays'] ?? 7) as num).toDouble();
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor:
+          isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(ctx).viewInsets.bottom + 28,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? DhanWiserColors.gray600
+                            : DhanWiserColors.gray300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Payment Reminders',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Automatic in-app reminders are on by default every 7 days. You can change that here.',
+                    style: GoogleFonts.inter(fontSize: 14, color: sub, height: 1.45),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Enable automatic reminders',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: text,
+                          ),
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: reminderEnabled,
+                        onChanged: isSaving
+                            ? null
+                            : (value) =>
+                                setSheetState(() => reminderEnabled = value),
+                        activeTrackColor: DhanWiserColors.primary,
+                      ),
+                    ],
+                  ),
+                  if (reminderEnabled) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'Reminder interval: ${intervalDays.round()} day${intervalDays.round() == 1 ? '' : 's'}',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: text,
+                      ),
+                    ),
+                    Slider(
+                      value: intervalDays,
+                      min: 1,
+                      max: 30,
+                      divisions: 29,
+                      label: '${intervalDays.round()} days',
+                      activeColor: DhanWiserColors.primary,
+                      onChanged: isSaving
+                          ? null
+                          : (value) => setSheetState(() => intervalDays = value),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setSheetState(() => isSaving = true);
+                              final success =
+                                  await serverProv.updateReminderSettings(
+                                serverId: widget.serverId,
+                                reminderEnabled: reminderEnabled,
+                                reminderIntervalDays: intervalDays.round(),
+                              );
+                              if (!mounted) return;
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? 'Reminder settings updated'
+                                        : (serverProv.error ??
+                                            'Failed to update reminder settings'),
+                                  ),
+                                  backgroundColor: success
+                                      ? DhanWiserColors.mint
+                                      : DhanWiserColors.coral,
+                                ),
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: DhanWiserColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'Save Reminder Settings',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDeleteOrLeave({
+    required bool canDelete,
+    required String groupName,
+  }) async {
+    final serverProv = Provider.of<ServerProvider>(context, listen: false);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark
+        ? DhanWiserColors.textPrimaryDark
+        : DhanWiserColors.textPrimaryLight;
+    final sub = isDark
+        ? DhanWiserColors.textSecondaryDark
+        : DhanWiserColors.textSecondaryLight;
+
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor:
+                  isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Text(
+                canDelete ? 'Delete Group' : 'Leave Group',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  color: text,
+                  fontSize: 18,
+                ),
+              ),
+              content: Text(
+                canDelete
+                    ? 'Delete "$groupName"? This removes the group for everyone and cannot be undone.'
+                    : 'Leave "$groupName"? You can join again only if someone invites you back.',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: sub,
+                  height: 1.45,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(
+                      color: sub,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          setDialogState(() => isSubmitting = true);
+                          final success = canDelete
+                              ? await serverProv.deleteServer(widget.serverId)
+                              : await serverProv.leaveServer(widget.serverId);
+                          if (!mounted) return;
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? canDelete
+                                        ? 'Group deleted'
+                                        : 'You left the group'
+                                    : (serverProv.error ??
+                                        'Unable to update group'),
+                              ),
+                              backgroundColor: success
+                                  ? DhanWiserColors.mint
+                                  : DhanWiserColors.coral,
+                            ),
+                          );
+                          if (success && mounted) {
+                            Navigator.pop(context, true);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: DhanWiserColors.coral,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          canDelete ? 'Delete' : 'Leave',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showSettleUpDialog(SuggestedSettlement suggestion) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
@@ -475,6 +780,84 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       ),
                     ),
                   ),
+                ),
+                Consumer2<ServerProvider, AuthProvider>(
+                  builder: (context, serverProv, authProv, _) {
+                    final detail = serverProv.currentServerDetail;
+                    final currentUserId = authProv.currentUser?.id;
+                    final isAdmin = detail?.yourRole == 'admin';
+                    final isCreator = detail?.server.createdBy == currentUserId;
+                    final groupName = detail?.server.name ?? widget.serverName;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
+                      child: PopupMenuButton<String>(
+                        color: isDark
+                            ? DhanWiserColors.surfaceElevatedDark
+                            : Colors.white,
+                        icon: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.more_horiz_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'reminder-settings') {
+                            _showReminderSettingsSheet();
+                          } else if (value == 'delete-group') {
+                            _confirmDeleteOrLeave(
+                              canDelete: true,
+                              groupName: groupName,
+                            );
+                          } else if (value == 'leave-group') {
+                            _confirmDeleteOrLeave(
+                              canDelete: false,
+                              groupName: groupName,
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          if (isAdmin)
+                            PopupMenuItem(
+                              value: 'reminder-settings',
+                              child: Text(
+                                'Reminder Settings',
+                                style: GoogleFonts.inter(fontSize: 14),
+                              ),
+                            ),
+                          if (isCreator)
+                            PopupMenuItem(
+                              value: 'delete-group',
+                              child: Text(
+                                'Delete Group',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: DhanWiserColors.coral,
+                                ),
+                              ),
+                            ),
+                          if (!isCreator)
+                            PopupMenuItem(
+                              value: 'leave-group',
+                              child: Text(
+                                'Leave Group',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: DhanWiserColors.coral,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(

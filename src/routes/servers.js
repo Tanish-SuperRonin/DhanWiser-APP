@@ -37,6 +37,17 @@ const respondInvitationValidation = [
     .withMessage('Action must be either "accept" or "reject"')
 ];
 
+const reminderSettingsValidation = [
+  body('reminderEnabled')
+    .optional()
+    .isBoolean()
+    .withMessage('Reminder enabled must be true or false'),
+  body('reminderIntervalDays')
+    .optional()
+    .isInt({ min: 1, max: 60 })
+    .withMessage('Reminder interval must be between 1 and 60 days')
+];
+
 // Routes - ORDER MATTERS!
 // Specific routes FIRST, dynamic routes LAST
 router.post('/', createServerValidation, validate, serverController.createServer);
@@ -48,6 +59,13 @@ router.post('/invite', inviteUserValidation, validate, serverController.inviteUs
 router.post('/invitations/:id/respond', respondInvitationValidation, validate, serverController.respondToInvitation);
 
 // Reminder routes
+router.get('/:id/reminder-settings', serverController.getReminderSettings);
+router.put(
+  '/:id/reminder-settings',
+  reminderSettingsValidation,
+  validate,
+  serverController.updateReminderSettings
+);
 router.get('/:id/reminders/pending', serverController.getUsersNeedingReminders);
 router.post('/:id/reminders/send', serverController.sendReminders);
 
