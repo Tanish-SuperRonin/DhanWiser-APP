@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class BalanceModel {
   final int userId;
   final String username;
@@ -21,13 +23,13 @@ class BalanceModel {
 
   factory BalanceModel.fromJson(Map<String, dynamic> json) {
     return BalanceModel(
-      userId: json['userId'],
+      userId: parseIntValue(json['userId']),
       username: json['username'] ?? '',
       fullName: json['fullName'] ?? '',
-      totalPaid: (json['totalPaid'] ?? 0).toDouble(),
-      totalOwed: (json['totalOwed'] ?? 0).toDouble(),
-      totalSettled: (json['totalSettled'] ?? 0).toDouble(),
-      balance: (json['balance'] ?? 0).toDouble(),
+      totalPaid: parseDoubleValue(json['totalPaid']),
+      totalOwed: parseDoubleValue(json['totalOwed']),
+      totalSettled: parseDoubleValue(json['totalSettled']),
+      balance: parseDoubleValue(json['balance']),
       status: json['status'] ?? 'settled',
     );
   }
@@ -51,7 +53,7 @@ class SuggestedSettlement {
     return SuggestedSettlement(
       from: json['from'] ?? {},
       to: json['to'] ?? {},
-      amount: (json['amount'] ?? 0).toDouble(),
+      amount: parseDoubleValue(json['amount']),
     );
   }
 }

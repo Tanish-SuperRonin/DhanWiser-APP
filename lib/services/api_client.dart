@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -15,23 +17,94 @@ class ApiClient {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
 
+  static bool _isRecoverableStorageError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('failed to unwrap key') ||
+        message.contains('invalidkeyexception') ||
+        message.contains('keystore') ||
+        message.contains('key permanently invalidated');
+  }
+
+  static Future<void> _resetStorage() async {
+    try {
+      await _storage.deleteAll();
+    } catch (_) {
+      // Best effort reset for broken keystore state.
+    }
+  }
+
+  static Future<http.Response> _sendRequest(
+    Future<http.Response> Function() request,
+  ) async {
+    try {
+      return await request().timeout(_timeout);
+    } on TimeoutException {
+      rethrow;
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Unable to reach the server. Check your internet connection and try again.',
+      );
+    } on HandshakeException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Secure connection failed. Please try again.',
+      );
+    } on http.ClientException catch (e) {
+      throw ApiException(
+        statusCode: 0,
+        message: e.message.isNotEmpty
+            ? e.message
+            : 'Network request failed. Please try again.',
+      );
+    }
+  }
+
   // Token management
   static Future<void> saveTokens(String accessToken, String refreshToken) async {
-    await _storage.write(key: _accessTokenKey, value: accessToken);
-    await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    try {
+      await _storage.write(key: _accessTokenKey, value: accessToken);
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    } on PlatformException catch (e) {
+      if (_isRecoverableStorageError(e)) {
+        await _resetStorage();
+        await _storage.write(key: _accessTokenKey, value: accessToken);
+        await _storage.write(key: _refreshTokenKey, value: refreshToken);
+        return;
+      }
+      throw ApiException(
+        statusCode: 0,
+        message: 'Secure storage failed. Please clear app data and try again.',
+      );
+    }
   }
 
   static Future<String?> getAccessToken() async {
-    return await _storage.read(key: _accessTokenKey);
+    try {
+      return await _storage.read(key: _accessTokenKey);
+    } on PlatformException catch (e) {
+      if (_isRecoverableStorageError(e)) {
+        await _resetStorage();
+        return null;
+      }
+      rethrow;
+    }
   }
 
   static Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshTokenKey);
+    try {
+      return await _storage.read(key: _refreshTokenKey);
+    } on PlatformException catch (e) {
+      if (_isRecoverableStorageError(e)) {
+        await _resetStorage();
+        return null;
+      }
+      rethrow;
+    }
   }
 
   static Future<void> clearTokens() async {
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
+    await _resetStorage();
   }
 
   // Build headers with JWT
@@ -54,11 +127,13 @@ class ApiClient {
     if (refreshToken == null) return false;
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(_timeout);
+      final response = await _sendRequest(
+        () => http.post(
+          Uri.parse('$baseUrl/auth/refresh'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'refreshToken': refreshToken}),
+        ),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -76,20 +151,24 @@ class ApiClient {
   static Future<Map<String, dynamic>> get(String endpoint,
       {bool withAuth = true}) async {
     final headers = await _headers(withAuth: withAuth);
-    var response = await http.get(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-    ).timeout(_timeout);
+    var response = await _sendRequest(
+      () => http.get(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      ),
+    );
 
     // Auto-refresh on 403
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
-        response = await http.get(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: newHeaders,
-        ).timeout(_timeout);
+        response = await _sendRequest(
+          () => http.get(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: newHeaders,
+          ),
+        );
       }
     }
 
@@ -100,21 +179,25 @@ class ApiClient {
   static Future<Map<String, dynamic>> post(String endpoint,
       {Map<String, dynamic>? body, bool withAuth = true}) async {
     final headers = await _headers(withAuth: withAuth);
-    var response = await http.post(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: body != null ? jsonEncode(body) : null,
-    ).timeout(_timeout);
+    var response = await _sendRequest(
+      () => http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      ),
+    );
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
-        response = await http.post(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: newHeaders,
-          body: body != null ? jsonEncode(body) : null,
-        ).timeout(_timeout);
+        response = await _sendRequest(
+          () => http.post(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: newHeaders,
+            body: body != null ? jsonEncode(body) : null,
+          ),
+        );
       }
     }
 
@@ -125,21 +208,25 @@ class ApiClient {
   static Future<Map<String, dynamic>> put(String endpoint,
       {Map<String, dynamic>? body, bool withAuth = true}) async {
     final headers = await _headers(withAuth: withAuth);
-    var response = await http.put(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-      body: body != null ? jsonEncode(body) : null,
-    ).timeout(_timeout);
+    var response = await _sendRequest(
+      () => http.put(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+        body: body != null ? jsonEncode(body) : null,
+      ),
+    );
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
-        response = await http.put(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: newHeaders,
-          body: body != null ? jsonEncode(body) : null,
-        ).timeout(_timeout);
+        response = await _sendRequest(
+          () => http.put(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: newHeaders,
+            body: body != null ? jsonEncode(body) : null,
+          ),
+        );
       }
     }
 
@@ -150,19 +237,23 @@ class ApiClient {
   static Future<Map<String, dynamic>> delete(String endpoint,
       {bool withAuth = true}) async {
     final headers = await _headers(withAuth: withAuth);
-    var response = await http.delete(
-      Uri.parse('$baseUrl$endpoint'),
-      headers: headers,
-    ).timeout(_timeout);
+    var response = await _sendRequest(
+      () => http.delete(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: headers,
+      ),
+    );
 
     if (response.statusCode == 403 && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
-        response = await http.delete(
-          Uri.parse('$baseUrl$endpoint'),
-          headers: newHeaders,
-        ).timeout(_timeout);
+        response = await _sendRequest(
+          () => http.delete(
+            Uri.parse('$baseUrl$endpoint'),
+            headers: newHeaders,
+          ),
+        );
       }
     }
 

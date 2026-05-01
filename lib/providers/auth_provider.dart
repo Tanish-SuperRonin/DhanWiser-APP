@@ -69,7 +69,8 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Connection error. Is the server running?';
+      debugPrint('Signup unexpected error: $e');
+      _error = 'Unexpected error. Please try again.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -107,7 +108,8 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Connection error. Is the server running?';
+      debugPrint('Login unexpected error: $e');
+      _error = 'Unexpected error. Please try again.';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -140,7 +142,8 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = 'Connection error';
+      debugPrint('Update profile unexpected error: $e');
+      _error = 'Unexpected error. Please try again.';
       notifyListeners();
       return false;
     }

@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class UserModel {
   final int id;
   final String username;
@@ -19,7 +21,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       username: json['username'] ?? '',
       email: json['email'] ?? '',
       fullName: json['fullName'] ?? '',
@@ -58,7 +60,7 @@ class PublicUser {
 
   factory PublicUser.fromJson(Map<String, dynamic> json) {
     return PublicUser(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       username: json['username'] ?? '',
       fullName: json['fullName'] ?? '',
       profilePicture: json['profilePicture'],

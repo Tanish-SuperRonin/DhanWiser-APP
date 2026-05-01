@@ -1,4 +1,8 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
+
+// Postgres BIGINT/BIGSERIAL values are returned as strings by default.
+// The app expects numeric IDs, so normalize them at the DB boundary.
+types.setTypeParser(20, (value) => parseInt(value, 10));
 
 if (!process.env.DATABASE_URL) {
   throw new Error('❌ DATABASE_URL is required');

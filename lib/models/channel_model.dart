@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class ChannelModel {
   final int id;
   final String name;
@@ -17,11 +19,11 @@ class ChannelModel {
 
   factory ChannelModel.fromJson(Map<String, dynamic> json) {
     return ChannelModel(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       name: json['name'] ?? '',
       description: json['description'],
-      expenseCount: json['expenseCount'] ?? 0,
-      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
+      expenseCount: parseIntValue(json['expenseCount']),
+      totalAmount: parseDoubleValue(json['totalAmount']),
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );

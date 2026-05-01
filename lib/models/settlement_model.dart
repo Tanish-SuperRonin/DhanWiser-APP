@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class SettlementModel {
   final int id;
   final int? serverId;
@@ -29,18 +31,20 @@ class SettlementModel {
   String get payerFullName => payer?['fullName'] ?? 'Unknown';
   String get receiverUsername => receiver?['username'] ?? 'Unknown';
   String get receiverFullName => receiver?['fullName'] ?? 'Unknown';
-  int? get receiverId => receiver?['id'] ?? receiver?['userId'];
-  int? get payerId => payer?['id'] ?? payer?['userId'];
+  int? get receiverId =>
+      parseNullableIntValue(receiver?['id'] ?? receiver?['userId']);
+  int? get payerId =>
+      parseNullableIntValue(payer?['id'] ?? payer?['userId']);
 
 
   factory SettlementModel.fromJson(Map<String, dynamic> json) {
     return SettlementModel(
-      id: json['id'],
-      serverId: json['serverId'],
+      id: parseIntValue(json['id']),
+      serverId: parseNullableIntValue(json['serverId']),
       serverName: json['serverName'],
       payer: json['payer'],
       receiver: json['receiver'],
-      amount: (json['amount'] ?? 0).toDouble(),
+      amount: parseDoubleValue(json['amount']),
       status: json['status'] ?? 'pending',
       notes: json['notes'],
       proofImage: json['proofImage'],

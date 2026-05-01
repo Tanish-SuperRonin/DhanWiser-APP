@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class ServerModel {
   final int id;
   final String name;
@@ -25,14 +27,14 @@ class ServerModel {
 
   factory ServerModel.fromJson(Map<String, dynamic> json) {
     return ServerModel(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       name: json['name'] ?? '',
       description: json['description'],
-      createdBy: json['createdBy'],
+      createdBy: parseNullableIntValue(json['createdBy']),
       creatorUsername: json['creatorUsername'],
-      isLocked: json['isLocked'] ?? false,
+      isLocked: parseBoolValue(json['isLocked']),
       role: json['role'] ?? 'member',
-      memberCount: json['memberCount'] ?? 0,
+      memberCount: parseIntValue(json['memberCount']),
       joinedAt:
           json['joinedAt'] != null ? DateTime.parse(json['joinedAt']) : null,
       createdAt:
@@ -62,7 +64,7 @@ class ServerMember {
 
   factory ServerMember.fromJson(Map<String, dynamic> json) {
     return ServerMember(
-      userId: json['userId'],
+      userId: parseIntValue(json['userId']),
       username: json['username'] ?? '',
       fullName: json['fullName'] ?? '',
       profilePicture: json['profilePicture'],
@@ -89,12 +91,12 @@ class ServerDetail {
     final serverJson = json['server'] as Map<String, dynamic>;
     return ServerDetail(
       server: ServerModel(
-        id: serverJson['id'],
+        id: parseIntValue(serverJson['id']),
         name: serverJson['name'] ?? '',
         description: serverJson['description'],
-        createdBy: serverJson['createdBy'],
+        createdBy: parseNullableIntValue(serverJson['createdBy']),
         creatorUsername: serverJson['creatorUsername'],
-        isLocked: serverJson['isLocked'] ?? false,
+        isLocked: parseBoolValue(serverJson['isLocked']),
       ),
       members: (json['members'] as List<dynamic>)
           .map((m) => ServerMember.fromJson(m))
@@ -127,8 +129,8 @@ class ServerInvitation {
 
   factory ServerInvitation.fromJson(Map<String, dynamic> json) {
     return ServerInvitation(
-      id: json['id'],
-      serverId: json['serverId'],
+      id: parseIntValue(json['id']),
+      serverId: parseIntValue(json['serverId']),
       serverName: json['serverName'] ?? '',
       serverDescription: json['serverDescription'],
       inviterUsername: json['inviterUsername'] ?? '',

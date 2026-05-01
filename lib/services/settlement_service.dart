@@ -1,4 +1,5 @@
 import '../models/settlement_model.dart';
+import '../utils/json_parsers.dart';
 import 'api_client.dart';
 
 class SettlementService {
@@ -60,8 +61,8 @@ class SettlementService {
         .toList();
     return {
       'settlements': settlements,
-      'totalSettled': (data['totalSettled'] ?? 0).toDouble(),
-      'count': data['count'] ?? 0,
+      'totalSettled': parseDoubleValue(data['totalSettled']),
+      'count': parseIntValue(data['count']),
     };
   }
 }

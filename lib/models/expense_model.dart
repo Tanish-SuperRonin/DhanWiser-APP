@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class ExpenseParticipant {
   final int userId;
   final String username;
@@ -15,11 +17,11 @@ class ExpenseParticipant {
 
   factory ExpenseParticipant.fromJson(Map<String, dynamic> json) {
     return ExpenseParticipant(
-      userId: json['userId'],
+      userId: parseIntValue(json['userId']),
       username: json['username'] ?? '',
       fullName: json['fullName'],
-      amountPaid: (json['amountPaid'] ?? 0).toDouble(),
-      amountOwed: (json['amountOwed'] ?? 0).toDouble(),
+      amountPaid: parseDoubleValue(json['amountPaid']),
+      amountOwed: parseDoubleValue(json['amountOwed']),
     );
   }
 
@@ -60,10 +62,10 @@ class ExpenseModel {
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       title: json['title'] ?? '',
       description: json['description'],
-      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
+      totalAmount: parseDoubleValue(json['totalAmount']),
       expenseDate: DateTime.parse(
           json['expenseDate'] ?? DateTime.now().toIso8601String()),
       channel: json['channel'],

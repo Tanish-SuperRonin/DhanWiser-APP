@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
+import '../utils/json_parsers.dart';
 import '../providers/server_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/expense_service.dart';
@@ -108,7 +109,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
     bool reminderEnabled = settings['reminderEnabled'] ?? true;
     double intervalDays =
-        ((settings['reminderIntervalDays'] ?? 7) as num).toDouble();
+        parseDoubleValue(settings['reminderIntervalDays'], fallback: 7)
+            .toDouble();
     bool isSaving = false;
 
     showModalBottomSheet(

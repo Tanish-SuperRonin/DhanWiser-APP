@@ -1,3 +1,5 @@
+import '../utils/json_parsers.dart';
+
 class AppNotification {
   final int id;
   final String type;
@@ -19,12 +21,12 @@ class AppNotification {
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['id'],
+      id: parseIntValue(json['id']),
       type: json['type'] ?? '',
       title: json['title'] ?? '',
       message: json['message'] ?? '',
-      isRead: json['isRead'] ?? false,
-      relatedId: json['relatedId'],
+      isRead: parseBoolValue(json['isRead']),
+      relatedId: parseNullableIntValue(json['relatedId']),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
