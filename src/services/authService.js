@@ -4,22 +4,21 @@ import { pool } from '../config/database.js';
 
 export const authService = {
   // Generate access token
-  generateAccessToken(userId, username) {
-    return jwt.sign(
-      { userId, username },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
-    );
-  },
+generateAccessToken(userId, username) {
+  return jwt.sign(
+    { userId, username },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }  
+  );
+},
 
-  // Generate refresh token
-  generateRefreshToken(userId) {
-    return jwt.sign(
-      { userId },
-      process.env.JWT_REFRESH_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRE }
-    );
-  },
+generateRefreshToken(userId) {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }  
+  );
+},
 
   // Store refresh token in database
   async storeRefreshToken(userId, token) {
