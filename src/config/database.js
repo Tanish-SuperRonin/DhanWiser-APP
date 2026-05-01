@@ -1,24 +1,14 @@
 import { Pool } from 'pg';
 
-const useConnectionString = Boolean(process.env.DATABASE_URL);
-const shouldUseSsl =
-  process.env.DB_SSL === 'true' || process.env.DB_SSL === '1';
+if (!process.env.DATABASE_URL) {
+  throw new Error('❌ DATABASE_URL is required');
+}
 
-export const pool = new Pool(
-  useConnectionString
-      ? {
-          connectionString: process.env.DATABASE_URL,
-          ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
-        }
-      : {
-          host: process.env.DB_HOST,
-          port: Number(process.env.DB_PORT),
-          database: process.env.DB_NAME,
-          user: process.env.DB_USER,
-          password: process.env.DB_PASSWORD,
-          ssl: shouldUseSsl ? { rejectUnauthorized: false } : undefined,
-        }
-    );
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }, // required for Supabase
+  family: 4, // ✅ FORCE IPv4 (this fixes your error)
+});
 
 pool.on('connect', () => {
   console.log('Database connected successfully');
