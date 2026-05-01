@@ -1,5 +1,23 @@
 import { pool } from '../config/database.js';
 
+let serverInvitationIdColumnExists;
+
+async function hasServerInvitationIdColumn() {
+  if (serverInvitationIdColumnExists !== undefined) {
+    return serverInvitationIdColumnExists;
+  }
+
+  const result = await pool.query(
+    `SELECT 1
+     FROM information_schema.columns
+     WHERE table_name = 'server_invitations' AND column_name = 'id'
+     LIMIT 1`
+  );
+
+  serverInvitationIdColumnExists = result.rows.length > 0;
+  return serverInvitationIdColumnExists;
+}
+
 export const serverController = {
   // Create a new server
   async createServer(req, res) {
@@ -219,6 +237,7 @@ export const serverController = {
     try {
       const { serverId, userId: inviteeId } = req.body;
       const inviterId = req.user.userId;
+      const hasInvitationId = await hasServerInvitationIdColumn();
 
       // Check if inviter is a member
       const memberCheck = await pool.query(
@@ -261,7 +280,7 @@ export const serverController = {
 
       // Check for pending invitation
       const pendingInvite = await pool.query(
-        `SELECT id FROM server_invitations 
+        `SELECT ${hasInvitationId ? 'id' : 'server_id AS id'} FROM server_invitations 
          WHERE server_id = $1 AND invitee_id = $2 AND status = 'pending'`,
         [serverId, inviteeId]
       );
@@ -277,9 +296,11 @@ export const serverController = {
       const result = await pool.query(
         `INSERT INTO server_invitations (server_id, inviter_id, invitee_id, status)
          VALUES ($1, $2, $3, 'pending')
-         RETURNING id, created_at`,
+         RETURNING ${hasInvitationId ? 'id' : 'server_id AS id'}, created_at`,
         [serverId, inviterId, inviteeId]
       );
+
+      const invitationId = result.rows[0].id;
 
       // Create notification
       const serverInfo = await pool.query(
@@ -295,7 +316,7 @@ export const serverController = {
           'invitation',
           'Server Invitation',
           `${req.user.username} invited you to join "${serverInfo.rows[0].name}"`,
-          result.rows[0].id
+          invitationId
         ]
       );
 
@@ -303,7 +324,7 @@ export const serverController = {
         success: true,
         message: 'Invitation sent successfully',
         data: {
-          invitationId: result.rows[0].id,
+          invitationId,
           invitee: userCheck.rows[0].username,
           createdAt: result.rows[0].created_at
         }
@@ -322,9 +343,10 @@ export const serverController = {
   async getMyInvitations(req, res) {
     try {
       const userId = req.user.userId;
+      const hasInvitationId = await hasServerInvitationIdColumn();
 
       const result = await pool.query(
-        `SELECT si.id, si.server_id, si.status, si.created_at,
+        `SELECT ${hasInvitationId ? 'si.id' : 'si.server_id AS id'}, si.server_id, si.status, si.created_at,
                 s.name as server_name, s.description as server_description,
                 u.username as inviter_username, u.full_name as inviter_name
          FROM server_invitations si
@@ -368,13 +390,15 @@ export const serverController = {
       const { id } = req.params;
       const { action } = req.body; // 'accept' or 'reject'
       const userId = req.user.userId;
+      const hasInvitationId = await hasServerInvitationIdColumn();
+      const invitationLookupColumn = hasInvitationId ? 'id' : 'server_id';
 
       await client.query('BEGIN');
 
       // Get invitation
       const inviteResult = await client.query(
         `SELECT * FROM server_invitations 
-         WHERE id = $1 AND invitee_id = $2 AND status = 'pending'`,
+         WHERE ${invitationLookupColumn} = $1 AND invitee_id = $2 AND status = 'pending'`,
         [id, userId]
       );
 
@@ -387,6 +411,7 @@ export const serverController = {
       }
 
       const invitation = inviteResult.rows[0];
+      const publicInvitationId = hasInvitationId ? invitation.id : invitation.server_id;
 
       if (action === 'accept') {
         // Add user to server
@@ -400,16 +425,16 @@ export const serverController = {
         await client.query(
           `UPDATE server_invitations 
            SET status = 'accepted', responded_at = CURRENT_TIMESTAMP
-           WHERE id = $1`,
-          [id]
+           WHERE ${invitationLookupColumn} = $1 AND invitee_id = $2 AND status = 'pending'`,
+          [id, userId]
         );
       } else if (action === 'reject') {
         // Update invitation status
         await client.query(
           `UPDATE server_invitations 
            SET status = 'rejected', responded_at = CURRENT_TIMESTAMP
-           WHERE id = $1`,
-          [id]
+           WHERE ${invitationLookupColumn} = $1 AND invitee_id = $2 AND status = 'pending'`,
+          [id, userId]
         );
       } else {
         await client.query('ROLLBACK');
@@ -423,7 +448,7 @@ export const serverController = {
       await client.query(
         `DELETE FROM notifications
          WHERE user_id = $1 AND related_id = $2 AND type = 'invitation'`,
-        [userId, id]
+        [userId, publicInvitationId]
       );
 
       await client.query('COMMIT');

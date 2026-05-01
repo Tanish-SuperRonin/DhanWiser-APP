@@ -19,6 +19,24 @@ app.listen(PORT, '0.0.0.0', async () => {
   try {
     const res = await pool.query('SELECT NOW()');
     console.log('Database connected at:', res.rows[0].now);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS server_invitations (
+        id BIGSERIAL PRIMARY KEY,
+        server_id BIGINT NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+        inviter_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        invitee_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR NOT NULL DEFAULT 'pending'
+          CHECK (status IN ('pending', 'accepted', 'rejected')),
+        created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        responded_at TIMESTAMP WITHOUT TIME ZONE
+      )
+    `);
+    await pool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS server_invitations_one_pending_idx
+      ON server_invitations (server_id, invitee_id)
+      WHERE status = 'pending'
+    `);
+    console.log('Server invitations table ready');
     await pool.query(
       'ALTER TABLE settlements ADD COLUMN IF NOT EXISTS proof_image TEXT'
     );
