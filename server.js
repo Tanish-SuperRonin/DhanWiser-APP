@@ -1,3 +1,5 @@
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
 import 'dotenv/config';
 import app from './src/app.js';
 import { pool } from './src/config/database.js';
