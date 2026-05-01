@@ -221,7 +221,7 @@ export const expenseController = {
 
       // Verify membership
       const memberCheck = await pool.query(
-        'SELECT id FROM server_members WHERE server_id = $1 AND user_id = $2',
+        'SELECT 1 FROM server_members WHERE server_id = $1 AND user_id = $2',
         [serverId, userId]
       );
 
@@ -302,7 +302,7 @@ export const expenseController = {
 
       // Verify membership
       const memberCheck = await pool.query(
-        'SELECT id FROM server_members WHERE server_id = $1 AND user_id = $2',
+        'SELECT 1 FROM server_members WHERE server_id = $1 AND user_id = $2',
         [serverId, userId]
       );
 

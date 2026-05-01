@@ -267,7 +267,7 @@ export const serverController = {
 
       // Check if already a member
       const alreadyMember = await pool.query(
-        'SELECT id FROM server_members WHERE server_id = $1 AND user_id = $2',
+        'SELECT 1 FROM server_members WHERE server_id = $1 AND user_id = $2',
         [serverId, inviteeId]
       );
 
