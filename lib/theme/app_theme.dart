@@ -305,7 +305,7 @@ class DhanWiserTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        dragHandleColor: DhanWiserColors.surfaceVariant,
+        dragHandleColor: DhanWiserColors.surfaceContainerLow,
         showDragHandle: true,
       );
 

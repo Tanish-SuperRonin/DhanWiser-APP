@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.backgroundDark,
+      backgroundColor: DhanWiserColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
-                        color: DhanWiserColors.backgroundDark,
+                        color: DhanWiserColors.background,
                       ),
                     ),
                   ),
@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: DhanWiserColors.textPrimaryDark,
+                    color: DhanWiserColors.textPrimary,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
-                  color: DhanWiserColors.textPrimaryDark,
+                  color: DhanWiserColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 6),
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'Sign in to your account',
                 style: GoogleFonts.dmSans(
                   fontSize: 15,
-                  color: DhanWiserColors.textSecondaryDark,
+                  color: DhanWiserColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 36),
@@ -132,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.textSecondaryDark,
+                  color: DhanWiserColors.textSecondary,
                   letterSpacing: 1,
                 ),
               ),
@@ -142,26 +142,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 style: GoogleFonts.dmSans(
-                  color: DhanWiserColors.textPrimaryDark,
+                  color: DhanWiserColors.textPrimary,
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
                   hintText: 'smit@example.com',
                   hintStyle: GoogleFonts.dmSans(
-                    color: DhanWiserColors.textMuted,
+                    color: DhanWiserColors.textDisabled,
                     fontSize: 16,
                   ),
                   filled: true,
-                  fillColor: DhanWiserColors.surfaceContainerDark,
+                  fillColor: DhanWiserColors.surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: DhanWiserColors.outlineDark),
+                        color: DhanWiserColors.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: DhanWiserColors.outlineDark),
+                        color: DhanWiserColors.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.textSecondaryDark,
+                  color: DhanWiserColors.textSecondary,
                   letterSpacing: 1,
                 ),
               ),
@@ -191,23 +191,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _login(),
                 style: GoogleFonts.dmSans(
-                  color: DhanWiserColors.textPrimaryDark,
+                  color: DhanWiserColors.textPrimary,
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
                   hintText: '••••••••',
                   hintStyle: GoogleFonts.dmSans(
-                    color: DhanWiserColors.textMuted,
+                    color: DhanWiserColors.textDisabled,
                     fontSize: 16,
                   ),
                   filled: true,
-                  fillColor: DhanWiserColors.surfaceContainerDark,
+                  fillColor: DhanWiserColors.surfaceContainer,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: DhanWiserColors.textMuted,
+                      color: DhanWiserColors.textDisabled,
                       size: 22,
                     ),
                     onPressed: () =>
@@ -216,12 +216,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: DhanWiserColors.outlineDark),
+                        color: DhanWiserColors.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(
-                        color: DhanWiserColors.outlineDark),
+                        color: DhanWiserColors.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -263,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isSubmitting ? null : _login,
                   style: FilledButton.styleFrom(
                     backgroundColor: DhanWiserColors.primary,
-                    foregroundColor: DhanWiserColors.backgroundDark,
+                    foregroundColor: DhanWiserColors.background,
                     disabledBackgroundColor:
                         DhanWiserColors.primary.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
@@ -274,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                            color: DhanWiserColors.backgroundDark,
+                            color: DhanWiserColors.background,
                             strokeWidth: 2.5,
                           ),
                         )
@@ -293,19 +293,19 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 children: [
                   const Expanded(
-                      child: Divider(color: DhanWiserColors.outlineDark)),
+                      child: Divider(color: DhanWiserColors.outline)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'or',
                       style: GoogleFonts.dmSans(
-                        color: DhanWiserColors.textMuted,
+                        color: DhanWiserColors.textDisabled,
                         fontSize: 14,
                       ),
                     ),
                   ),
                   const Expanded(
-                      child: Divider(color: DhanWiserColors.outlineDark)),
+                      child: Divider(color: DhanWiserColors.outline)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -318,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     "Don't have an account?",
                     style: GoogleFonts.dmSans(
                       fontSize: 14,
-                      color: DhanWiserColors.textSecondaryDark,
+                      color: DhanWiserColors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -345,9 +345,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: DhanWiserColors.outlineDark),
+                        color: DhanWiserColors.outline),
                     borderRadius: BorderRadius.circular(12),
-                    color: DhanWiserColors.surfaceContainerDark,
+                    color: DhanWiserColors.surfaceContainer,
                   ),
                   child: Column(
                     children: [

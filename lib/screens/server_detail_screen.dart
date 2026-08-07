@@ -337,8 +337,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   void _showSettleUpDialog(SuggestedSettlement suggestion) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final text = isDark ? DhanWiserColors.textPrimary : DhanWiserColors.textPrimary;
+    final sub = isDark ? DhanWiserColors.textSecondary : DhanWiserColors.textSecondary;
     final transactionIdController = TextEditingController();
     final notesController = TextEditingController();
     bool isSending = false;
@@ -364,7 +364,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
+      backgroundColor: isDark ? DhanWiserColors.surfaceContainer : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -384,7 +384,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     child: Container(
                       width: 40, height: 4,
                       decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.gray600 : DhanWiserColors.gray300,
+                        color: isDark ? DhanWiserColors.outlineVariant : DhanWiserColors.outline,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -413,7 +413,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       hintText: 'e.g. UPI123456789',
                       hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 14),
                       filled: true,
-                      fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                      fillColor: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
                       prefixIcon: Icon(Icons.receipt_long_rounded, color: sub, size: 20),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -436,7 +436,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       hintText: 'e.g. Paid via Google Pay, screenshot attached',
                       hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 13),
                       filled: true,
-                      fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                      fillColor: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -492,7 +492,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
+                        color: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: proofBytes != null
@@ -741,7 +741,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       padding: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
                       child: PopupMenuButton<String>(
                         color: isDark
-                            ? DhanWiserColors.surfaceElevatedDark
+                            ? DhanWiserColors.surfaceContainer
                             : Colors.white,
                         icon: Container(
                           width: 42,

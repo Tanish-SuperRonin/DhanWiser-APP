@@ -90,7 +90,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (ctx) => AlertDialog(
-        backgroundColor: DhanWiserColors.surfaceContainerHighDark,
+        backgroundColor: DhanWiserColors.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -114,7 +114,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: DhanWiserColors.textPrimaryDark,
+                color: DhanWiserColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
@@ -123,7 +123,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
               text: TextSpan(
                 style: GoogleFonts.dmSans(
                   fontSize: 14,
-                  color: DhanWiserColors.textSecondaryDark,
+                  color: DhanWiserColors.textSecondary,
                   height: 1.5,
                 ),
                 children: [
@@ -132,7 +132,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                     text: "'${widget.title}'",
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.textPrimaryDark,
+                      color: DhanWiserColors.textPrimary,
                     ),
                   ),
                   const TextSpan(text: '? This action cannot be undone.'),
@@ -152,7 +152,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                       },
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(
-                            color: DhanWiserColors.outlineDark),
+                            color: DhanWiserColors.outline),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -161,7 +161,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: DhanWiserColors.textPrimaryDark,
+                          color: DhanWiserColors.textPrimary,
                         ),
                       ),
                     ),
@@ -209,7 +209,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
           // Background action buttons (revealed on swipe)
           Positioned.fill(
             child: Container(
-              color: DhanWiserColors.surfaceContainerDark,
+              color: DhanWiserColors.surfaceContainer,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -229,14 +229,14 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: DhanWiserColors.surfaceContainerHighestDark,
+                              color: DhanWiserColors.surfaceContainerHighest,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: DhanWiserColors.outlineDark),
+                                  color: DhanWiserColors.outline),
                             ),
                             child: const Icon(
                               Icons.edit_rounded,
-                              color: DhanWiserColors.textPrimaryDark,
+                              color: DhanWiserColors.textPrimary,
                               size: 20,
                             ),
                           ),
@@ -246,7 +246,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: DhanWiserColors.textSecondaryDark,
+                              color: DhanWiserColors.textSecondary,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -314,7 +314,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
               onHorizontalDragEnd: _handleDragEnd,
               child: Container(
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.backgroundDark,
+                  color: DhanWiserColors.background,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: widget.child,
