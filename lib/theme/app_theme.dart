@@ -1,26 +1,26 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animations/animations.dart';
 import 'colors.dart';
 
-/// DhanWiser Premium Theme — v2 (Warm Amber)
+/// DhanWiser Premium Theme — v3 (Lime & Violet)
 ///
-/// Dark mode only. Warm amber (#F5A623) primary with deep
-/// obsidian (#0F0E0D) surfaces. Uses DM Sans for body and
-/// Plus Jakarta Sans for headings (via Google Fonts).
+/// Dark mode only. Lime green (#C0F500) and Violet (#C9BFFF) on deep
+/// black (#131315) surfaces. Uses Inter for body and Plus Jakarta Sans for headings.
 class DhanWiserTheme {
   DhanWiserTheme._();
 
-  // ── Body text: DM Sans ──
+  // ── Body text: Inter ──
   static TextTheme get _textTheme =>
-      GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme);
+      GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
 
   // ── Heading font: Plus Jakarta Sans ──
   static TextStyle _heading({
     double fontSize = 20,
     FontWeight fontWeight = FontWeight.w700,
-    Color color = DhanWiserColors.textPrimaryDark,
+    Color color = DhanWiserColors.textPrimary,
     double letterSpacing = -0.3,
   }) =>
       GoogleFonts.plusJakartaSans(
@@ -30,7 +30,20 @@ class DhanWiserTheme {
         letterSpacing: letterSpacing,
       );
 
-  // ── Color scheme (premium warm dark) ──
+  // ── Tabular Numeric Text Style ──
+  static TextStyle _numeric({
+    double fontSize = 16,
+    FontWeight fontWeight = FontWeight.w500,
+    Color color = DhanWiserColors.textPrimary,
+  }) =>
+      GoogleFonts.inter(
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+        color: color,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  // ── Color scheme (premium dark lime) ──
   static ColorScheme get _colorScheme => ColorScheme.dark(
         primary: DhanWiserColors.primary,
         onPrimary: DhanWiserColors.onPrimary,
@@ -48,72 +61,72 @@ class DhanWiserTheme {
         onError: DhanWiserColors.onError,
         errorContainer: DhanWiserColors.errorContainer,
         onErrorContainer: DhanWiserColors.onErrorContainer,
-        surface: DhanWiserColors.surfaceDark,
-        onSurface: DhanWiserColors.textPrimaryDark,
-        surfaceContainerLowest: DhanWiserColors.surfaceContainerLowestDark,
-        surfaceContainerLow: DhanWiserColors.surfaceContainerLowDark,
-        surfaceContainer: DhanWiserColors.surfaceContainerDark,
-        surfaceContainerHigh: DhanWiserColors.surfaceContainerHighDark,
-        surfaceContainerHighest: DhanWiserColors.surfaceContainerHighestDark,
-        onSurfaceVariant: DhanWiserColors.textSecondaryDark,
-        outline: DhanWiserColors.outlineDark,
-        outlineVariant: DhanWiserColors.outlineVariantDark,
-        inverseSurface: DhanWiserColors.textPrimaryDark,
-        onInverseSurface: DhanWiserColors.backgroundDark,
+        surface: DhanWiserColors.surface,
+        onSurface: DhanWiserColors.textPrimary,
+        surfaceContainerLowest: DhanWiserColors.surfaceContainerLowest,
+        surfaceContainerLow: DhanWiserColors.surfaceContainerLow,
+        surfaceContainer: DhanWiserColors.surfaceContainer,
+        surfaceContainerHigh: DhanWiserColors.surfaceContainerHigh,
+        surfaceContainerHighest: DhanWiserColors.surfaceContainerHighest,
+        onSurfaceVariant: DhanWiserColors.textSecondary,
+        outline: DhanWiserColors.outline,
+        outlineVariant: DhanWiserColors.outlineVariant,
+        inverseSurface: DhanWiserColors.inverseSurface,
+        onInverseSurface: DhanWiserColors.inverseOnSurface,
       );
 
   // ── Component themes ──
 
   static AppBarTheme get _appBarTheme => AppBarTheme(
-        backgroundColor: DhanWiserColors.backgroundDark,
+        backgroundColor: DhanWiserColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        iconTheme: const IconThemeData(color: DhanWiserColors.textPrimaryDark),
+        iconTheme: const IconThemeData(color: DhanWiserColors.textPrimary),
         titleTextStyle: _heading(fontSize: 20, fontWeight: FontWeight.w600),
       );
 
   static NavigationBarThemeData get _navBarTheme => NavigationBarThemeData(
-        backgroundColor: DhanWiserColors.surfaceContainerDark,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        height: 80,
+        height: 68,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: DhanWiserColors.primary.withValues(alpha: 0.15),
+        indicatorColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: DhanWiserColors.primary,
+              color: DhanWiserColors.primaryFixed,
               letterSpacing: 0.5,
             );
           }
           return GoogleFonts.plusJakartaSans(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: DhanWiserColors.textMuted,
+            color: DhanWiserColors.textDisabled,
             letterSpacing: 0.5,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(
-                color: DhanWiserColors.primary, size: 24);
+                color: DhanWiserColors.primaryFixed, size: 24);
           }
           return const IconThemeData(
-              color: DhanWiserColors.textMuted, size: 24);
+              color: DhanWiserColors.textDisabled, size: 24);
         }),
       );
 
   static CardThemeData get _cardTheme => CardThemeData(
         elevation: 0,
-        color: DhanWiserColors.surfaceContainerDark,
+        color: DhanWiserColors.surfaceContainer,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: DhanWiserColors.outlineDark, width: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: DhanWiserColors.outlineVariant, width: 0.5),
         ),
         clipBehavior: Clip.antiAlias,
       );
@@ -121,18 +134,18 @@ class DhanWiserTheme {
   static ElevatedButtonThemeData get _elevatedButtonTheme =>
       ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: DhanWiserColors.primary,
-          foregroundColor: DhanWiserColors.onPrimary,
+          backgroundColor: DhanWiserColors.primaryFixed,
+          foregroundColor: DhanWiserColors.onPrimaryFixed,
           disabledBackgroundColor:
-              DhanWiserColors.primary.withValues(alpha: 0.38),
+              DhanWiserColors.primaryFixed.withValues(alpha: 0.38),
           disabledForegroundColor:
-              DhanWiserColors.onPrimary.withValues(alpha: 0.38),
+              DhanWiserColors.onPrimaryFixed.withValues(alpha: 0.38),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
           textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
       );
@@ -140,13 +153,13 @@ class DhanWiserTheme {
   static FilledButtonThemeData get _filledButtonTheme =>
       FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: DhanWiserColors.primary,
-          foregroundColor: DhanWiserColors.onPrimary,
+          backgroundColor: DhanWiserColors.primaryFixed,
+          foregroundColor: DhanWiserColors.onPrimaryFixed,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
           textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
       );
@@ -154,10 +167,10 @@ class DhanWiserTheme {
   static OutlinedButtonThemeData get _outlinedButtonTheme =>
       OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: DhanWiserColors.primary,
-          side: const BorderSide(color: DhanWiserColors.outlineDark),
+          foregroundColor: DhanWiserColors.textPrimary,
+          side: const BorderSide(color: DhanWiserColors.outlineVariant),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9999)),
           textStyle: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -167,7 +180,7 @@ class DhanWiserTheme {
 
   static TextButtonThemeData get _textButtonTheme => TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: DhanWiserColors.primary,
+          foregroundColor: DhanWiserColors.primaryFixed,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: GoogleFonts.plusJakartaSans(
@@ -179,8 +192,8 @@ class DhanWiserTheme {
 
   static FloatingActionButtonThemeData get _fabTheme =>
       FloatingActionButtonThemeData(
-        backgroundColor: DhanWiserColors.primary,
-        foregroundColor: DhanWiserColors.onPrimary,
+        backgroundColor: DhanWiserColors.primaryFixed,
+        foregroundColor: DhanWiserColors.onPrimaryFixed,
         elevation: 4,
         highlightElevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -188,52 +201,52 @@ class DhanWiserTheme {
 
   static InputDecorationTheme get _inputTheme => InputDecorationTheme(
         filled: true,
-        fillColor: DhanWiserColors.surfaceContainerDark,
-        hintStyle: GoogleFonts.dmSans(
-          color: DhanWiserColors.textMuted,
+        fillColor: DhanWiserColors.surfaceContainerLow,
+        hintStyle: GoogleFonts.inter(
+          color: DhanWiserColors.textDisabled,
           fontSize: 15,
         ),
-        labelStyle: GoogleFonts.dmSans(
-          color: DhanWiserColors.textSecondaryDark,
+        labelStyle: GoogleFonts.inter(
+          color: DhanWiserColors.textSecondary,
           fontSize: 15,
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: DhanWiserColors.outlineDark),
+          borderSide: const BorderSide(color: DhanWiserColors.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: DhanWiserColors.outlineDark),
+          borderSide: const BorderSide(color: DhanWiserColors.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(
-            color: DhanWiserColors.primary,
-            width: 2,
+            color: DhanWiserColors.primaryFixed,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(
-            color: DhanWiserColors.negative,
+            color: DhanWiserColors.error,
             width: 1,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(
-            color: DhanWiserColors.negative,
-            width: 2,
+            color: DhanWiserColors.error,
+            width: 1.5,
           ),
         ),
       );
 
   static TabBarThemeData get _tabBarTheme => TabBarThemeData(
-        indicatorColor: DhanWiserColors.primary,
-        labelColor: DhanWiserColors.primary,
-        unselectedLabelColor: DhanWiserColors.textSecondaryDark,
+        indicatorColor: DhanWiserColors.primaryFixed,
+        labelColor: DhanWiserColors.primaryFixed,
+        unselectedLabelColor: DhanWiserColors.textSecondary,
         labelStyle:
             GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
         unselectedLabelStyle:
@@ -245,63 +258,63 @@ class DhanWiserTheme {
   static SwitchThemeData get _switchTheme => SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return DhanWiserColors.backgroundDark;
+            return DhanWiserColors.onPrimaryFixed;
           }
-          return DhanWiserColors.outlineDark;
+          return DhanWiserColors.textDisabled;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return DhanWiserColors.primary;
+            return DhanWiserColors.primaryFixed;
           }
-          return DhanWiserColors.surfaceContainerHighestDark;
+          return DhanWiserColors.surfaceContainerHighest;
         }),
         trackOutlineColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return Colors.transparent;
           }
-          return DhanWiserColors.outlineDark;
+          return DhanWiserColors.outlineVariant;
         }),
       );
 
   static ChipThemeData get _chipTheme => ChipThemeData(
-        backgroundColor: DhanWiserColors.surfaceContainerHighDark,
-        selectedColor: DhanWiserColors.primary.withValues(alpha: 0.15),
+        backgroundColor: DhanWiserColors.surfaceContainerHigh,
+        selectedColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
         labelStyle:
             GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w500),
         shape: const StadiumBorder(),
-        side: const BorderSide(color: DhanWiserColors.outlineDark),
+        side: const BorderSide(color: DhanWiserColors.outlineVariant),
       );
 
   static DialogThemeData get _dialogTheme => DialogThemeData(
-        backgroundColor: DhanWiserColors.surfaceContainerHighDark,
+        backgroundColor: DhanWiserColors.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         titleTextStyle: _heading(fontSize: 22, fontWeight: FontWeight.w700),
-        contentTextStyle: GoogleFonts.dmSans(
+        contentTextStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: DhanWiserColors.textSecondaryDark,
+          color: DhanWiserColors.textSecondary,
           height: 1.5,
         ),
       );
 
   static BottomSheetThemeData get _bottomSheetTheme => BottomSheetThemeData(
-        backgroundColor: DhanWiserColors.backgroundDark,
+        backgroundColor: DhanWiserColors.surface,
         surfaceTintColor: Colors.transparent,
-        elevation: 1,
+        elevation: 0,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        dragHandleColor: DhanWiserColors.outlineDark,
+        dragHandleColor: DhanWiserColors.surfaceVariant,
         showDragHandle: true,
       );
 
   static SnackBarThemeData get _snackBarTheme => SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: DhanWiserColors.surfaceContainerHighestDark,
-        contentTextStyle: GoogleFonts.dmSans(
-          color: DhanWiserColors.textPrimaryDark,
+        backgroundColor: DhanWiserColors.surfaceContainerHighest,
+        contentTextStyle: GoogleFonts.inter(
+          color: DhanWiserColors.textPrimary,
           fontSize: 14,
         ),
       );
@@ -322,7 +335,7 @@ class DhanWiserTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: _colorScheme,
-      scaffoldBackgroundColor: DhanWiserColors.backgroundDark,
+      scaffoldBackgroundColor: DhanWiserColors.background,
       textTheme: _textTheme,
       appBarTheme: _appBarTheme,
       navigationBarTheme: _navBarTheme,
@@ -340,7 +353,7 @@ class DhanWiserTheme {
       bottomSheetTheme: _bottomSheetTheme,
       snackBarTheme: _snackBarTheme,
       dividerTheme: const DividerThemeData(
-        color: DhanWiserColors.outlineDark,
+        color: DhanWiserColors.outlineVariant,
         thickness: 1,
         space: 1,
       ),
@@ -352,23 +365,21 @@ class DhanWiserTheme {
         titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: DhanWiserColors.textPrimaryDark,
+          color: DhanWiserColors.textPrimary,
         ),
-        subtitleTextStyle: GoogleFonts.dmSans(
+        subtitleTextStyle: GoogleFonts.inter(
           fontSize: 14,
-          color: DhanWiserColors.textSecondaryDark,
+          color: DhanWiserColors.textSecondary,
         ),
       ),
-      badgeTheme: BadgeThemeData(
-        backgroundColor: DhanWiserColors.negative,
+      badgeTheme: const BadgeThemeData(
+        backgroundColor: DhanWiserColors.error,
         textColor: Colors.white,
-        textStyle:
-            GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.w600),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: DhanWiserColors.primary,
-        linearTrackColor: DhanWiserColors.primary.withValues(alpha: 0.15),
-        circularTrackColor: DhanWiserColors.primary.withValues(alpha: 0.15),
+        color: DhanWiserColors.primaryFixed,
+        linearTrackColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+        circularTrackColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await CacheService.invalidate('servers_list');
             await _loadData();
           },
-          color: cs.primary,
+          color: DhanWiserColors.primaryFixed,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
@@ -210,13 +210,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const SizedBox(height: 16),
                   _buildHeader(cs),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   _buildBalanceCard(cs, isDark),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   _buildQuickActionsGrid(cs, isDark),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   _buildGroupsSection(cs, isDark),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -224,33 +224,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // M3 Extended FAB
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateAndRefresh('/add-expense'),
-        icon: const Icon(Icons.add_rounded, size: 22),
-        label: Text(
-          'Split',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
-      // Floating Glass NavigationBar
+      // Floating Glass NavigationBar (Matching Tailwind)
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+        padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(9999),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark 
-                    ? cs.surfaceContainerLowest.withValues(alpha: 0.65)
-                    : cs.surface.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(30),
+                color: DhanWiserColors.surface.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(9999),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.05),
                 ),
@@ -261,7 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 68,
                 selectedIndex: _selectedIndex,
                 onDestinationSelected: (index) {
-                  if (index == 1) {
+                  if (index == 2) {
+                    _navigateAndRefresh('/add-expense');
+                  } else if (index == 1) {
                     Navigator.pushNamed(context, '/friend-discovery');
                   } else if (index == 3) {
                     Navigator.pushNamed(context, '/activity');
@@ -271,31 +257,42 @@ class _HomeScreenState extends State<HomeScreen> {
                     setState(() => _selectedIndex = index);
                   }
                 },
-                destinations: const [
-                  NavigationDestination(
+                destinations: [
+                  const NavigationDestination(
                     icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
-                    label: 'HOME',
+                    selectedIcon: Icon(Icons.home_filled),
+                    label: 'Home',
                   ),
-                  NavigationDestination(
+                  const NavigationDestination(
                     icon: Icon(Icons.search_rounded),
                     selectedIcon: Icon(Icons.search_rounded),
-                    label: 'EXPLORE',
+                    label: 'Explore',
                   ),
                   NavigationDestination(
-                    icon: SizedBox(width: 24),
+                    icon: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: DhanWiserColors.primaryFixed,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: DhanWiserColors.onPrimaryFixed,
+                        size: 28,
+                      ),
+                    ),
                     label: '',
-                    enabled: false,
                   ),
-                  NavigationDestination(
-                    icon: Icon(Icons.show_chart_rounded),
-                    selectedIcon: Icon(Icons.show_chart_rounded),
-                    label: 'ACTIVITY',
+                  const NavigationDestination(
+                    icon: Icon(Icons.notifications_outlined),
+                    selectedIcon: Icon(Icons.notifications_rounded),
+                    label: 'Activity',
                   ),
-                  NavigationDestination(
+                  const NavigationDestination(
                     icon: Icon(Icons.person_outline_rounded),
                     selectedIcon: Icon(Icons.person_rounded),
-                    label: 'ME',
+                    label: 'Profile',
                   ),
                 ],
               ),
@@ -310,97 +307,95 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final name = auth.currentUser?.fullName ?? 'there';
-        final greeting = _getGreeting();
+        final initial =
+            (auth.currentUser?.fullName ?? 'U').isNotEmpty ? (auth.currentUser?.fullName ?? 'U')[0].toUpperCase() : 'U';
+            
         return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting,
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      color: cs.onSurfaceVariant,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    name,
+            // Profile avatar left
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/profile'),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: DhanWiserColors.surface,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    initial,
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24,
-                      color: cs.onSurface,
+                      color: DhanWiserColors.textPrimary,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-            // M3 Icon Button with badge
+            
+            // Greeting center
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  _getGreeting(),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: DhanWiserColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name.split(' ')[0],
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    color: DhanWiserColors.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            
+            // Notification bell right
             Consumer<NotificationProvider>(
               builder: (context, notif, _) {
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    IconButton.filledTonal(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/activity'),
-                      icon: const Icon(
-                          Icons.notifications_outlined, size: 22),
-                      style: IconButton.styleFrom(
-                        backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
-                        foregroundColor: cs.primary,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: DhanWiserColors.outlineVariant),
+                      ),
+                      child: IconButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/activity'),
+                        icon: const Icon(
+                            Icons.notifications_outlined, size: 20),
+                        color: DhanWiserColors.textPrimary,
                       ),
                     ),
                     if (notif.unreadCount > 0)
                       Positioned(
-                        top: 4,
-                        right: 4,
+                        top: 10,
+                        right: 12,
                         child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: cs.error,
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: DhanWiserColors.primaryFixed,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: cs.surface,
-                              width: 1.5,
-                            ),
                           ),
                         ),
                       ),
                   ],
-                );
-              },
-            ),
-            const SizedBox(width: 4),
-            // M3 Profile avatar
-            Consumer<AuthProvider>(
-              builder: (context, auth, _) {
-                final initial =
-                    (auth.currentUser?.fullName ?? 'U')[0].toUpperCase();
-                return GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/profile'),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: GoogleFonts.plusJakartaSans(
-                          color: cs.onPrimaryContainer,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
                 );
               },
             ),
@@ -412,74 +407,78 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBalanceCard(ColorScheme cs, bool isDark) {
     final balanceColor = _netBalance < -0.01
-        ? DhanWiserColors.coral
+        ? DhanWiserColors.error
         : _netBalance > 0.01
-            ? DhanWiserColors.teal
-            : cs.onSurface;
+            ? DhanWiserColors.primaryFixed
+            : DhanWiserColors.textPrimary;
 
-    return Card(
-      elevation: 1,
-      color: isDark
-          ? cs.surfaceContainerHigh
-          : cs.surfaceContainerLow,
-      surfaceTintColor: cs.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Text(
-              'Net Balance',
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
-                color: cs.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: DhanWiserColors.surface,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: DhanWiserColors.primaryFixed.withValues(alpha: 0.05),
+            blurRadius: 40,
+            spreadRadius: 0,
+            offset: const Offset(0, 10),
+          )
+        ]
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Total Net Balance',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: DhanWiserColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _loadingBalanceSummary
+              ? const ShimmerBox(width: 200, height: 56, borderRadius: 12)
+              : Text(
+                  _formatCurrency(_netBalance, withDecimals: true),
+                  style: GoogleFonts.inter(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w700,
+                    color: balanceColor,
+                    letterSpacing: -1.5,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: _buildBalanceItem(
+                  'You Owe',
+                  _formatCurrency(_youOwe, withDecimals: true),
+                  DhanWiserColors.error,
+                  Icons.arrow_upward_rounded,
+                  cs,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _loadingBalanceSummary
-                ? const ShimmerBox(width: 200, height: 46, borderRadius: 12)
-                : Text(
-                    _formatCurrency(_netBalance, withDecimals: true),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 38,
-                      fontWeight: FontWeight.w800,
-                      color: balanceColor,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-            const SizedBox(height: 24),
-            Divider(color: cs.outlineVariant, height: 1),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildBalanceItem(
-                    'You owe',
-                    _formatCurrency(_youOwe, withDecimals: true),
-                    DhanWiserColors.coral,
-                    Icons.arrow_upward_rounded,
-                    cs,
-                  ),
+              Container(
+                width: 1,
+                height: 48,
+                color: DhanWiserColors.outlineVariant,
+              ),
+              Expanded(
+                child: _buildBalanceItem(
+                  'Owed to You',
+                  _formatCurrency(_owedToYou, withDecimals: true),
+                  DhanWiserColors.primaryFixed,
+                  Icons.arrow_downward_rounded,
+                  cs,
                 ),
-                Container(
-                  width: 1,
-                  height: 48,
-                  color: cs.outlineVariant,
-                ),
-                Expanded(
-                  child: _buildBalanceItem(
-                    'Owed to you',
-                    _formatCurrency(_owedToYou, withDecimals: true),
-                    DhanWiserColors.teal,
-                    Icons.arrow_downward_rounded,
-                    cs,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     ).animate().fade(duration: 300.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
   }
@@ -495,8 +494,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                color: color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 14),
             ),
@@ -504,20 +503,21 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: cs.onSurfaceVariant,
+                fontSize: 13,
+                color: DhanWiserColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           amount,
           style: GoogleFonts.inter(
-            fontSize: 20,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
             color: color,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ],
@@ -526,14 +526,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildQuickActionsGrid(ColorScheme cs, bool isDark) {
     final actions = [
-      _QuickAction('New Group', Icons.group_add_rounded,
-          DhanWiserColors.primary, '/create-server'),
-      _QuickAction('Find Friends', Icons.person_search_rounded,
-          DhanWiserColors.teal, '/friend-discovery'),
-      _QuickAction('Settle Up', Icons.handshake_rounded,
-          DhanWiserColors.warning, '/settlement'),
-      _QuickAction('Settings', Icons.tune_rounded,
-          cs.onSurfaceVariant, '/settings'),
+      _QuickAction('Create', Icons.group_add_rounded,
+          DhanWiserColors.primaryFixed, '/create-server'),
+      _QuickAction('Expense', Icons.receipt_long_rounded,
+          DhanWiserColors.secondary, '/add-expense'),
+      _QuickAction('Settle', Icons.handshake_rounded,
+          DhanWiserColors.tertiaryFixed, '/settlement'),
     ];
 
     return Row(
@@ -541,29 +539,30 @@ class _HomeScreenState extends State<HomeScreen> {
         return Expanded(
           child: GestureDetector(
             onTap: () => _navigateAndRefresh(action.route),
-            child: Column(
-              children: [
-                // M3 tonal icon container
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: action.color.withValues(alpha: isDark ? 0.16 : 0.10),
-                    borderRadius: BorderRadius.circular(16),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: DhanWiserColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: DhanWiserColors.outlineVariant),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(action.icon, color: action.color, size: 28),
+                  const SizedBox(height: 8),
+                  Text(
+                    action.label,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: DhanWiserColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  child: Icon(action.icon, color: action.color, size: 26),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  action.label,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: cs.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -581,26 +580,20 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Your Groups',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: cs.onSurface,
+                color: DhanWiserColors.textPrimary,
                 letterSpacing: -0.3,
               ),
             ),
-            // M3 tonal button
-            FilledButton.tonal(
-              onPressed: () => _navigateAndRefresh('/create-server'),
-              style: FilledButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+            TextButton(
+              onPressed: () {}, // Optional see all logic
               child: Text(
-                '+ New',
+                'See All',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: DhanWiserColors.primaryFixed,
                 ),
               ),
             ),
@@ -651,16 +644,9 @@ class _HomeScreenState extends State<HomeScreen> {
       Icons.celebration_rounded,
       Icons.coffee_rounded
     ];
-    final gradients = [
-      [const Color(0xFFFFAD60), const Color(0xFFFFCF9D)],
-      [const Color(0xFFB5EAD7), const Color(0xFFA8E6CF)],
-      [const Color(0xFFFFB5A7), const Color(0xFFFFCDBD)],
-      [const Color(0xFFFFD97D), const Color(0xFFFFE5A0)],
-      [const Color(0xFF74B9FF), const Color(0xFFA3D5FF)],
-    ];
+
     final idx = name.hashCode.abs();
     final groupIcon = groupIcons[idx % groupIcons.length];
-    final grad = gradients[idx % gradients.length];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -671,89 +657,85 @@ class _HomeScreenState extends State<HomeScreen> {
           'members': members,
           'imageUrl': '',
         }),
-        child: Card(
-          elevation: 0,
-          color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Hero(
-                  tag: 'server_avatar_$id',
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: grad,
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(groupIcon, color: Colors.white, size: 24),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: DhanWiserColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: DhanWiserColors.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              Hero(
+                tag: 'server_avatar_$id',
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
                   ),
+                  child: Icon(groupIcon, color: DhanWiserColors.primaryFixed, size: 24),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            name,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: DhanWiserColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isAdmin) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: DhanWiserColors.secondary.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Text(
-                              name,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 16,
+                              'Admin',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
+                                color: DhanWiserColors.secondary,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isAdmin) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: cs.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Admin',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.onPrimaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      members,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: DhanWiserColors.textSecondary,
+                        fontWeight: FontWeight.w400,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        members,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                  size: 22,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: DhanWiserColors.textDisabled,
+                size: 24,
+              ),
+            ],
           ),
         ),
       ),
