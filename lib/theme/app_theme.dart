@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,19 +27,6 @@ class DhanWiserTheme {
         fontWeight: fontWeight,
         color: color,
         letterSpacing: letterSpacing,
-      );
-
-  // ── Tabular Numeric Text Style ──
-  static TextStyle _numeric({
-    double fontSize = 16,
-    FontWeight fontWeight = FontWeight.w500,
-    Color color = DhanWiserColors.textPrimary,
-  }) =>
-      GoogleFonts.inter(
-        fontSize: fontSize,
-        fontWeight: fontWeight,
-        color: color,
-        fontFeatures: const [FontFeature.tabularFigures()],
       );
 
   // ── Color scheme (premium dark lime) ──

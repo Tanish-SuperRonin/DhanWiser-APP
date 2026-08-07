@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
@@ -247,311 +249,469 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
+      backgroundColor: DhanWiserColors.background,
       appBar: AppBar(
-        title: const Text('New Expense'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
+        title: Text(
+          'Add Expense',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: DhanWiserColors.textPrimary,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded, color: DhanWiserColors.textPrimary),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // ── Body ──
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
-
-                  // ── Amount input (hero) ──
-                  Center(
-                    child: Column(
+          // ── Amount Input Hero ──
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            alignment: Alignment.center,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Subtle Glow
+                ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+                  child: Container(
+                    width: 192,
+                    height: 192,
+                    decoration: BoxDecoration(
+                      color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                  ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                    .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
+                ),
+                
+                Column(
+                  children: [
+                    Text(
+                      'TOTAL AMOUNT',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        letterSpacing: 0.05,
+                        fontWeight: FontWeight.w600,
+                        color: DhanWiserColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           '₹',
-                          style: GoogleFonts.inter(
-                            fontSize: 28,
-                            color: cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w700,
+                            color: DhanWiserColors.textPrimary.withValues(alpha: 0.6),
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         ),
-                        SizedBox(
-                          width: 200,
+                        const SizedBox(width: 8),
+                        IntrinsicWidth(
                           child: TextField(
                             controller: _amountController,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             textAlign: TextAlign.center,
                             onChanged: (_) => setState(() {}),
-                            style: GoogleFonts.inter(
-                              fontSize: 48,
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                              letterSpacing: -2,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 56,
+                              fontWeight: FontWeight.w700,
+                              color: DhanWiserColors.textPrimary,
+                              height: 1.1,
+                              fontFeatures: const [FontFeature.tabularFigures()],
                             ),
                             decoration: InputDecoration(
-                              hintText: '0',
-                              hintStyle: GoogleFonts.inter(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w800,
-                                color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                                letterSpacing: -2,
+                              hintText: '0.00',
+                              hintStyle: GoogleFonts.plusJakartaSans(
+                                fontSize: 56,
+                                fontWeight: FontWeight.w700,
+                                color: DhanWiserColors.textPrimary.withValues(alpha: 0.3),
+                                height: 1.1,
+                                fontFeatures: const [FontFeature.tabularFigures()],
                               ),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
-                              fillColor: Colors.transparent,
-                              filled: false,
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // ── Note ──
-                  _buildLabel('What\'s it for?', cs),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _noteController,
-                    style: GoogleFonts.inter(color: cs.onSurface, fontSize: 15),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Dinner, Uber, Groceries',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Category pills — M3 Filter Chips ──
-                  _buildLabel('Category', cs),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _categories.map((cat) {
-                      final isSelected = _selectedCategory == cat['name'];
-                      return FilterChip(
-                        selected: isSelected,
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = cat['name']!),
-                        avatar: Icon(
-                          cat['icon'] as IconData,
-                          size: 18,
-                          color: isSelected ? cs.primary : cs.onSurfaceVariant,
-                        ),
-                        label: Text(cat['name']! as String),
-                        selectedColor: cs.primaryContainer,
-                        checkmarkColor: cs.primary,
-                        showCheckmark: false,
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Group selector ──
-                  if (_selectedServerId == null) ...[
-                    _buildLabel('Group', cs),
-                    const SizedBox(height: 8),
-                    Consumer<ServerProvider>(
-                      builder: (context, serverProv, _) {
-                        if (serverProv.servers.isEmpty) {
-                          return Text('No groups available',
-                              style: GoogleFonts.inter(
-                                  color: cs.onSurfaceVariant, fontSize: 14));
-                        }
-                        return DropdownMenu<int>(
-                          width: double.infinity,
-                          hintText: 'Select a group',
-                          inputDecorationTheme: Theme.of(context).inputDecorationTheme,
-                          textStyle: GoogleFonts.inter(
-                              color: cs.onSurface, fontSize: 15),
-                          onSelected: (val) {
-                            if (val != null) _onServerSelected(val);
-                          },
-                          dropdownMenuEntries: serverProv.servers.map((s) {
-                            return DropdownMenuEntry(
-                              value: s.id,
-                              label: s.name,
-                            );
-                          }).toList(),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
                   ],
-
-                  // ── Auto-select channel (hidden from user) ──
-                  if (_selectedServerId != null)
-                    Consumer<ServerProvider>(
-                      builder: (context, serverProv, _) {
-                        final chList = serverProv.channels;
-                        if (chList.isNotEmpty) {
-                          // Auto-select first channel if not already set
-                          if (_selectedChannelId == null ||
-                              !chList.any((c) => c.id == _selectedChannelId)) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              if (mounted) {
-                                setState(
-                                    () => _selectedChannelId = chList.first.id);
-                              }
-                            });
-                          }
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-
-                  // ── Paid by selector ──
-                  if (_selectedServerId != null)
-                    Consumer<ServerProvider>(
-                      builder: (context, serverProv, _) {
-                        final members =
-                            serverProv.currentServerDetail?.members ?? [];
-                        if (members.isEmpty) return const SizedBox.shrink();
-
-                        // Set default paidBy if not set
-                        if (_paidByUserId == null && members.isNotEmpty) {
-                          final auth = Provider.of<AuthProvider>(context,
-                              listen: false);
-                          _paidByUserId =
-                              auth.currentUser?.id ?? members.first.userId;
-                        }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ],
+            ),
+          ),
+          
+          // ── Form Sheet Container ──
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: DhanWiserColors.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.05),
+                    blurRadius: 30,
+                    offset: const Offset(0, -8),
+                  )
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Expense Title
+                      _buildSectionTitle('EXPENSE TITLE'),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: DhanWiserColors.background,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
                           children: [
-                            _buildLabel('Paid by', cs),
-                            const SizedBox(height: 8),
-                            DropdownMenu<int>(
-                              width: double.infinity,
-                              initialSelection:
-                                  members.any((m) => m.userId == _paidByUserId)
-                                      ? _paidByUserId
-                                      : members.first.userId,
-                              textStyle: GoogleFonts.inter(
-                                  color: cs.onSurface, fontSize: 15),
-                              inputDecorationTheme: Theme.of(context).inputDecorationTheme,
-                              onSelected: (val) =>
-                                  setState(() => _paidByUserId = val),
-                              dropdownMenuEntries: members.map((m) {
-                                return DropdownMenuEntry(
-                                  value: m.userId,
-                                  label:
-                                      '${m.fullName} (@${m.username})',
-                                );
-                              }).toList(),
+                            const Icon(Icons.edit_rounded, color: DhanWiserColors.textSecondary, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _noteController,
+                                style: GoogleFonts.inter(fontSize: 16, color: DhanWiserColors.textPrimary),
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. Friday Dinner',
+                                  hintStyle: GoogleFonts.inter(color: DhanWiserColors.textDisabled, fontSize: 16),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 20),
                           ],
-                        );
-                      },
-                    ),
-
-                  // ── Split type — M3 Segmented Button ──
-                  _buildLabel('Split', cs),
-                  const SizedBox(height: 10),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(
-                        value: 'equally',
-                        label: Text('Equally'),
-                        icon: Icon(Icons.balance_rounded),
+                        ),
                       ),
-                      ButtonSegment(
-                        value: 'custom',
-                        label: Text('Custom'),
-                        icon: Icon(Icons.tune_rounded),
-                      ),
-                    ],
-                    selected: {_splitType},
-                    onSelectionChanged: (sel) =>
-                        setState(() => _splitType = sel.first),
-                  ),
-                  const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                  // ── Split details ──
-                  if (_selectedServerId != null)
-                    Consumer<ServerProvider>(
-                      builder: (context, serverProv, _) {
-                        final members =
-                            serverProv.currentServerDetail?.members ?? [];
-                        if (members.isEmpty) {
-                          if (serverProv.isLoading) {
+                      // Category
+                      _buildSectionTitle('CATEGORY'),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 80,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _categories.length,
+                          itemBuilder: (context, index) {
+                            final cat = _categories[index];
+                            final isSelected = _selectedCategory == cat['name'];
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: cs.primary,
-                                  strokeWidth: 2,
+                              padding: const EdgeInsets.only(right: 16),
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedCategory = cat['name']!),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isSelected ? DhanWiserColors.secondaryContainer.withValues(alpha: 0.2) : DhanWiserColors.background,
+                                        border: Border.all(
+                                          color: isSelected ? DhanWiserColors.secondaryContainer.withValues(alpha: 0.5) : DhanWiserColors.surfaceBright.withValues(alpha: 0.3),
+                                        ),
+                                        boxShadow: isSelected ? [
+                                          BoxShadow(
+                                            color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.15),
+                                            blurRadius: 15,
+                                          )
+                                        ] : null,
+                                      ),
+                                      child: Icon(
+                                        cat['icon'],
+                                        color: isSelected ? DhanWiserColors.secondaryFixed : DhanWiserColors.textSecondary,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      cat['name']!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        color: isSelected ? DhanWiserColors.textPrimary : DhanWiserColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
-                          }
-                          return const SizedBox.shrink();
-                        }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                        _initCustomControllers(members);
-                        final amount =
-                            double.tryParse(_amountController.text.trim()) ??
-                                0;
-                        final perPerson = members.isNotEmpty
-                            ? amount / members.length
-                            : 0.0;
-
-                        return Column(
+                      // Split Engine
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: DhanWiserColors.background,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1)),
+                        ),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel(
-                              _splitType == 'equally'
-                                  ? 'Split equally (₹${perPerson.toStringAsFixed(2)} each)'
-                                  : 'Custom amounts (must total ₹${amount.toStringAsFixed(2)})',
-                              cs,
+                            // Group Selector (Optional logic if not selected)
+                            if (_selectedServerId == null) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Group', style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 16)),
+                                  Consumer<ServerProvider>(
+                                    builder: (context, serverProv, _) {
+                                      if (serverProv.servers.isEmpty) {
+                                        return Text('No groups', style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 14));
+                                      }
+                                      return DropdownButtonHideUnderline(
+                                        child: DropdownButton<int>(
+                                          value: _selectedServerId,
+                                          dropdownColor: DhanWiserColors.surface,
+                                          hint: Text('Select group', style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14)),
+                                          icon: const Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
+                                          style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14),
+                                          onChanged: (val) {
+                                            if (val != null) _onServerSelected(val);
+                                          },
+                                          items: serverProv.servers.map((s) {
+                                            return DropdownMenuItem(value: s.id, child: Text(s.name));
+                                          }).toList(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const Divider(color: DhanWiserColors.surfaceBright, height: 24),
+                            ],
+
+                            // Paid by
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Paid by', style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 16)),
+                                Consumer<ServerProvider>(
+                                  builder: (context, serverProv, _) {
+                                    final members = serverProv.currentServerDetail?.members ?? [];
+                                    if (members.isEmpty) return const SizedBox.shrink();
+
+                                    final auth = Provider.of<AuthProvider>(context, listen: false);
+                                    final currentUserId = auth.currentUser?.id;
+
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: DhanWiserColors.surface,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.2)),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<int>(
+                                          value: members.any((m) => m.userId == _paidByUserId)
+                                              ? _paidByUserId
+                                              : (members.isNotEmpty ? members.first.userId : null),
+                                          dropdownColor: DhanWiserColors.surface,
+                                          icon: const Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
+                                          style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14),
+                                          onChanged: (val) => setState(() => _paidByUserId = val),
+                                          items: members.map((m) {
+                                            return DropdownMenuItem(
+                                              value: m.userId,
+                                              child: Text(m.userId == currentUserId ? 'You' : m.fullName.split(' ')[0]),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 10),
-                            ...members.map((m) {
-                              return _buildMemberSplitRow(
-                                  m, perPerson, cs, isDark);
-                            }),
+                            Divider(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.2), height: 32),
+
+                            // Split with Header
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Split with', style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 16)),
+                                TextButton.icon(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.group_add_rounded, size: 18),
+                                  label: const Text('Add people'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: DhanWiserColors.tertiaryFixed,
+                                    textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Segmented Control
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: DhanWiserColors.surface,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _splitType = 'equally'),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: _splitType == 'equally' ? DhanWiserColors.tertiaryFixed : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          'Equally',
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: _splitType == 'equally' ? DhanWiserColors.background : DhanWiserColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => setState(() => _splitType = 'custom'),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: _splitType == 'custom' ? DhanWiserColors.tertiaryFixed : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          'Manually',
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: _splitType == 'custom' ? DhanWiserColors.background : DhanWiserColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Split Preview Rows
+                            if (_selectedServerId != null)
+                              Consumer<ServerProvider>(
+                                builder: (context, serverProv, _) {
+                                  final members = serverProv.currentServerDetail?.members ?? [];
+                                  if (members.isEmpty) return const SizedBox.shrink();
+
+                                  _initCustomControllers(members);
+                                  final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+                                  final perPerson = members.isNotEmpty ? amount / members.length : 0.0;
+                                  
+                                  double sumCustom = 0;
+                                  if (_splitType == 'custom') {
+                                    for (final m in members) {
+                                      sumCustom += double.tryParse(_customAmountControllers[m.userId]?.text.trim() ?? '0') ?? 0;
+                                    }
+                                  }
+                                  final remaining = amount - sumCustom;
+
+                                  return Column(
+                                    children: [
+                                      ...members.map((m) => _buildSplitPreviewRow(m, perPerson)),
+                                      
+                                      if (_splitType == 'custom') ...[
+                                        const SizedBox(height: 12),
+                                        Divider(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1), height: 1),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text('Remaining to split', style: GoogleFonts.inter(fontSize: 13, color: DhanWiserColors.textSecondary)),
+                                            Text(
+                                              '₹${remaining.toStringAsFixed(2)}',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: remaining.abs() > 0.01 ? DhanWiserColors.error : DhanWiserColors.textPrimary,
+                                                fontFeatures: const [FontFeature.tabularFigures()],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                },
+                              ),
                           ],
-                        );
-                      },
-                    ),
-
-                  const SizedBox(height: 20),
-
-                  // ── Save button — M3 FilledButton ──
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: FilledButton(
-                      onPressed: _isSaving ? null : _saveExpense,
-                      child: _isSaving
-                          ? SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: cs.onPrimary,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : Text(
-                              'Add Expense',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      // Primary Action
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _saveExpense,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: DhanWiserColors.tertiaryFixed,
+                            foregroundColor: DhanWiserColors.onTertiaryFixed,
+                            elevation: 8,
+                            shadowColor: DhanWiserColors.tertiaryFixed.withValues(alpha: 0.15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onTertiaryFixed))
+                              : Text(
+                                  'Add Expense',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           ),
@@ -560,113 +720,108 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  Widget _buildMemberSplitRow(
-      ServerMember member, double equalAmount, ColorScheme cs, bool isDark) {
-    final initial =
-        member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?';
-    final isPayer = member.userId == _paidByUserId;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      elevation: 0,
-      color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: isPayer
-            ? BorderSide(color: cs.primary.withValues(alpha: 0.3), width: 1)
-            : BorderSide.none,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    color: cs.primary,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    member.fullName,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (isPayer)
-                    Text(
-                      'Payer',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: cs.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (_splitType == 'equally')
-              Text(
-                '₹${equalAmount.toStringAsFixed(2)}',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurface,
-                ),
-              )
-            else
-              SizedBox(
-                width: 90,
-                child: TextField(
-                  controller: _customAmountControllers[member.userId],
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  textAlign: TextAlign.right,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: cs.onSurface,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '0',
-                    prefixText: '₹',
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 8),
-                  ),
-                ),
-              ),
-          ],
-        ),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        letterSpacing: 0.05,
+        fontWeight: FontWeight.w600,
+        color: DhanWiserColors.textSecondary,
       ),
     );
   }
 
-  Widget _buildLabel(String label, ColorScheme cs) {
-    return Text(
-      label,
-      style: GoogleFonts.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: cs.onSurfaceVariant,
-        letterSpacing: 0.3,
+  Widget _buildSplitPreviewRow(ServerMember member, double equalAmount) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final isYou = member.userId == auth.currentUser?.id;
+    final initial = member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              if (isYou)
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: DhanWiserColors.surfaceBright,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DhanWiserColors.textPrimary, fontSize: 14),
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_rounded, color: DhanWiserColors.secondaryFixed, size: 18),
+                ),
+              const SizedBox(width: 12),
+              Text(
+                isYou ? 'You' : member.fullName,
+                style: GoogleFonts.inter(fontSize: 14, color: DhanWiserColors.textPrimary),
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: DhanWiserColors.surfaceContainerLow,
+              border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1)),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Text('₹', style: GoogleFonts.inter(fontSize: 12, color: DhanWiserColors.textDisabled)),
+                if (_splitType == 'equally')
+                  Text(
+                    equalAmount.toStringAsFixed(2),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: DhanWiserColors.textPrimary,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: 60,
+                    child: TextField(
+                      controller: _customAmountControllers[member.userId],
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: DhanWiserColors.textPrimary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        hintText: '0.00',
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

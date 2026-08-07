@@ -152,277 +152,357 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settlement Request'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: cs.primary))
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: cs.primaryContainer
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            Icons.task_alt_rounded,
-                            color: cs.primary,
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: cs.onSurfaceVariant,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Card(
-                    elevation: 0,
-                    color: isDark
-                        ? cs.surfaceContainerHigh
-                        : cs.surfaceContainerLowest,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: _buildSettlementCard(cs, isDark),
-                    ),
-                  ),
-                ),
-    );
-  }
-
-  Widget _buildSettlementCard(ColorScheme cs, bool isDark) {
-    final settlement = _settlement!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            _userChip(settlement.payerUsername, DhanWiserColors.coral, cs),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Icon(Icons.arrow_forward_rounded,
-                  size: 16, color: cs.onSurfaceVariant),
+      backgroundColor: DhanWiserColors.background,
+      body: Stack(
+        children: [
+          // Blurred Background Context (Simulated)
+          Positioned.fill(
+            child: Container(
+              color: DhanWiserColors.background,
+              // Ideally an image or gradient goes here
             ),
-            _userChip(settlement.receiverUsername, DhanWiserColors.teal, cs),
-            const Spacer(),
-            Text(
-              '₹${settlement.amount.toStringAsFixed(0)}',
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
-              ),
-            ),
-          ],
-        ),
-        if (settlement.serverName != null) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Group: ${settlement.serverName}',
-            style: GoogleFonts.inter(
-                fontSize: 13, color: cs.onSurfaceVariant),
           ),
-        ],
-        const SizedBox(height: 14),
-        Text(
-          '${settlement.payerFullName} says they paid you this amount. Please approve only if you have actually received the money.',
-          style: GoogleFonts.inter(
-              fontSize: 14, color: cs.onSurface, height: 1.45),
-        ),
-        if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cs.primary.withValues(alpha: 0.15),
-              ),
+          // Dimming Overlay
+          Positioned.fill(
+            child: Container(
+              color: DhanWiserColors.surfaceDim.withValues(alpha: 0.6),
             ),
+          ),
+          // Content
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Payment proof / note',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: cs.primary,
+                // Top App Bar area
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    padding: const EdgeInsets.all(20),
+                    icon: const Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  settlement.notes!,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: cs.onSurface,
-                    height: 1.4,
-                  ),
-                ),
+                const Spacer(),
+                // Settlement Bottom Sheet
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator(color: DhanWiserColors.primaryFixed))
+                    : _error != null
+                        ? _buildErrorView()
+                        : _buildSettlementSheet(),
               ],
             ),
           ),
         ],
-        if (settlement.proofImage != null &&
-            settlement.proofImage!.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          _buildProofImage(settlement.proofImage!, cs, isDark),
-        ],
-        const SizedBox(height: 22),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isSubmitting ? null : _showRejectDialog,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: DhanWiserColors.coral,
-                  side: BorderSide(
-                    color: DhanWiserColors.coral.withValues(alpha: 0.3),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text('Reject'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton(
-                onPressed: _isSubmitting ? null : _approve,
-                style: FilledButton.styleFrom(
-                  backgroundColor: DhanWiserColors.mint,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor:
-                      DhanWiserColors.mint.withValues(alpha: 0.5),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Approve'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _userChip(String username, Color color, ColorScheme cs) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        username,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
       ),
     );
   }
 
-  Widget _buildProofImage(
-      String proofImage, ColorScheme cs, bool isDark) {
-    final imageBytes = _decodeProofImage(proofImage);
-
+  Widget _buildErrorView() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      constraints: const BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: cs.primary.withValues(alpha: 0.15),
-        ),
+        color: DhanWiserColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.2)),
       ),
+      padding: const EdgeInsets.all(32),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: DhanWiserColors.errorContainer.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.error_outline_rounded, color: DhanWiserColors.error, size: 32),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              color: DhanWiserColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettlementSheet() {
+    final settlement = _settlement!;
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 600),
+      decoration: BoxDecoration(
+        color: DhanWiserColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+            blurRadius: 32,
+            offset: const Offset(0, -8),
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.image_outlined, size: 16, color: cs.primary),
-              const SizedBox(width: 6),
-              Text(
-                'Payment screenshot',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.primary,
+              // Drag Handle Indicator
+              Container(
+                width: 48,
+                height: 6,
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  color: DhanWiserColors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(999),
                 ),
               ),
+
+              // Avatar & Header
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: DhanWiserColors.surfaceContainerHigh,
+                  border: Border.all(color: DhanWiserColors.surfaceBright, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    settlement.payerFullName.isNotEmpty ? settlement.payerFullName[0].toUpperCase() : '?',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: DhanWiserColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                settlement.payerFullName,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: DhanWiserColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'is requesting',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: DhanWiserColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Amount
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, right: 4),
+                    child: Text(
+                      '₹',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 24,
+                        color: DhanWiserColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    settlement.amount.toStringAsFixed(2),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 48,
+                      fontWeight: FontWeight.w700,
+                      color: DhanWiserColors.textPrimary,
+                      letterSpacing: -1,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Context Card
+              if (settlement.serverName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: DhanWiserColors.surfaceContainerHighest),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: DhanWiserColors.surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.flight_takeoff_rounded, color: DhanWiserColors.primaryFixed, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              settlement.serverName!,
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: DhanWiserColors.textPrimary,
+                              ),
+                            ),
+                            if (settlement.initiatedAt != null)
+                              Text(
+                                'Requested recently', // In a real app, calculate time ago
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: DhanWiserColors.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right_rounded, color: DhanWiserColors.textSecondary, size: 20),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Split Details / Notes
+              if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: DhanWiserColors.surfaceContainerHighest),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Note',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: DhanWiserColors.textSecondary,
+                        ),
+                      ),
+                      Text(
+                        settlement.notes!,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: DhanWiserColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              
+              if (settlement.proofImage != null && settlement.proofImage!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildProofImage(settlement.proofImage!),
+              ],
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _approve,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: DhanWiserColors.primaryFixed,
+                    foregroundColor: DhanWiserColors.onPrimaryFixed,
+                    elevation: 8,
+                    shadowColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.2),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onPrimaryFixed))
+                      : Text(
+                          'Settle Now',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: _isSubmitting ? null : _showRejectDialog,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: DhanWiserColors.surfaceContainerHighest),
+                    foregroundColor: DhanWiserColors.textSecondary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  ),
+                  child: Text(
+                    'Decline Request',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
-          const SizedBox(height: 10),
-          if (imageBytes != null)
-            GestureDetector(
-              onTap: () => _showProofPreview(imageBytes),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.memory(
-                  imageBytes,
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            )
-          else
-            Text(
-              'This screenshot could not be displayed.',
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: cs.onSurfaceVariant),
-            ),
-          if (imageBytes != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Tap the screenshot to open it full screen before approving.',
-              style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: cs.onSurface.withValues(alpha: 0.75)),
-            ),
-          ],
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProofImage(String proofImage) {
+    final imageBytes = _decodeProofImage(proofImage);
+    if (imageBytes == null) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () => _showProofPreview(imageBytes),
+      child: Container(
+        width: double.infinity,
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: DhanWiserColors.surfaceBright),
+          image: DecorationImage(
+            image: MemoryImage(imageBytes),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.black.withValues(alpha: 0.3),
+          ),
+          child: const Center(
+            child: Icon(Icons.zoom_in_rounded, color: Colors.white, size: 32),
+          ),
+        ),
       ),
     );
   }
@@ -462,8 +542,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 child: SafeArea(
                   child: IconButton(
                     onPressed: () => Navigator.pop(ctx),
-                    icon:
-                        const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),
                 ),
               ),
