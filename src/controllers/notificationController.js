@@ -1,7 +1,7 @@
 import { pool } from '../config/database.js';
 
 export const notificationController = {
-  // Get all notifications for current user
+  // Get all notifications for current user (paginated)
   async getMyNotifications(req, res) {
     try {
       const { reminderService } = await import('../services/reminderService.js');
@@ -9,25 +9,37 @@ export const notificationController = {
 
       const userId = req.user.userId;
       const { unreadOnly } = req.query;
+      const page = Math.max(1, parseInt(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+      const offset = (page - 1) * limit;
 
-      let query = `
-        SELECT id, type, title, message, is_read, related_id, created_at
-        FROM notifications
-        WHERE user_id = $1
-      `;
-
+      // Build WHERE clause
+      let whereClause = 'WHERE user_id = $1';
       const params = [userId];
 
-      // Filter for unread only if requested
       if (unreadOnly === 'true') {
-        query += ` AND is_read = false`;
+        whereClause += ` AND is_read = false`;
       }
 
-      query += ` ORDER BY created_at DESC`;
+      // Get total count
+      const countResult = await pool.query(
+        `SELECT COUNT(*) FROM notifications ${whereClause}`,
+        params
+      );
+      const total = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(total / limit);
 
-      const result = await pool.query(query, params);
+      // Get paginated notifications
+      const result = await pool.query(
+        `SELECT id, type, title, message, is_read, related_id, created_at
+         FROM notifications
+         ${whereClause}
+         ORDER BY created_at DESC
+         LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, limit, offset]
+      );
 
-      // Get unread count
+      // Get unread count (always, for badge)
       const unreadCount = await pool.query(
         'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = false',
         [userId]
@@ -46,7 +58,14 @@ export const notificationController = {
             createdAt: notif.created_at
           })),
           unreadCount: parseInt(unreadCount.rows[0].count),
-          totalCount: result.rows.length
+          totalCount: total,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasMore: page < totalPages
+          }
         }
       });
     } catch (error) {

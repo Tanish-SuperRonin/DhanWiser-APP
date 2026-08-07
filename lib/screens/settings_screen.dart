@@ -1,284 +1,225 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _pushNotifications = true;
-  bool _emailAlerts = false;
-
-  @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
-    final surface = isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white;
 
     return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.surfaceElevatedDark : DhanWiserColors.gray100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.arrow_back_rounded, color: text, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    'Settings',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: text,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        children: [
+          // ── Appearance Section ──
+          _buildSectionHeader('Appearance', cs),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Account ──
-                    _sectionTitle('Account', sub),
-                    const SizedBox(height: 10),
-                    _card(surface, isDark, [
-                      _navTile(Icons.person_outline_rounded, 'Edit Profile',
-                          'Update your info', text, sub,
-                          () => Navigator.pushNamed(context, '/profile')),
-                      _divider(isDark),
-                      _navTile(Icons.lock_outline_rounded, 'Change Password',
-                          'Update credentials', text, sub, () {}),
-                      _divider(isDark),
-                      _navTile(Icons.payment_rounded, 'Payment Methods',
-                          'UPI & bank accounts', text, sub, () {}),
-                    ]),
-
-                    const SizedBox(height: 24),
-
-                    // ── Appearance ──
-                    _sectionTitle('Appearance', sub),
-                    const SizedBox(height: 10),
-                    Consumer<ThemeProvider>(
-                      builder: (context, themeProv, _) => _card(surface, isDark, [
-                        _toggleTile(Icons.dark_mode_rounded,
-                            'Dark Mode', text, sub,
-                            themeProv.isDark, (_) => themeProv.toggleTheme()),
-                      ]),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ── Notifications ──
-                    _sectionTitle('Notifications', sub),
-                    const SizedBox(height: 10),
-                    _card(surface, isDark, [
-                      _toggleTile(Icons.notifications_active_outlined,
-                          'Push Notifications', text, sub,
-                          _pushNotifications, (v) => setState(() => _pushNotifications = v)),
-                      _divider(isDark),
-                      _toggleTile(Icons.email_outlined,
-                          'Email Alerts', text, sub,
-                          _emailAlerts, (v) => setState(() => _emailAlerts = v)),
-                    ]),
-
-                    const SizedBox(height: 24),
-
-                    // ── About ──
-                    _sectionTitle('About', sub),
-                    const SizedBox(height: 10),
-                    _card(surface, isDark, [
-                      _navTile(Icons.info_outline_rounded, 'About DhanWiser',
-                          'Version 1.0.0', text, sub, () {}),
-                      _divider(isDark),
-                      _navTile(Icons.description_outlined, 'Terms of Service',
-                          null, text, sub, () {}),
-                      _divider(isDark),
-                      _navTile(Icons.shield_outlined, 'Privacy Policy',
-                          null, text, sub, () {}),
-                    ]),
-
-                    const SizedBox(height: 28),
-
-                    // ── Sign out ──
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () async {
-                          final auth = Provider.of<AuthProvider>(context, listen: false);
-                          await auth.logout();
-                          if (context.mounted) {
-                            Navigator.pushNamedAndRemoveUntil(
-                                context, '/login', (route) => false);
-                          }
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: DhanWiserColors.coral.withValues(alpha: 0.3),
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          'Sign Out',
-                          style: GoogleFonts.inter(
-                            color: DhanWiserColors.coral,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+            child: Column(
+              children: [
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProv, _) {
+                    return SwitchListTile(
+                      title: Text(
+                        'Dark Mode',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 40),
-                  ],
+                      subtitle: Text(
+                        isDark ? 'Using dark theme' : 'Using light theme',
+                        style: GoogleFonts.inter(
+                          color: cs.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
+                      secondary: Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: cs.primary,
+                      ),
+                      value: themeProv.themeMode == ThemeMode.dark,
+                      onChanged: (_) => themeProv.toggleTheme(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Account Section ──
+          _buildSectionHeader('Account', cs),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.person_outline_rounded, color: cs.primary),
+                  title: Text('Profile', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  onTap: () => Navigator.pushNamed(context, '/profile'),
+                ),
+                Divider(height: 1, indent: 56, endIndent: 16, color: cs.outlineVariant),
+                ListTile(
+                  leading: Icon(Icons.notifications_outlined, color: cs.primary),
+                  title: Text('Notifications', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  onTap: () => Navigator.pushNamed(context, '/activity'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── More Section ──
+          _buildSectionHeader('More', cs),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.handshake_outlined, color: cs.primary),
+                  title: Text('Settlements', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  onTap: () => Navigator.pushNamed(context, '/settlement'),
+                ),
+                Divider(height: 1, indent: 56, endIndent: 16, color: cs.outlineVariant),
+                ListTile(
+                  leading: Icon(Icons.info_outline_rounded, color: cs.primary),
+                  title: Text('About DhanWiser', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  subtitle: Text(
+                    'Version 1.0.0',
+                    style: GoogleFonts.inter(fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
+                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  onTap: () {
+                    showAboutDialog(
+                      context: context,
+                      applicationName: 'DhanWiser',
+                      applicationVersion: '1.0.0',
+                      applicationLegalese: '© 2026 DhanWiser',
+                      applicationIcon: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.account_balance_wallet_rounded,
+                          color: cs.onPrimaryContainer,
+                          size: 24,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Danger Zone ──
+          _buildSectionHeader('Danger Zone', cs),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ListTile(
+              leading: Icon(Icons.logout_rounded, color: cs.error),
+              title: Text(
+                'Sign Out',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w500,
+                  color: cs.error,
                 ),
               ),
+              onTap: () => _showLogoutDialog(context, cs, isDark),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }
 
-  Widget _sectionTitle(String title, Color color) {
+  Widget _buildSectionHeader(String title, ColorScheme cs) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsets.only(left: 4, top: 8),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: GoogleFonts.inter(
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: color,
-          letterSpacing: 0.8,
+          color: cs.primary,
+          letterSpacing: 0.2,
         ),
       ),
     );
   }
 
-  Widget _card(Color surface, bool isDark, List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _divider(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 56),
-      child: Divider(
-        height: 1,
-        color: isDark
-            ? DhanWiserColors.gray700.withValues(alpha: 0.5)
-            : DhanWiserColors.gray200,
-      ),
-    );
-  }
-
-  Widget _navTile(IconData icon, String title, String? subtitle,
-      Color text, Color sub, VoidCallback? onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: DhanWiserColors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: DhanWiserColors.primary, size: 18),
+  void _showLogoutDialog(BuildContext context, ColorScheme cs, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          icon: Icon(Icons.logout_rounded, color: cs.error, size: 32),
+          title: const Text('Sign Out'),
+          content: const Text('Are you sure you want to sign out of DhanWiser?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: GoogleFonts.inter(
-                    fontSize: 15, fontWeight: FontWeight.w500, color: text)),
-                  if (subtitle != null)
-                    Text(subtitle, style: GoogleFonts.inter(
-                      fontSize: 12, color: sub)),
-                ],
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _performLogout(context);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.error,
+                foregroundColor: cs.onError,
               ),
+              child: const Text('Sign Out'),
             ),
-            Icon(Icons.chevron_right_rounded, color: sub, size: 18),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _toggleTile(IconData icon, String title, Color text, Color sub,
-      bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: DhanWiserColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: DhanWiserColors.primary, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(title, style: GoogleFonts.inter(
-              fontSize: 15, fontWeight: FontWeight.w500, color: text)),
-          ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: DhanWiserColors.primary,
-          ),
-        ],
-      ),
-    );
+  void _performLogout(BuildContext context) {
+    Provider.of<AuthProvider>(context, listen: false).logout();
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
 }

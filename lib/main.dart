@@ -1,8 +1,8 @@
-﻿import "package:flutter/material.dart";
+import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import "package:google_fonts/google_fonts.dart";
 import "package:shared_preferences/shared_preferences.dart";
-import "package:dhanwiser_fixed/theme/colors.dart";
+import "package:dhanwiser_fixed/theme/app_theme.dart";
 
 // Providers
 import "package:dhanwiser_fixed/providers/auth_provider.dart";
@@ -42,107 +42,111 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProv, _) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'DhanWiser',
-        theme: ThemeData(
-          primaryColor: DhanWiserColors.primary,
-          scaffoldBackgroundColor: DhanWiserColors.backgroundLight,
-          colorScheme: ColorScheme.light(
-            primary: DhanWiserColors.primary,
-            secondary: DhanWiserColors.teal,
-            surface: DhanWiserColors.surfaceLight,
-          ),
-          appBarTheme: AppBarTheme(
-            backgroundColor: DhanWiserColors.backgroundLight,
-            elevation: 0,
-            iconTheme: IconThemeData(color: DhanWiserColors.textPrimaryLight),
-            titleTextStyle: GoogleFonts.inter(
-              color: DhanWiserColors.textPrimaryLight,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textTheme: GoogleFonts.interTextTheme(),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          brightness: Brightness.dark,
-          primaryColor: DhanWiserColors.primary,
-          scaffoldBackgroundColor: DhanWiserColors.backgroundDark,
-          colorScheme: ColorScheme.dark(
-            primary: DhanWiserColors.primary,
-            secondary: DhanWiserColors.teal,
-            surface: DhanWiserColors.surfaceDark,
-          ),
-          appBarTheme: AppBarTheme(
-            backgroundColor: DhanWiserColors.backgroundDark,
-            elevation: 0,
-            iconTheme: IconThemeData(color: DhanWiserColors.textPrimaryDark),
-            titleTextStyle: GoogleFonts.inter(
-              color: DhanWiserColors.textPrimaryDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
-          useMaterial3: true,
-        ),
-        themeMode: themeProv.themeMode,
-        home: const AppStartup(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignupScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/create-server': (context) => const CreateServerScreen(),
-          '/profile': (context) => const ProfileScreen(),
-          '/friend-discovery': (context) => const FriendDiscoveryScreen(),
-          '/activity': (context) => const ActivityScreen(),
-          '/settlement': (context) => const SettlementScreen(),
-          '/settings': (context) => const SettingsScreen(),
-        },
-        onGenerateRoute: (settings) {
-          if (settings.name == '/server-detail') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            return MaterialPageRoute(
-              builder: (context) => ServerDetailScreen(
+          debugShowCheckedModeBanner: false,
+          title: 'DhanWiser',
+
+          // ── Material Design 3 Themes ──
+          theme: DhanWiserTheme.lightTheme,
+          darkTheme: DhanWiserTheme.darkTheme,
+          themeMode: themeProv.themeMode,
+
+          builder: (context, child) {
+            return ScrollConfiguration(
+              behavior: const MaterialScrollBehavior().copyWith(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+              ),
+              child: child!,
+            );
+          },
+
+          home: const AppStartup(),
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/signup': (context) => const SignupScreen(),
+            '/home': (context) => const HomeScreen(),
+            '/create-server': (context) => const CreateServerScreen(),
+            '/profile': (context) => const ProfileScreen(),
+            '/friend-discovery': (context) => const FriendDiscoveryScreen(),
+            '/activity': (context) => const ActivityScreen(),
+            '/settlement': (context) => const SettlementScreen(),
+            '/settings': (context) => const SettingsScreen(),
+          },
+          onGenerateRoute: (settings) {
+            // M3 shared axis transition
+            Widget? page;
+
+            if (settings.name == '/server-detail') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = ServerDetailScreen(
                 serverId: args?['serverId'] ?? 0,
                 serverName: args?['serverName'] ?? 'Server',
                 members: args?['members'] ?? '0 members',
                 imageUrl: args?['imageUrl'] ?? '',
-              ),
-            );
-          }
-          if (settings.name == '/add-expense') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            return MaterialPageRoute(
-              builder: (context) => AddExpenseScreen(
+              );
+            }
+            if (settings.name == '/add-expense') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = AddExpenseScreen(
                 serverId: args?['serverId'],
-              ),
-            );
-          }
-          if (settings.name == '/expense-detail') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            return MaterialPageRoute(
-              builder: (context) => ExpenseDetailScreen(
+              );
+            }
+            if (settings.name == '/expense-detail') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = ExpenseDetailScreen(
                 title: args?['title'] ?? 'Expense',
                 amount: args?['amount'] ?? '₹0',
                 date: args?['date'] ?? '',
                 paidBy: args?['paidBy'] ?? 'Unknown',
-              ),
-            );
-          }
-          if (settings.name == '/settlement-request') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            return MaterialPageRoute(
-              builder: (context) => SettlementRequestScreen(
+                participants: args?['participants'] != null
+                    ? List<Map<String, dynamic>>.from(args!['participants'])
+                    : null,
+              );
+            }
+            if (settings.name == '/settlement-request') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = SettlementRequestScreen(
                 settlementId: args?['settlementId'] ?? 0,
-              ),
-            );
-          }
-          return null;
-        },
+              );
+            }
+
+            if (page != null) {
+              return _buildM3PageRoute(page, settings);
+            }
+            return null;
+          },
+        ),
       ),
-      ),
+    );
+  }
+
+  /// Material 3 inspired page route with predictive back & fade-through transition
+  PageRoute _buildM3PageRoute(Widget page, RouteSettings settings) {
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        // M3 fade-through transition
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 0.04),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          ),
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 350),
+      reverseTransitionDuration: const Duration(milliseconds: 300),
     );
   }
 }
@@ -155,11 +159,28 @@ class AppStartup extends StatefulWidget {
   State<AppStartup> createState() => _AppStartupState();
 }
 
-class _AppStartupState extends State<AppStartup> {
+class _AppStartupState extends State<AppStartup>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -196,25 +217,35 @@ class _AppStartupState extends State<AppStartup> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFF121121),
+      backgroundColor: cs.surface,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5048E5), Color(0xFF7C3AED)],
+            // M3 branded icon with surface tint
+            ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet,
-                color: Colors.white,
-                size: 40,
+                child: Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: cs.onPrimaryContainer,
+                  size: 40,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -223,12 +254,17 @@ class _AppStartupState extends State<AppStartup> {
               style: GoogleFonts.inter(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: cs.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
-            const CircularProgressIndicator(
-              color: Color(0xFF5048E5),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                color: cs.primary,
+                strokeWidth: 3,
+              ),
             ),
           ],
         ),

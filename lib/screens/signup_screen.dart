@@ -49,57 +49,114 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  InputDecoration _inputDeco({
+    required String hint,
+    Widget? prefix,
+    Widget? suffix,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: GoogleFonts.dmSans(
+        color: DhanWiserColors.textMuted,
+        fontSize: 16,
+      ),
+      prefixIcon: prefix,
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: DhanWiserColors.surfaceContainerDark,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: DhanWiserColors.outlineDark),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: DhanWiserColors.outlineDark),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide:
+            const BorderSide(color: DhanWiserColors.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: DhanWiserColors.negative),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide:
+            const BorderSide(color: DhanWiserColors.negative, width: 2),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: DhanWiserColors.backgroundDark,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
-                // ── Back button ──
-                GestureDetector(
-                  onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                // ── D Logo (centered) ──
+                Center(
                   child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: DhanWiserColors.inputDark,
-                      borderRadius: BorderRadius.circular(12),
+                    width: 56,
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      color: DhanWiserColors.primary,
+                      shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 20),
+                    child: Center(
+                      child: Text(
+                        'D',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: DhanWiserColors.backgroundDark,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 28),
-
-                // ── Title ──
-                Text(
-                  'Create\naccount',
-                  style: GoogleFonts.inter(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    height: 1.15,
-                    letterSpacing: -1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Join and start splitting expenses with friends',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: DhanWiserColors.textSecondaryDark,
-                    fontWeight: FontWeight.w400,
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    'DhanWiser',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: DhanWiserColors.textPrimaryDark,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // ── Title ──
+                Text(
+                  'Create account.',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: DhanWiserColors.textPrimaryDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Join your friends on DhanWiser',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 15,
+                    color: DhanWiserColors.textSecondaryDark,
+                  ),
+                ),
+                const SizedBox(height: 28),
 
                 // ── Error ──
                 Consumer<AuthProvider>(
@@ -110,22 +167,19 @@ class _SignupScreenState extends State<SignupScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.coral.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: DhanWiserColors.coral.withValues(alpha: 0.2),
-                        ),
+                        color: DhanWiserColors.negativeSoft,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline_rounded,
-                              color: DhanWiserColors.coral, size: 18),
+                          const Icon(Icons.info_outline_rounded,
+                              color: DhanWiserColors.negative, size: 18),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               auth.error!,
-                              style: GoogleFonts.inter(
-                                color: DhanWiserColors.coral,
+                              style: GoogleFonts.dmSans(
+                                color: DhanWiserColors.negative,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -138,20 +192,38 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
 
                 // ── Full Name ──
-                _buildInputField(
+                _buildLabel('FULL NAME'),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _fullNameController,
-                  hint: 'Full name',
-                  icon: Icons.person_outline_rounded,
+                  style: GoogleFonts.dmSans(
+                      color: DhanWiserColors.textPrimaryDark, fontSize: 16),
+                  decoration: _inputDeco(hint: 'e.g. Smit Nayi'),
                   validator: (v) =>
                       v == null || v.isEmpty ? 'Full name is required' : null,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 // ── Username ──
-                _buildInputField(
+                _buildLabel('USERNAME'),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _usernameController,
-                  hint: 'Username',
-                  icon: Icons.alternate_email_rounded,
+                  style: GoogleFonts.dmSans(
+                      color: DhanWiserColors.textPrimaryDark, fontSize: 16),
+                  decoration: _inputDeco(
+                    hint: '@smitnayi',
+                    prefix: Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 0),
+                      child: Text(
+                        '@',
+                        style: GoogleFonts.dmSans(
+                          color: DhanWiserColors.textMuted,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Username is required';
                     if (v.length < 3) return 'At least 3 characters';
@@ -161,38 +233,54 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 4),
+                Text(
+                  'Others find you by this',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    color: DhanWiserColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 16),
 
                 // ── Email ──
-                _buildInputField(
+                _buildLabel('EMAIL'),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _emailController,
-                  hint: 'Email address',
-                  icon: Icons.mail_outline_rounded,
                   keyboardType: TextInputType.emailAddress,
+                  style: GoogleFonts.dmSans(
+                      color: DhanWiserColors.textPrimaryDark, fontSize: 16),
+                  decoration: _inputDeco(hint: 'smit@example.com'),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Email is required';
                     if (!v.contains('@')) return 'Enter a valid email';
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 // ── Password ──
-                _buildInputField(
+                _buildLabel('PASSWORD'),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _passwordController,
-                  hint: 'Password (min. 6 characters)',
-                  icon: Icons.lock_outline_rounded,
                   obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: DhanWiserColors.gray400,
-                      size: 20,
+                  style: GoogleFonts.dmSans(
+                      color: DhanWiserColors.textPrimaryDark, fontSize: 16),
+                  decoration: _inputDeco(
+                    hint: '••••••••',
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: DhanWiserColors.textMuted,
+                        size: 22,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Password is required';
@@ -200,48 +288,65 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
-                // ── UPI (optional) ──
-                _buildInputField(
+                // ── UPI ID (optional) — highlighted in amber ──
+                Text(
+                  'UPI ID (OPTIONAL)',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: DhanWiserColors.primary,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _upiController,
-                  hint: 'UPI ID (optional)',
-                  icon: Icons.account_balance_outlined,
+                  style: GoogleFonts.dmSans(
+                      color: DhanWiserColors.textPrimaryDark, fontSize: 16),
+                  decoration: _inputDeco(hint: 'name@okbank'),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Add later in settings. We encrypt and never expose this.',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12,
+                    color: DhanWiserColors.textMuted,
+                  ),
                 ),
                 const SizedBox(height: 28),
 
-                // ── Create button ──
+                // ── Continue Button ──
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
                     return SizedBox(
                       width: double.infinity,
                       height: 56,
-                      child: ElevatedButton(
+                      child: FilledButton(
                         onPressed: auth.isLoading ? null : _signup,
-                        style: ElevatedButton.styleFrom(
+                        style: FilledButton.styleFrom(
                           backgroundColor: DhanWiserColors.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: DhanWiserColors.backgroundDark,
                           disabledBackgroundColor:
                               DhanWiserColors.primary.withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
+                              borderRadius: BorderRadius.circular(14)),
                         ),
                         child: auth.isLoading
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: DhanWiserColors.backgroundDark,
                                   strokeWidth: 2.5,
                                 ),
                               )
                             : Text(
-                                'Create Account',
-                                style: GoogleFonts.inter(
+                                'Continue',
+                                style: GoogleFonts.plusJakartaSans(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                       ),
@@ -251,29 +356,30 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 24),
 
                 // ── Login link ──
-                Center(
-                  child: GestureDetector(
-                    onTap: () =>
-                        Navigator.pushReplacementNamed(context, '/login'),
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Already have an account? ',
-                        style: GoogleFonts.inter(
-                          color: DhanWiserColors.textSecondaryDark,
-                          fontSize: 14,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: 'Sign In',
-                            style: GoogleFonts.inter(
-                              color: DhanWiserColors.primaryLight,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Already have an account?',
+                      style: GoogleFonts.dmSans(
+                        color: DhanWiserColors.textSecondaryDark,
+                        fontSize: 14,
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: DhanWiserColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 32),
               ],
@@ -284,66 +390,14 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildInputField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      style: GoogleFonts.inter(
-        color: Colors.white,
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
-      ),
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.inter(
-          color: DhanWiserColors.gray500,
-          fontSize: 15,
-        ),
-        prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 12),
-          child: Icon(icon, color: DhanWiserColors.gray400, size: 20),
-        ),
-        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: DhanWiserColors.inputDark,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: DhanWiserColors.primary.withValues(alpha: 0.5),
-            width: 1.5,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: DhanWiserColors.coral.withValues(alpha: 0.5),
-            width: 1,
-          ),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: DhanWiserColors.coral.withValues(alpha: 0.7),
-            width: 1.5,
-          ),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+  Widget _buildLabel(String label) {
+    return Text(
+      label,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: DhanWiserColors.textSecondaryDark,
+        letterSpacing: 1,
       ),
     );
   }

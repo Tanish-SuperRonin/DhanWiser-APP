@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
+import '../widgets/bouncing_button.dart';
+import '../widgets/shimmer_loading.dart';
 import '../utils/json_parsers.dart';
 import '../providers/server_provider.dart';
 import '../providers/auth_provider.dart';
@@ -12,6 +15,7 @@ import '../services/expense_service.dart';
 import '../services/settlement_service.dart';
 import '../models/expense_model.dart';
 import '../models/balance_model.dart';
+import '../widgets/swipeable_expense_row.dart';
 
 class ServerDetailScreen extends StatefulWidget {
   final int serverId;
@@ -40,13 +44,56 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
   bool _loadingExpenses = true;
   bool _loadingBalances = true;
 
+  // Pagination state for expenses
+  int _expensePage = 1;
+  bool _hasMoreExpenses = false;
+  bool _loadingMoreExpenses = false;
+  static const int _expensePageSize = 20;
+
+  // Scroll controller for infinite scroll
+  final ScrollController _expenseScrollController = ScrollController();
+
+  // Lazy tab loading: track which tabs have been loaded
+  final Set<int> _loadedTabs = {0}; // Tab 0 (expenses) loads by default
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _expenseScrollController.addListener(_onExpenseScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _expenseScrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  /// Lazy tab loading: only fetch data for a tab when user first visits it.
+  void _onTabChanged() {
+    final index = _tabController.index;
+    if (!_loadedTabs.contains(index)) {
+      _loadedTabs.add(index);
+      if (index == 1) {
+        // Balances tab
+        _loadBalances();
+      }
+      // Tab 2 (Members) data comes from server details which is already loaded
+    }
+  }
+
+  /// Infinite scroll: load more expenses when near the bottom.
+  void _onExpenseScroll() {
+    if (_expenseScrollController.position.pixels >=
+        _expenseScrollController.position.maxScrollExtent - 200) {
+      _loadMoreExpenses();
+    }
   }
 
   Future<void> _loadData() async {
@@ -63,13 +110,36 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     final serverProvider = Provider.of<ServerProvider>(context, listen: false);
     await serverProvider.fetchServerDetails(widget.serverId);
 
+    // Load first page of expenses
+    _expensePage = 1;
     try {
-      _expenses = await ExpenseService.getServerExpenses(widget.serverId);
+      final result = await ExpenseService.getServerExpenses(
+        widget.serverId,
+        page: 1,
+        limit: _expensePageSize,
+      );
+      _expenses = result.items;
+      _hasMoreExpenses = result.hasMore;
+      _expensePage = 1;
     } catch (_) {
       _expenses = [];
+      _hasMoreExpenses = false;
     }
     _loadingExpenses = false;
 
+    // Load balances only if that tab has been visited, otherwise defer
+    if (_loadedTabs.contains(1)) {
+      await _loadBalances();
+    } else {
+      _loadingBalances = false;
+    }
+
+    if (mounted) setState(() {});
+  }
+
+  /// Load balances (called lazily when balance tab is first visited).
+  Future<void> _loadBalances() async {
+    if (mounted) setState(() => _loadingBalances = true);
     try {
       final balanceData = await ExpenseService.getServerBalances(widget.serverId);
       _balances = balanceData['balances'] as List<BalanceModel>;
@@ -79,7 +149,29 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       _suggestions = [];
     }
     _loadingBalances = false;
+    if (mounted) setState(() {});
+  }
 
+  /// Load the next page of expenses (infinite scroll).
+  Future<void> _loadMoreExpenses() async {
+    if (_loadingMoreExpenses || !_hasMoreExpenses) return;
+    _loadingMoreExpenses = true;
+    if (mounted) setState(() {});
+
+    try {
+      final result = await ExpenseService.getServerExpenses(
+        widget.serverId,
+        page: _expensePage + 1,
+        limit: _expensePageSize,
+      );
+      _expenses.addAll(result.items);
+      _expensePage++;
+      _hasMoreExpenses = result.hasMore;
+    } catch (_) {
+      // Keep existing data, just stop loading more
+      _hasMoreExpenses = false;
+    }
+    _loadingMoreExpenses = false;
     if (mounted) setState(() {});
   }
 
@@ -99,13 +191,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       return;
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark
-        ? DhanWiserColors.textPrimaryDark
-        : DhanWiserColors.textPrimaryLight;
-    final sub = isDark
-        ? DhanWiserColors.textSecondaryDark
-        : DhanWiserColors.textSecondaryLight;
+    final cs = Theme.of(context).colorScheme;
 
     bool reminderEnabled = settings['reminderEnabled'] ?? true;
     double intervalDays =
@@ -116,151 +202,75 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             return Padding(
               padding: EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
+                20, 8, 20,
                 MediaQuery.of(ctx).viewInsets.bottom + 28,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? DhanWiserColors.gray600
-                            : DhanWiserColors.gray300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 8),
                   Text(
                     'Payment Reminders',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: text,
+                      color: cs.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Automatic in-app reminders are on by default every 7 days. You can change that here.',
-                    style: GoogleFonts.inter(fontSize: 14, color: sub, height: 1.45),
+                    'Automatic in-app reminders are on by default every 7 days.',
+                    style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant, height: 1.45),
                   ),
                   const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Enable automatic reminders',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: text,
-                          ),
-                        ),
-                      ),
-                      Switch.adaptive(
-                        value: reminderEnabled,
-                        onChanged: isSaving
-                            ? null
-                            : (value) =>
-                                setSheetState(() => reminderEnabled = value),
-                        activeTrackColor: DhanWiserColors.primary,
-                      ),
-                    ],
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('Enable automatic reminders',
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                    value: reminderEnabled,
+                    onChanged: isSaving ? null : (v) => setSheetState(() => reminderEnabled = v),
                   ),
                   if (reminderEnabled) ...[
                     const SizedBox(height: 12),
                     Text(
                       'Reminder interval: ${intervalDays.round()} day${intervalDays.round() == 1 ? '' : 's'}',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: text,
-                      ),
+                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
                     ),
                     Slider(
-                      value: intervalDays,
-                      min: 1,
-                      max: 30,
-                      divisions: 29,
+                      value: intervalDays, min: 1, max: 30, divisions: 29,
                       label: '${intervalDays.round()} days',
-                      activeColor: DhanWiserColors.primary,
-                      onChanged: isSaving
-                          ? null
-                          : (value) => setSheetState(() => intervalDays = value),
+                      onChanged: isSaving ? null : (v) => setSheetState(() => intervalDays = v),
                     ),
                   ],
                   const SizedBox(height: 12),
                   SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              setSheetState(() => isSaving = true);
-                              final success =
-                                  await serverProv.updateReminderSettings(
-                                serverId: widget.serverId,
-                                reminderEnabled: reminderEnabled,
-                                reminderIntervalDays: intervalDays.round(),
-                              );
-                              if (!mounted) return;
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    success
-                                        ? 'Reminder settings updated'
-                                        : (serverProv.error ??
-                                            'Failed to update reminder settings'),
-                                  ),
-                                  backgroundColor: success
-                                      ? DhanWiserColors.mint
-                                      : DhanWiserColors.coral,
-                                ),
-                              );
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: DhanWiserColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
+                    width: double.infinity, height: 48,
+                    child: FilledButton(
+                      onPressed: isSaving ? null : () async {
+                        setSheetState(() => isSaving = true);
+                        final navigator = Navigator.of(ctx);
+                        final messenger = ScaffoldMessenger.of(context);
+                        final success = await serverProv.updateReminderSettings(
+                          serverId: widget.serverId,
+                          reminderEnabled: reminderEnabled,
+                          reminderIntervalDays: intervalDays.round(),
+                        );
+                        if (!mounted) return;
+                        navigator.pop();
+                        messenger.showSnackBar(SnackBar(
+                          content: Text(success ? 'Reminder settings updated' : (serverProv.error ?? 'Failed')),
+                          backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
+                        ));
+                      },
                       child: isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              'Save Reminder Settings',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('Save Reminder Settings', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
                     ),
                   ),
                 ],
@@ -277,14 +287,6 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     required String groupName,
   }) async {
     final serverProv = Provider.of<ServerProvider>(context, listen: false);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark
-        ? DhanWiserColors.textPrimaryDark
-        : DhanWiserColors.textPrimaryLight;
-    final sub = isDark
-        ? DhanWiserColors.textSecondaryDark
-        : DhanWiserColors.textSecondaryLight;
-
     bool isSubmitting = false;
 
     showDialog(
@@ -293,93 +295,37 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return AlertDialog(
-              backgroundColor:
-                  isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: Text(
-                canDelete ? 'Delete Group' : 'Leave Group',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                  color: text,
-                  fontSize: 18,
-                ),
-              ),
-              content: Text(
-                canDelete
-                    ? 'Delete "$groupName"? This removes the group for everyone and cannot be undone.'
-                    : 'Leave "$groupName"? You can join again only if someone invites you back.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: sub,
-                  height: 1.45,
-                ),
-              ),
+              icon: Icon(canDelete ? Icons.delete_outline_rounded : Icons.exit_to_app_rounded, color: DhanWiserColors.coral, size: 32),
+              title: Text(canDelete ? 'Delete Group' : 'Leave Group'),
+              content: Text(canDelete
+                  ? 'Delete "$groupName"? This removes the group for everyone and cannot be undone.'
+                  : 'Leave "$groupName"? You can join again only if someone invites you back.'),
               actions: [
                 TextButton(
                   onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                  child: Text(
-                    'Cancel',
-                    style: GoogleFonts.inter(
-                      color: sub,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: const Text('Cancel'),
                 ),
-                ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          setDialogState(() => isSubmitting = true);
-                          final success = canDelete
-                              ? await serverProv.deleteServer(widget.serverId)
-                              : await serverProv.leaveServer(widget.serverId);
-                          if (!mounted) return;
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                success
-                                    ? canDelete
-                                        ? 'Group deleted'
-                                        : 'You left the group'
-                                    : (serverProv.error ??
-                                        'Unable to update group'),
-                              ),
-                              backgroundColor: success
-                                  ? DhanWiserColors.mint
-                                  : DhanWiserColors.coral,
-                            ),
-                          );
-                          if (success && mounted) {
-                            Navigator.pop(context, true);
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DhanWiserColors.coral,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+                FilledButton(
+                  onPressed: isSubmitting ? null : () async {
+                    setDialogState(() => isSubmitting = true);
+                    final dialogNavigator = Navigator.of(ctx);
+                    final messenger = ScaffoldMessenger.of(context);
+                    final pageNavigator = Navigator.of(context);
+                    final success = canDelete
+                        ? await serverProv.deleteServer(widget.serverId)
+                        : await serverProv.leaveServer(widget.serverId);
+                    if (!mounted) return;
+                    dialogNavigator.pop();
+                    messenger.showSnackBar(SnackBar(
+                      content: Text(success ? (canDelete ? 'Group deleted' : 'You left the group') : (serverProv.error ?? 'Unable to update group')),
+                      backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
+                    ));
+                    if (success && mounted) pageNavigator.pop(true);
+                  },
+                  style: FilledButton.styleFrom(backgroundColor: DhanWiserColors.coral, foregroundColor: Colors.white),
                   child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          canDelete ? 'Delete' : 'Leave',
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(canDelete ? 'Delete' : 'Leave'),
                 ),
               ],
             );
@@ -645,6 +591,10 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                         final notes = notesController.text.trim();
                         if (notes.isNotEmpty) proof += '\n$notes';
 
+                        // Capture navigator/messenger before async gap
+                        final sheetNavigator = Navigator.of(ctx);
+                        final messenger = ScaffoldMessenger.of(context);
+
                         try {
                           final toUserId = suggestion.to['userId'] ?? suggestion.to['id'];
                           await SettlementService.initiateSettlement(
@@ -655,8 +605,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                             proofImage: proofImage,
                           );
                           if (mounted) {
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            sheetNavigator.pop();
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text('Settlement sent! Waiting for ${suggestion.toUsername} to approve.'),
                                 backgroundColor: DhanWiserColors.mint,
@@ -667,7 +617,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                         } catch (e) {
                           setSheetState(() => isSending = false);
                           if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: Text('Failed: $e'),
                                 backgroundColor: DhanWiserColors.coral,
@@ -701,19 +651,15 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     );
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final surface = isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final bg = cs.surface;
+    final surface = isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest;
+    final text = cs.onSurface;
+    final sub = cs.onSurfaceVariant;
 
     // Deterministic gradient from server name
     final grads = [
@@ -885,20 +831,23 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Server icon
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                                    style: GoogleFonts.inter(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w800,
+                              Hero(
+                                tag: 'server_avatar_${widget.serverId}',
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -939,9 +888,9 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: DhanWiserColors.primary,
+                    labelColor: cs.primary,
                     unselectedLabelColor: sub,
-                    indicatorColor: DhanWiserColors.primary,
+                    indicatorColor: cs.primary,
                     indicatorWeight: 3,
                     indicatorSize: TabBarIndicatorSize.label,
                     dividerColor: Colors.transparent,
@@ -972,8 +921,16 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   // ── EXPENSES TAB ──
   Widget _buildExpensesTab(bool isDark, Color surface, Color text, Color sub) {
-    if (_loadingExpenses) {
-      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+    final cs = Theme.of(context).colorScheme;
+    if (_loadingExpenses && _expensePage == 1) {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        itemCount: 6,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, __) => ShimmerLoading(
+          child: Container(height: 72, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18))),
+        ),
+      );
     }
 
     if (_expenses.isEmpty) {
@@ -987,78 +944,151 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     final categoryIcons = [Icons.restaurant_rounded, Icons.directions_car_rounded, Icons.home_rounded, Icons.movie_rounded, Icons.shopping_cart_rounded, Icons.lightbulb_rounded, Icons.sports_esports_rounded, Icons.coffee_rounded];
 
     return ListView.builder(
+      controller: _expenseScrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      itemCount: _expenses.length,
+      itemCount: _expenses.length + (_hasMoreExpenses || _loadingMoreExpenses ? 1 : 0),
       itemBuilder: (context, index) {
+        // "Load more" indicator at the bottom
+        if (index >= _expenses.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: cs.primary,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            ),
+          );
+        }
         final e = _expenses[index];
         final catIcon = categoryIcons[e.title.hashCode.abs() % categoryIcons.length];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SwipeableExpenseRow(
+            title: e.title,
+            onEdit: () {
+              Navigator.pushNamed(context, '/add-expense', arguments: {
+                'serverId': widget.serverId,
+              }).then((_) => _loadData());
+            },
+            onDelete: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ExpenseService.deleteExpense(e.id);
+                await _loadData();
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Deleted "${e.title}"'),
+                      backgroundColor: DhanWiserColors.positive,
+                    ),
+                  );
+                }
+              } catch (err) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete: $err'),
+                      backgroundColor: DhanWiserColors.negative,
+                    ),
+                  );
+                }
+              }
+            },
+            child: BouncingButton(
+              onTap: () {
+                Navigator.pushNamed(context, '/expense-detail', arguments: {
+                  'title': e.title,
+                  'amount': '₹${e.totalAmount.toStringAsFixed(2)}',
+                  'date': '${e.expenseDate.day}/${e.expenseDate.month}/${e.expenseDate.year}',
+                  'paidBy': e.createdByUsername,
+                  'participants': e.participants.map((p) {
+                    return {
+                      'name': p.fullName ?? p.username,
+                      'amountPaid': p.amountPaid,
+                      'amountOwed': p.amountOwed,
+                    };
+                  }).toList(),
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
-                  borderRadius: BorderRadius.circular(13),
+                  color: surface,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(catIcon, color: DhanWiserColors.primary, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(catIcon, color: cs.primary, size: 20),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e.title,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: text,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Paid by ${e.createdByUsername}',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              color: sub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Text(
-                      e.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                      '₹${e.totalAmount.toStringAsFixed(0)}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
                         color: text,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Paid by ${e.createdByUsername}',
-                      style: GoogleFonts.inter(fontSize: 12, color: sub),
                     ),
                   ],
                 ),
               ),
-              Text(
-                '₹${e.totalAmount.toStringAsFixed(0)}',
-                style: GoogleFonts.inter(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: text,
-                ),
-              ),
-            ],
+            ),
           ),
-        );
+        ).animate().fade(duration: 200.ms, delay: ((index % 10) * 30).ms)
+         .slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 200.ms);
       },
     );
   }
 
   // ── BALANCES TAB ──
   Widget _buildBalancesTab(bool isDark, Color surface, Color text, Color sub) {
+    final cs = Theme.of(context).colorScheme;
     if (_loadingBalances) {
-      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+      return Center(child: CircularProgressIndicator(color: cs.primary));
     }
 
     final authProv = Provider.of<AuthProvider>(context, listen: false);
@@ -1082,6 +1112,100 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── How Balances Work — Explainer ──
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.35),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: cs.primary.withValues(alpha: 0.15),
+              ),
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                leading: Icon(Icons.info_outline_rounded, color: cs.primary, size: 20),
+                title: Text(
+                  'How balances work',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.primary,
+                  ),
+                ),
+                children: [
+                  _buildExplainerRow(
+                    Icons.person_rounded,
+                    'Payer',
+                    'The person who paid for an expense upfront.',
+                    DhanWiserColors.teal,
+                    cs,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildExplainerRow(
+                    Icons.people_rounded,
+                    'Debtors',
+                    'Everyone who shares the expense owes their portion to the payer.',
+                    DhanWiserColors.coral,
+                    cs,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: cs.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Calculation',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Balance = Total Paid − Total Owed',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text.rich(
+                          TextSpan(
+                            style: GoogleFonts.inter(fontSize: 12, color: cs.onSurfaceVariant, height: 1.5),
+                            children: [
+                              TextSpan(
+                                text: '▲ Positive',
+                                style: TextStyle(color: DhanWiserColors.teal, fontWeight: FontWeight.w600),
+                              ),
+                              const TextSpan(text: ' → Others owe you (you get back)\n'),
+                              TextSpan(
+                                text: '▼ Negative',
+                                style: TextStyle(color: DhanWiserColors.coral, fontWeight: FontWeight.w600),
+                              ),
+                              const TextSpan(text: ' → You owe others (you need to pay)'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           // Balance cards
           ..._balances.map((b) {
             final isPositive = b.balance >= 0;
@@ -1269,10 +1393,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   // ── MEMBERS TAB ──
   Widget _buildMembersTab(bool isDark, Color surface, Color text, Color sub) {
+    final cs = Theme.of(context).colorScheme;
     return Consumer2<ServerProvider, AuthProvider>(
       builder: (context, serverProv, authProv, _) {
         if (serverProv.isLoading) {
-          return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+          return Center(child: CircularProgressIndicator(color: cs.primary));
         }
 
         final members = serverProv.currentServerDetail?.members ?? [];
@@ -1420,7 +1545,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     required String title,
     required String subtitle,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1429,30 +1554,64 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+              color: cs.primaryContainer.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icon, size: 30, color: DhanWiserColors.primary.withValues(alpha: 0.6)),
+            child: Icon(icon, size: 30, color: cs.primary),
           ),
           const SizedBox(height: 16),
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight,
-            ),
-          ),
+          Text(title, style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface)),
           const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight,
-            ),
-          ),
+          Text(subtitle, style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant)),
         ],
       ),
+    );
+  }
+
+  Widget _buildExplainerRow(
+    IconData icon,
+    String label,
+    String description,
+    Color color,
+    ColorScheme cs,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+              Text(
+                description,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: cs.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

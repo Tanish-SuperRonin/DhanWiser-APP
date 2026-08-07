@@ -26,5 +26,6 @@ router.post('/', addExpenseValidation, validate, expenseController.addExpense);
 router.get('/channel/:channelId', expenseController.getChannelExpenses);
 router.get('/server/:serverId', expenseController.getServerExpenses);
 router.get('/server/:serverId/balances', expenseController.getServerBalances);
+router.delete('/:expenseId', expenseController.deleteExpense);
 
 export default router;

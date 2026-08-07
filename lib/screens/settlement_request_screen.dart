@@ -16,7 +16,8 @@ class SettlementRequestScreen extends StatefulWidget {
   });
 
   @override
-  State<SettlementRequestScreen> createState() => _SettlementRequestScreenState();
+  State<SettlementRequestScreen> createState() =>
+      _SettlementRequestScreenState();
 }
 
 class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
@@ -38,8 +39,8 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
     });
 
     try {
-      final pending = await SettlementService.getPendingSettlements();
-      final match = pending.where((s) => s.id == widget.settlementId);
+      final result = await SettlementService.getPendingSettlements();
+      final match = result.items.where((s) => s.id == widget.settlementId);
 
       setState(() {
         _settlement = match.isNotEmpty ? match.first : null;
@@ -111,77 +112,37 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
 
   void _showRejectDialog() {
     final reasonController = TextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark
-        ? DhanWiserColors.textPrimaryDark
-        : DhanWiserColors.textPrimaryLight;
-    final sub = isDark
-        ? DhanWiserColors.textSecondaryDark
-        : DhanWiserColors.textSecondaryLight;
 
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor:
-              isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(
-            'Reject Settlement',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              color: text,
-              fontSize: 18,
-            ),
-          ),
+          icon: Icon(Icons.cancel_outlined,
+              color: DhanWiserColors.coral, size: 32),
+          title: const Text('Reject Settlement'),
           content: TextField(
             controller: reasonController,
             maxLines: 3,
-            style: GoogleFonts.inter(color: text, fontSize: 14),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               labelText: 'Reason for rejection',
-              labelStyle: GoogleFonts.inter(color: sub, fontSize: 14),
               hintText: 'e.g. I did not receive this payment',
-              hintStyle: GoogleFonts.inter(
-                color: sub.withValues(alpha: 0.6),
-                fontSize: 13,
-              ),
-              filled: true,
-              fillColor: isDark
-                  ? DhanWiserColors.inputDark
-                  : DhanWiserColors.inputLight,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(color: sub, fontWeight: FontWeight.w500),
-              ),
+              child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            FilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _reject(reasonController.text.trim());
               },
-              style: ElevatedButton.styleFrom(
+              style: FilledButton.styleFrom(
                 backgroundColor: DhanWiserColors.coral,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
               ),
-              child: Text(
-                'Reject',
-                style:
-                    GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
-              ),
+              child: const Text('Reject'),
             ),
           ],
         );
@@ -191,125 +152,73 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg =
-        isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final text = isDark
-        ? DhanWiserColors.textPrimaryDark
-        : DhanWiserColors.textPrimaryLight;
-    final sub = isDark
-        ? DhanWiserColors.textSecondaryDark
-        : DhanWiserColors.textSecondaryLight;
-    final surface =
-        isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white;
 
     return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? DhanWiserColors.surfaceElevatedDark
-                            : DhanWiserColors.gray100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.arrow_back_rounded, color: text, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    'Settlement Request',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: text,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: DhanWiserColors.primary,
-                      ),
-                    )
-                  : _error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 28),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    color: DhanWiserColors.primary
-                                        .withValues(alpha: isDark ? 0.12 : 0.06),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Icon(
-                                    Icons.task_alt_rounded,
-                                    color: DhanWiserColors.primary,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 15,
-                                    color: sub,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Container(
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: surface,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black
-                                      .withValues(alpha: isDark ? 0.12 : 0.03),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: _buildSettlementCard(text, sub, isDark),
-                          ),
-                        ),
-            ),
-          ],
+      appBar: AppBar(
+        title: const Text('Settlement Request'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: cs.primary))
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: cs.primaryContainer
+                                .withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Icon(
+                            Icons.task_alt_rounded,
+                            color: cs.primary,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            color: cs.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Card(
+                    elevation: 0,
+                    color: isDark
+                        ? cs.surfaceContainerHigh
+                        : cs.surfaceContainerLowest,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: _buildSettlementCard(cs, isDark),
+                    ),
+                  ),
+                ),
     );
   }
 
-  Widget _buildSettlementCard(Color text, Color sub, bool isDark) {
+  Widget _buildSettlementCard(ColorScheme cs, bool isDark) {
     final settlement = _settlement!;
 
     return Column(
@@ -317,20 +226,20 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       children: [
         Row(
           children: [
-            _userChip(settlement.payerUsername, DhanWiserColors.coral, isDark),
+            _userChip(settlement.payerUsername, DhanWiserColors.coral, cs),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              child:
-                  Icon(Icons.arrow_forward_rounded, size: 16, color: sub),
+              child: Icon(Icons.arrow_forward_rounded,
+                  size: 16, color: cs.onSurfaceVariant),
             ),
-            _userChip(settlement.receiverUsername, DhanWiserColors.teal, isDark),
+            _userChip(settlement.receiverUsername, DhanWiserColors.teal, cs),
             const Spacer(),
             Text(
               '₹${settlement.amount.toStringAsFixed(0)}',
               style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                color: text,
+                color: cs.onSurface,
               ),
             ),
           ],
@@ -339,13 +248,15 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
           const SizedBox(height: 12),
           Text(
             'Group: ${settlement.serverName}',
-            style: GoogleFonts.inter(fontSize: 13, color: sub),
+            style: GoogleFonts.inter(
+                fontSize: 13, color: cs.onSurfaceVariant),
           ),
         ],
         const SizedBox(height: 14),
         Text(
           '${settlement.payerFullName} says they paid you this amount. Please approve only if you have actually received the money.',
-          style: GoogleFonts.inter(fontSize: 14, color: text, height: 1.45),
+          style: GoogleFonts.inter(
+              fontSize: 14, color: cs.onSurface, height: 1.45),
         ),
         if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
           const SizedBox(height: 14),
@@ -353,10 +264,10 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+              color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DhanWiserColors.primary.withValues(alpha: 0.15),
+                color: cs.primary.withValues(alpha: 0.15),
               ),
             ),
             child: Column(
@@ -367,7 +278,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: DhanWiserColors.primary,
+                    color: cs.primary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -375,7 +286,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   settlement.notes!,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: text,
+                    color: cs.onSurface,
                     height: 1.4,
                   ),
                 ),
@@ -383,70 +294,48 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
             ),
           ),
         ],
-        if (settlement.proofImage != null && settlement.proofImage!.isNotEmpty) ...[
+        if (settlement.proofImage != null &&
+            settlement.proofImage!.isNotEmpty) ...[
           const SizedBox(height: 14),
-          _buildProofImage(settlement.proofImage!, text, sub, isDark),
+          _buildProofImage(settlement.proofImage!, cs, isDark),
         ],
         const SizedBox(height: 22),
         Row(
           children: [
             Expanded(
-              child: SizedBox(
-                height: 44,
-                child: OutlinedButton(
-                  onPressed: _isSubmitting ? null : _showRejectDialog,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: DhanWiserColors.coral.withValues(alpha: 0.3),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+              child: OutlinedButton(
+                onPressed: _isSubmitting ? null : _showRejectDialog,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: DhanWiserColors.coral,
+                  side: BorderSide(
+                    color: DhanWiserColors.coral.withValues(alpha: 0.3),
                   ),
-                  child: Text(
-                    'Reject',
-                    style: GoogleFonts.inter(
-                      color: DhanWiserColors.coral,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+                child: const Text('Reject'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: SizedBox(
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _approve,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DhanWiserColors.mint,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor:
-                        DhanWiserColors.mint.withValues(alpha: 0.5),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          'Approve',
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
+              child: FilledButton(
+                onPressed: _isSubmitting ? null : _approve,
+                style: FilledButton.styleFrom(
+                  backgroundColor: DhanWiserColors.mint,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      DhanWiserColors.mint.withValues(alpha: 0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Approve'),
               ),
             ),
           ],
@@ -455,11 +344,11 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
     );
   }
 
-  Widget _userChip(String username, Color color, bool isDark) {
+  Widget _userChip(String username, Color color, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: isDark ? 0.12 : 0.06),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
@@ -473,17 +362,18 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
     );
   }
 
-  Widget _buildProofImage(String proofImage, Color text, Color sub, bool isDark) {
+  Widget _buildProofImage(
+      String proofImage, ColorScheme cs, bool isDark) {
     final imageBytes = _decodeProofImage(proofImage);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+        color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DhanWiserColors.primary.withValues(alpha: 0.15),
+          color: cs.primary.withValues(alpha: 0.15),
         ),
       ),
       child: Column(
@@ -491,14 +381,14 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.image_outlined, size: 16, color: DhanWiserColors.primary),
+              Icon(Icons.image_outlined, size: 16, color: cs.primary),
               const SizedBox(width: 6),
               Text(
                 'Payment screenshot',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.primary,
+                  color: cs.primary,
                 ),
               ),
             ],
@@ -520,13 +410,16 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
           else
             Text(
               'This screenshot could not be displayed.',
-              style: GoogleFonts.inter(fontSize: 13, color: sub),
+              style: GoogleFonts.inter(
+                  fontSize: 13, color: cs.onSurfaceVariant),
             ),
           if (imageBytes != null) ...[
             const SizedBox(height: 8),
             Text(
               'Tap the screenshot to open it full screen before approving.',
-              style: GoogleFonts.inter(fontSize: 12, color: text.withValues(alpha: 0.75)),
+              style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: cs.onSurface.withValues(alpha: 0.75)),
             ),
           ],
         ],
@@ -569,7 +462,8 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 child: SafeArea(
                   child: IconButton(
                     onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
+                    icon:
+                        const Icon(Icons.close_rounded, color: Colors.white),
                   ),
                 ),
               ),

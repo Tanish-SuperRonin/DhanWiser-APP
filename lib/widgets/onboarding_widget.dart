@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
 
 // Reusable Onboarding Card
 class OnboardingCard extends StatelessWidget {
@@ -16,6 +15,8 @@ class OnboardingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -25,14 +26,10 @@ class OnboardingCard extends StatelessWidget {
           height: 256,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDark
-                ? DhanWiserColors.primary.withValues(alpha: 0.1)
-                : DhanWiserColors.primary.withValues(alpha: 0.2),
+            color: cs.primaryContainer.withValues(alpha: isDark ? 0.2 : 0.4),
             boxShadow: [
               BoxShadow(
-                color: isDark
-                    ? DhanWiserColors.primary.withValues(alpha: 0.1)
-                    : DhanWiserColors.primary.withValues(alpha: 0.2),
+                color: cs.primary.withValues(alpha: isDark ? 0.1 : 0.2),
                 blurRadius: 48,
               ),
             ],
@@ -46,19 +43,17 @@ class OnboardingCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             color: isDark
-                ? DhanWiserColors.surfaceDark.withValues(alpha: 0.5)
-                : DhanWiserColors.surfaceLight,
+                ? cs.surfaceContainerHigh
+                : cs.surfaceContainerLowest,
             border: Border.all(
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : DhanWiserColors.gray100,
+                  ? cs.outlineVariant.withValues(alpha: 0.2)
+                  : cs.outlineVariant,
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark
-                    ? DhanWiserColors.primary.withValues(alpha: 0.2)
-                    : DhanWiserColors.primary.withValues(alpha: 0.3),
+                color: cs.primary.withValues(alpha: isDark ? 0.15 : 0.2),
                 blurRadius: 48,
                 spreadRadius: 16,
               ),
@@ -82,12 +77,10 @@ class OnboardingCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: isDark
-                  ? DhanWiserColors.surfaceDark
-                  : DhanWiserColors.surfaceLight,
+                  ? cs.surfaceContainerHigh
+                  : cs.surfaceContainerLowest,
               border: Border.all(
-                color: isDark
-                    ? DhanWiserColors.gray700
-                    : DhanWiserColors.gray200,
+                color: cs.outlineVariant,
               ),
               boxShadow: [
                 BoxShadow(
@@ -99,7 +92,7 @@ class OnboardingCard extends StatelessWidget {
             ),
             child: Icon(
               floatingIcon,
-              color: DhanWiserColors.primary,
+              color: cs.primary,
               size: 32,
             ),
           ),

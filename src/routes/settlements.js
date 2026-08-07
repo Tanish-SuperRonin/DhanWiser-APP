@@ -25,6 +25,7 @@ const rejectSettlementValidation = [
 // Routes
 router.post('/', initiateSettlementValidation, validate, settlementController.initiateSettlement);
 router.get('/pending', settlementController.getMyPendingSettlements);
+router.get('/outgoing', settlementController.getMyOutgoingSettlements);
 router.get('/server/:serverId', settlementController.getServerSettlements);
 router.get('/server/:serverId/history', settlementController.getSettlementHistory);
 router.post('/:id/approve', settlementController.approveSettlement);

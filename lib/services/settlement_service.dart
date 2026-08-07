@@ -1,4 +1,5 @@
 import '../models/settlement_model.dart';
+import '../models/paginated_response.dart';
 import '../utils/json_parsers.dart';
 import 'api_client.dart';
 
@@ -20,21 +21,51 @@ class SettlementService {
     });
   }
 
-  // Get pending settlements (where user is receiver)
-  static Future<List<SettlementModel>> getPendingSettlements() async {
-    final response = await ApiClient.get('/settlements/pending');
-    final settlements = response['data']['settlements'] as List<dynamic>;
-    return settlements.map((s) => SettlementModel.fromJson(s)).toList();
+  // Get pending settlements (where user is receiver) — paginated
+  static Future<PaginatedResponse<SettlementModel>> getPendingSettlements({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await ApiClient.get(
+      '/settlements/pending?page=$page&limit=$limit',
+    );
+    return PaginatedResponse.fromJson(
+      response['data'],
+      itemsKey: 'settlements',
+      fromJson: (json) => SettlementModel.fromJson(json),
+    );
   }
 
-  // Get settlements for a server
-  static Future<List<SettlementModel>> getServerSettlements(int serverId,
-      {String? status}) async {
-    String endpoint = '/settlements/server/$serverId';
-    if (status != null) endpoint += '?status=$status';
+  // Get outgoing settlements (where user is payer) — paginated
+  static Future<PaginatedResponse<SettlementModel>> getOutgoingSettlements({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    final response = await ApiClient.get(
+      '/settlements/outgoing?page=$page&limit=$limit',
+    );
+    return PaginatedResponse.fromJson(
+      response['data'],
+      itemsKey: 'settlements',
+      fromJson: (json) => SettlementModel.fromJson(json),
+    );
+  }
+
+  // Get settlements for a server — paginated
+  static Future<PaginatedResponse<SettlementModel>> getServerSettlements(
+    int serverId, {
+    String? status,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    String endpoint = '/settlements/server/$serverId?page=$page&limit=$limit';
+    if (status != null) endpoint += '&status=$status';
     final response = await ApiClient.get(endpoint);
-    final settlements = response['data']['settlements'] as List<dynamic>;
-    return settlements.map((s) => SettlementModel.fromJson(s)).toList();
+    return PaginatedResponse.fromJson(
+      response['data'],
+      itemsKey: 'settlements',
+      fromJson: (json) => SettlementModel.fromJson(json),
+    );
   }
 
   // Approve a settlement

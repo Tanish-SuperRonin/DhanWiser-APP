@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/server_model.dart';
 import '../models/channel_model.dart';
 import '../services/server_service.dart';
+import '../services/cache_service.dart';
 
 class ServerProvider extends ChangeNotifier {
   List<ServerModel> _servers = [];
@@ -18,13 +20,37 @@ class ServerProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Fetch all servers for the user
+  // Cache keys
+  static const String _serversListKey = 'servers_list';
+  static String _serverDetailKey(int id) => 'server_${id}_detail';
+  static String _channelsKey(int id) => 'server_${id}_channels';
+
+  // Cache TTLs
+  static const Duration _serversListTtl = Duration(minutes: 5);
+  static const Duration _serverDetailTtl = Duration(minutes: 2);
+  static const Duration _channelsTtl = Duration(minutes: 2);
+
+  /// Fetch all servers — serves cached data instantly, refreshes in background.
   Future<void> fetchServers() async {
+    // Show cached data immediately (no loading spinner)
+    final cached = CacheService.get<List<ServerModel>>(_serversListKey);
+    if (cached != null) {
+      _servers = cached;
+      _error = null;
+      notifyListeners();
+
+      // Background refresh
+      _backgroundFetchServers();
+      return;
+    }
+
+    // No cache — show loading
     _isLoading = true;
     notifyListeners();
 
     try {
       _servers = await ServerService.getMyServers();
+      CacheService.put(_serversListKey, _servers, ttl: _serversListTtl);
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -34,14 +60,43 @@ class ServerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Fetch server details
+  /// Background refresh of server list (non-blocking).
+  Future<void> _backgroundFetchServers() async {
+    try {
+      final fresh = await ServerService.getMyServers();
+      _servers = fresh;
+      CacheService.put(_serversListKey, _servers, ttl: _serversListTtl);
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Background server fetch failed: $e');
+    }
+  }
+
+  /// Fetch server details — serves cached data, refreshes in background.
   Future<void> fetchServerDetails(int serverId) async {
+    final cachedDetail = CacheService.get<ServerDetail>(_serverDetailKey(serverId));
+    final cachedChannels = CacheService.get<List<ChannelModel>>(_channelsKey(serverId));
+
+    if (cachedDetail != null && cachedChannels != null) {
+      _currentServerDetail = cachedDetail;
+      _channels = cachedChannels;
+      _error = null;
+      notifyListeners();
+
+      // Background refresh
+      _backgroundFetchServerDetails(serverId);
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
     try {
       _currentServerDetail = await ServerService.getServerDetails(serverId);
       _channels = await ServerService.getChannels(serverId);
+      CacheService.put(_serverDetailKey(serverId), _currentServerDetail!, ttl: _serverDetailTtl);
+      CacheService.put(_channelsKey(serverId), _channels, ttl: _channelsTtl);
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -49,6 +104,22 @@ class ServerProvider extends ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+  }
+
+  /// Background refresh of server details (non-blocking).
+  Future<void> _backgroundFetchServerDetails(int serverId) async {
+    try {
+      final freshDetail = await ServerService.getServerDetails(serverId);
+      final freshChannels = await ServerService.getChannels(serverId);
+      _currentServerDetail = freshDetail;
+      _channels = freshChannels;
+      CacheService.put(_serverDetailKey(serverId), freshDetail, ttl: _serverDetailTtl);
+      CacheService.put(_channelsKey(serverId), freshChannels, ttl: _channelsTtl);
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Background server detail fetch failed: $e');
+    }
   }
 
   // Create a server
@@ -60,13 +131,16 @@ class ServerProvider extends ChangeNotifier {
       await ServerService.createServer(name: name, description: description, isPrivate: isPrivate);
       _error = null;
 
+      // Invalidate server list cache to force fresh fetch
+      await CacheService.invalidate(_serversListKey);
+
       // Refresh the server list
       try {
         await fetchServers();
       } catch (fetchError) {
         // If fetch fails, we still created the server successfully
         _error = 'Server created but failed to refresh list: $fetchError';
-        print('Error fetching servers after creation: $fetchError');
+        debugPrint('Error fetching servers after creation: $fetchError');
       }
 
       _isLoading = false;
@@ -76,7 +150,7 @@ class ServerProvider extends ChangeNotifier {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
-      print('Error creating server: $e');
+      debugPrint('Error creating server: $e');
       return false;
     }
   }
@@ -88,6 +162,7 @@ class ServerProvider extends ChangeNotifier {
       await ServerService.createChannel(
           serverId: serverId, name: name, description: description);
       _channels = await ServerService.getChannels(serverId);
+      CacheService.put(_channelsKey(serverId), _channels, ttl: _channelsTtl);
       notifyListeners();
       return true;
     } catch (e) {
@@ -111,6 +186,7 @@ class ServerProvider extends ChangeNotifier {
   Future<bool> respondToInvitation(int invitationId, String action) async {
     try {
       await ServerService.respondToInvitation(invitationId, action);
+      await CacheService.invalidate(_serversListKey);
       await fetchInvitations();
       await fetchServers();
       return true;
@@ -137,6 +213,8 @@ class ServerProvider extends ChangeNotifier {
   Future<bool> leaveServer(int serverId) async {
     try {
       await ServerService.leaveServer(serverId);
+      await CacheService.invalidate(_serversListKey);
+      await CacheService.invalidatePrefix('server_${serverId}_');
       await fetchServers();
       return true;
     } catch (e) {
@@ -150,6 +228,8 @@ class ServerProvider extends ChangeNotifier {
   Future<bool> deleteServer(int serverId) async {
     try {
       await ServerService.deleteServer(serverId);
+      await CacheService.invalidate(_serversListKey);
+      await CacheService.invalidatePrefix('server_${serverId}_');
       await fetchServers();
       return true;
     } catch (e) {

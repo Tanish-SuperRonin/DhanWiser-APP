@@ -135,11 +135,14 @@ export const expenseController = {
     }
   },
 
-  // Get expenses in a channel
+  // Get expenses in a channel (paginated)
   async getChannelExpenses(req, res) {
     try {
       const { channelId } = req.params;
       const userId = req.user.userId;
+      const page = Math.max(1, parseInt(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+      const offset = (page - 1) * limit;
 
       // Verify membership
       const memberCheck = await pool.query(
@@ -157,7 +160,15 @@ export const expenseController = {
         });
       }
 
-      // Get expenses with participants
+      // Get total count
+      const countResult = await pool.query(
+        'SELECT COUNT(*) FROM expenses WHERE channel_id = $1',
+        [channelId]
+      );
+      const total = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(total / limit);
+
+      // Get expenses with participants (paginated)
       const result = await pool.query(
         `SELECT e.id, e.title, e.description, e.total_amount, e.expense_date, e.created_at,
                 u.id as created_by_id, u.username as created_by_username,
@@ -174,8 +185,9 @@ export const expenseController = {
          LEFT JOIN users u2 ON ep.user_id = u2.id
          WHERE e.channel_id = $1
          GROUP BY e.id, u.id, u.username
-         ORDER BY e.expense_date DESC, e.created_at DESC`,
-        [channelId]
+         ORDER BY e.expense_date DESC, e.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [channelId, limit, offset]
       );
 
       res.json({
@@ -200,7 +212,14 @@ export const expenseController = {
             })),
             createdAt: expense.created_at
           })),
-          count: result.rows.length
+          count: result.rows.length,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasMore: page < totalPages
+          }
         }
       });
     } catch (error) {
@@ -213,11 +232,14 @@ export const expenseController = {
     }
   },
 
-  // Get all expenses in a server
+  // Get all expenses in a server (paginated)
   async getServerExpenses(req, res) {
     try {
       const { serverId } = req.params;
       const userId = req.user.userId;
+      const page = Math.max(1, parseInt(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+      const offset = (page - 1) * limit;
 
       // Verify membership
       const memberCheck = await pool.query(
@@ -232,7 +254,15 @@ export const expenseController = {
         });
       }
 
-      // Get all expenses with channel info
+      // Get total count
+      const countResult = await pool.query(
+        'SELECT COUNT(*) FROM expenses WHERE server_id = $1',
+        [serverId]
+      );
+      const total = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(total / limit);
+
+      // Get all expenses with channel info (paginated)
       const result = await pool.query(
         `SELECT e.id, e.title, e.description, e.total_amount, e.expense_date, e.created_at,
                 c.id as channel_id, c.name as channel_name,
@@ -251,8 +281,9 @@ export const expenseController = {
          LEFT JOIN users u2 ON ep.user_id = u2.id
          WHERE e.server_id = $1
          GROUP BY e.id, c.id, c.name, u.id, u.username
-         ORDER BY e.expense_date DESC, e.created_at DESC`,
-        [serverId]
+         ORDER BY e.expense_date DESC, e.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [serverId, limit, offset]
       );
 
       res.json({
@@ -281,7 +312,14 @@ export const expenseController = {
             })),
             createdAt: expense.created_at
           })),
-          count: result.rows.length
+          count: result.rows.length,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasMore: page < totalPages
+          }
         }
       });
     } catch (error) {
@@ -393,6 +431,66 @@ export const expenseController = {
         message: 'Server error',
         error: error.message
       });
+    }
+  },
+
+  // Delete an expense
+  async deleteExpense(req, res) {
+    const client = await pool.connect();
+    try {
+      const { expenseId } = req.params;
+      const userId = req.user.userId;
+
+      // Verify the expense exists and user is the creator
+      const expenseCheck = await client.query(
+        'SELECT id, created_by, title FROM expenses WHERE id = $1',
+        [expenseId]
+      );
+
+      if (expenseCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Expense not found'
+        });
+      }
+
+      if (expenseCheck.rows[0].created_by !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only delete expenses you created'
+        });
+      }
+
+      await client.query('BEGIN');
+
+      // Delete participants first (foreign key)
+      await client.query(
+        'DELETE FROM expense_participants WHERE expense_id = $1',
+        [expenseId]
+      );
+
+      // Delete expense
+      await client.query(
+        'DELETE FROM expenses WHERE id = $1',
+        [expenseId]
+      );
+
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        message: 'Expense deleted successfully'
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Delete expense error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    } finally {
+      client.release();
     }
   }
 };

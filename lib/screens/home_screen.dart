@@ -1,4 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../widgets/bouncing_button.dart';
+import '../widgets/shimmer_loading.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
@@ -6,6 +10,7 @@ import '../providers/auth_provider.dart';
 import '../providers/server_provider.dart';
 import '../providers/notification_provider.dart';
 import '../services/expense_service.dart';
+import '../services/cache_service.dart';
 import '../models/balance_model.dart';
 import '../models/server_model.dart';
 
@@ -23,6 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
   double _youOwe = 0;
   double _owedToYou = 0;
 
+  // Debounce refresh
+  DateTime? _lastRefreshTime;
+  static const Duration _refreshDebounce = Duration(seconds: 3);
+
+  // Cache keys
+  static const String _balanceSummaryKey = 'home_balance_summary';
+  static const Duration _balanceTtl = Duration(minutes: 2);
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +50,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
+    // Debounce: prevent rapid pull-to-refresh spam
+    final now = DateTime.now();
+    if (_lastRefreshTime != null &&
+        now.difference(_lastRefreshTime!) < _refreshDebounce) {
+      return;
+    }
+    _lastRefreshTime = now;
+
     final serverProvider = Provider.of<ServerProvider>(context, listen: false);
     final notifProvider =
         Provider.of<NotificationProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
+      // Load cached balance summary immediately
+      _loadCachedBalanceSummary();
+
       final futures = <Future>[
         serverProvider.fetchServers(),
         notifProvider.fetchUnreadCount(),
@@ -65,17 +89,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Load cached balance summary for instant display.
+  void _loadCachedBalanceSummary() {
+    final cached = CacheService.get<Map<String, double>>(_balanceSummaryKey);
+    if (cached != null && mounted) {
+      setState(() {
+        _netBalance = cached['netBalance'] ?? 0;
+        _youOwe = cached['youOwe'] ?? 0;
+        _owedToYou = cached['owedToYou'] ?? 0;
+        _loadingBalanceSummary = false;
+      });
+    }
+  }
+
   Future<void> _loadBalanceSummary(
       List<ServerModel> servers, AuthProvider authProvider) async {
     if (!mounted) return;
 
-    setState(() {
-      _loadingBalanceSummary = true;
-    });
+    // Only show loading spinner if we have no cached data
+    if (!CacheService.has(_balanceSummaryKey)) {
+      setState(() {
+        _loadingBalanceSummary = true;
+      });
+    }
 
     final currentUser = authProvider.currentUser;
     if (currentUser == null || servers.isEmpty) {
       if (!mounted) return;
+      final summary = {'netBalance': 0.0, 'youOwe': 0.0, 'owedToYou': 0.0};
+      CacheService.put(_balanceSummaryKey, summary, ttl: _balanceTtl);
       setState(() {
         _netBalance = 0;
         _youOwe = 0;
@@ -89,33 +131,48 @@ class _HomeScreenState extends State<HomeScreen> {
     double oweTotal = 0;
     double owedTotal = 0;
 
-    for (final server in servers) {
+    // Fetch all balances in parallel instead of sequential loop
+    final futures = servers.map((server) async {
       try {
         final balanceData = await ExpenseService.getServerBalances(server.id);
-        final balances = balanceData['balances'] as List<BalanceModel>;
-
-        BalanceModel? userBalance;
-        for (final balance in balances) {
-          if (balance.userId == currentUser.id ||
-              balance.username == currentUser.username ||
-              balance.fullName == currentUser.fullName) {
-            userBalance = balance;
-            break;
-          }
-        }
-
-        if (userBalance == null) continue;
-
-        netBalance += userBalance.balance;
-        if (userBalance.balance < -0.01) {
-          oweTotal += userBalance.balance.abs();
-        } else if (userBalance.balance > 0.01) {
-          owedTotal += userBalance.balance;
-        }
+        return balanceData;
       } catch (_) {
-        // Skip one server failing instead of breaking the full card.
+        return null;
+      }
+    }).toList();
+
+    final results = await Future.wait(futures);
+
+    for (final balanceData in results) {
+      if (balanceData == null) continue;
+
+      final balances = balanceData['balances'] as List<BalanceModel>;
+
+      BalanceModel? userBalance;
+      for (final balance in balances) {
+        if (balance.userId == currentUser.id) {
+          userBalance = balance;
+          break;
+        }
+      }
+
+      if (userBalance == null) continue;
+
+      netBalance += userBalance.balance;
+      if (userBalance.balance < -0.01) {
+        oweTotal += userBalance.balance.abs();
+      } else if (userBalance.balance > 0.01) {
+        owedTotal += userBalance.balance;
       }
     }
+
+    // Cache the computed summary
+    final summary = {
+      'netBalance': netBalance,
+      'youOwe': oweTotal,
+      'owedToYou': owedTotal,
+    };
+    CacheService.put(_balanceSummaryKey, summary, ttl: _balanceTtl);
 
     if (!mounted) return;
     setState(() {
@@ -128,28 +185,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg =
-        isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final surface = isDark
-        ? DhanWiserColors.surfaceDark
-        : DhanWiserColors.surfaceLight;
-    final elevated = isDark
-        ? DhanWiserColors.surfaceElevatedDark
-        : DhanWiserColors.surfaceElevatedLight;
-    final text = isDark
-        ? DhanWiserColors.textPrimaryDark
-        : DhanWiserColors.textPrimaryLight;
-    final sub = isDark
-        ? DhanWiserColors.textSecondaryDark
-        : DhanWiserColors.textSecondaryLight;
 
     return Scaffold(
-      backgroundColor: bg,
+      extendBody: true,
       body: SafeArea(
+        bottom: false,
         child: RefreshIndicator(
-          onRefresh: _loadData,
-          color: DhanWiserColors.primary,
+          onRefresh: () async {
+            // Force invalidate caches on manual pull-to-refresh
+            _lastRefreshTime = null;
+            await CacheService.invalidate(_balanceSummaryKey);
+            await CacheService.invalidate('servers_list');
+            await _loadData();
+          },
+          color: cs.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
@@ -158,13 +209,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  _buildHeader(text, sub),
-                  const SizedBox(height: 28),
-                  _buildBalanceCard(isDark),
-                  const SizedBox(height: 28),
-                  _buildQuickActionsGrid(isDark, surface, text, sub),
-                  const SizedBox(height: 28),
-                  _buildGroupsSection(isDark, surface, elevated, text, sub),
+                  _buildHeader(cs),
+                  const SizedBox(height: 24),
+                  _buildBalanceCard(cs, isDark),
+                  const SizedBox(height: 24),
+                  _buildQuickActionsGrid(cs, isDark),
+                  const SizedBox(height: 24),
+                  _buildGroupsSection(cs, isDark),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -172,41 +223,90 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [DhanWiserColors.primary, DhanWiserColors.primaryLight],
+
+      // M3 Extended FAB
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _navigateAndRefresh('/add-expense'),
+        icon: const Icon(Icons.add_rounded, size: 22),
+        label: Text(
+          'Split',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: DhanWiserColors.primary.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
         ),
-        child: FloatingActionButton.extended(
-          onPressed: () => Navigator.pushNamed(context, '/add-expense'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          highlightElevation: 0,
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
-          label: Text(
-            'Split',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      // Floating Glass NavigationBar
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? cs.surfaceContainerLowest.withValues(alpha: 0.65)
+                    : cs.surface.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+              child: NavigationBar(
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                height: 68,
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: (index) {
+                  if (index == 1) {
+                    Navigator.pushNamed(context, '/friend-discovery');
+                  } else if (index == 3) {
+                    Navigator.pushNamed(context, '/activity');
+                  } else if (index == 4) {
+                    Navigator.pushNamed(context, '/profile');
+                  } else {
+                    setState(() => _selectedIndex = index);
+                  }
+                },
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home_rounded),
+                    label: 'HOME',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.search_rounded),
+                    selectedIcon: Icon(Icons.search_rounded),
+                    label: 'EXPLORE',
+                  ),
+                  NavigationDestination(
+                    icon: SizedBox(width: 24),
+                    label: '',
+                    enabled: false,
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.show_chart_rounded),
+                    selectedIcon: Icon(Icons.show_chart_rounded),
+                    label: 'ACTIVITY',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded),
+                    selectedIcon: Icon(Icons.person_rounded),
+                    label: 'ME',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(isDark, surface, sub),
     );
   }
 
-  Widget _buildHeader(Color text, Color sub) {
+  Widget _buildHeader(ColorScheme cs) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final name = auth.currentUser?.fullName ?? 'there';
@@ -219,18 +319,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Text(
                     greeting,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.dmSans(
                       fontSize: 14,
-                      color: sub,
+                      color: cs.onSurfaceVariant,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     name,
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      color: text,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 24,
+                      color: cs.onSurface,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.5,
                     ),
@@ -238,49 +338,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+            // M3 Icon Button with badge
             Consumer<NotificationProvider>(
               builder: (context, notif, _) {
-                return GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/activity'),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: DhanWiserColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton.filledTonal(
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/activity'),
+                      icon: const Icon(
+                          Icons.notifications_outlined, size: 22),
+                      style: IconButton.styleFrom(
+                        backgroundColor: cs.primaryContainer.withValues(alpha: 0.4),
+                        foregroundColor: cs.primary,
+                      ),
                     ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none_rounded,
-                          color: DhanWiserColors.primary,
-                          size: 24,
-                        ),
-                        if (notif.unreadCount > 0)
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                color: DhanWiserColors.coral,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: DhanWiserColors.backgroundDark,
-                                  width: 1.5,
-                                ),
-                              ),
+                    if (notif.unreadCount > 0)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: cs.error,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: cs.surface,
+                              width: 1.5,
                             ),
                           ),
-                      ],
-                    ),
-                  ),
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
+            // M3 Profile avatar
             Consumer<AuthProvider>(
               builder: (context, auth, _) {
                 final initial =
@@ -291,21 +387,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          DhanWiserColors.primary,
-                          DhanWiserColors.primaryLight
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(22),
                     ),
                     child: Center(
                       child: Text(
                         initial,
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: cs.onPrimaryContainer,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -321,107 +410,82 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceCard(bool isDark) {
+  Widget _buildBalanceCard(ColorScheme cs, bool isDark) {
     final balanceColor = _netBalance < -0.01
         ? DhanWiserColors.coral
         : _netBalance > 0.01
             ? DhanWiserColors.teal
-            : (isDark ? Colors.white : DhanWiserColors.textPrimaryLight);
+            : cs.onSurface;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark
-              ? DhanWiserColors.primary.withValues(alpha: 0.15)
-              : DhanWiserColors.gray200,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.2)
-                : DhanWiserColors.primary.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Net Balance',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: isDark
-                  ? DhanWiserColors.textSecondaryDark
-                  : DhanWiserColors.textSecondaryLight,
-              fontWeight: FontWeight.w500,
+    return Card(
+      elevation: 1,
+      color: isDark
+          ? cs.surfaceContainerHigh
+          : cs.surfaceContainerLow,
+      surfaceTintColor: cs.primary,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Text(
+              'Net Balance',
+              style: GoogleFonts.dmSans(
+                fontSize: 13,
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          _loadingBalanceSummary
-              ? SizedBox(
-                  height: 46,
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: DhanWiserColors.primary,
-                        strokeWidth: 2.4,
-                      ),
+            const SizedBox(height: 8),
+            _loadingBalanceSummary
+                ? const ShimmerBox(width: 200, height: 46, borderRadius: 12)
+                : Text(
+                    _formatCurrency(_netBalance, withDecimals: true),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w800,
+                      color: balanceColor,
+                      letterSpacing: -1.5,
                     ),
                   ),
-                )
-              : Text(
-                  _formatCurrency(_netBalance, withDecimals: true),
-                  style: GoogleFonts.inter(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: balanceColor,
-                    letterSpacing: -1.5,
+            const SizedBox(height: 24),
+            Divider(color: cs.outlineVariant, height: 1),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildBalanceItem(
+                    'You owe',
+                    _formatCurrency(_youOwe, withDecimals: true),
+                    DhanWiserColors.coral,
+                    Icons.arrow_upward_rounded,
+                    cs,
                   ),
                 ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildBalanceItem(
-                  'You owe',
-                  _formatCurrency(_youOwe, withDecimals: true),
-                  DhanWiserColors.coral,
-                  Icons.arrow_upward_rounded,
-                  isDark,
+                Container(
+                  width: 1,
+                  height: 48,
+                  color: cs.outlineVariant,
                 ),
-              ),
-              Container(
-                width: 1,
-                height: 48,
-                color: isDark
-                    ? DhanWiserColors.gray700
-                    : DhanWiserColors.gray200,
-              ),
-              Expanded(
-                child: _buildBalanceItem(
-                  'Owed to you',
-                  _formatCurrency(_owedToYou, withDecimals: true),
-                  DhanWiserColors.teal,
-                  Icons.arrow_downward_rounded,
-                  isDark,
+                Expanded(
+                  child: _buildBalanceItem(
+                    'Owed to you',
+                    _formatCurrency(_owedToYou, withDecimals: true),
+                    DhanWiserColors.teal,
+                    Icons.arrow_downward_rounded,
+                    cs,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    );
+    ).animate().fade(duration: 300.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
   }
 
   Widget _buildBalanceItem(
-      String label, String amount, Color color, IconData icon, bool isDark) {
+      String label, String amount, Color color, IconData icon, ColorScheme cs) {
     return Column(
       children: [
         Row(
@@ -432,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 14),
             ),
@@ -441,9 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: isDark
-                    ? DhanWiserColors.textSecondaryDark
-                    : DhanWiserColors.textSecondaryLight,
+                color: cs.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -462,8 +524,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickActionsGrid(
-      bool isDark, Color surface, Color text, Color sub) {
+  Widget _buildQuickActionsGrid(ColorScheme cs, bool isDark) {
     final actions = [
       _QuickAction('New Group', Icons.group_add_rounded,
           DhanWiserColors.primary, '/create-server'),
@@ -471,51 +532,46 @@ class _HomeScreenState extends State<HomeScreen> {
           DhanWiserColors.teal, '/friend-discovery'),
       _QuickAction('Settle Up', Icons.handshake_rounded,
           DhanWiserColors.warning, '/settlement'),
-      _QuickAction(
-          'Settings', Icons.tune_rounded, DhanWiserColors.gray400, '/settings'),
+      _QuickAction('Settings', Icons.tune_rounded,
+          cs.onSurfaceVariant, '/settings'),
     ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: actions.map((action) {
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => _navigateAndRefresh(action.route),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: action.color.withValues(alpha: isDark ? 0.12 : 0.08),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Icon(action.icon, color: action.color, size: 26),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      action.label,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: sub,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+    return Row(
+      children: actions.map((action) {
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _navigateAndRefresh(action.route),
+            child: Column(
+              children: [
+                // M3 tonal icon container
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: action.color.withValues(alpha: isDark ? 0.16 : 0.10),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(action.icon, color: action.color, size: 26),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+                const SizedBox(height: 8),
+                Text(
+                  action.label,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildGroupsSection(
-      bool isDark, Color surface, Color elevated, Color text, Color sub) {
+  Widget _buildGroupsSection(ColorScheme cs, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -524,29 +580,27 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               'Your Groups',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: text,
+                color: cs.onSurface,
                 letterSpacing: -0.3,
               ),
             ),
-            GestureDetector(
-              onTap: () => _navigateAndRefresh('/create-server'),
-              child: Container(
+            // M3 tonal button
+            FilledButton.tonal(
+              onPressed: () => _navigateAndRefresh('/create-server'),
+              style: FilledButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: DhanWiserColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '+ New',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: DhanWiserColors.primary,
-                  ),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                '+ New',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -556,26 +610,27 @@ class _HomeScreenState extends State<HomeScreen> {
         Consumer<ServerProvider>(
           builder: (context, serverProv, _) {
             if (serverProv.isLoading) {
-              return _buildShimmerCards(isDark);
+              return _buildShimmerCards(cs, isDark);
             }
 
             if (serverProv.servers.isEmpty) {
-              return _buildEmptyGroups(isDark, text, sub);
+              return _buildEmptyGroups(cs, isDark);
             }
 
             return Column(
-              children: serverProv.servers.map((server) {
+              children: serverProv.servers.asMap().entries.map((entry) {
+                final index = entry.key;
+                final server = entry.value;
                 return _buildGroupCard(
                   context,
+                  cs,
                   isDark,
-                  surface,
-                  text,
-                  sub,
                   server.id,
                   server.name,
                   '${server.memberCount} members',
                   server.role == 'admin',
-                );
+                ).animate().fade(duration: 200.ms, delay: (index * 50).ms)
+                 .slideX(begin: 0.05, end: 0, curve: Curves.easeOutCubic, duration: 200.ms);
               }).toList(),
             );
           },
@@ -584,8 +639,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildGroupCard(BuildContext context, bool isDark, Color surface,
-      Color text, Color sub, int id, String name, String members, bool isAdmin) {
+  Widget _buildGroupCard(BuildContext context, ColorScheme cs, bool isDark,
+      int id, String name, String members, bool isAdmin) {
     final groupIcons = [
       Icons.home_rounded,
       Icons.flight_rounded,
@@ -607,98 +662,152 @@ class _HomeScreenState extends State<HomeScreen> {
     final groupIcon = groupIcons[idx % groupIcons.length];
     final grad = gradients[idx % gradients.length];
 
-    return GestureDetector(
-      onTap: () => _navigateAndRefresh('/server-detail', arguments: {
-        'serverId': id,
-        'serverName': name,
-        'members': members,
-        'imageUrl': '',
-      }),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: grad,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(groupIcon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: text,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: BouncingButton(
+        onTap: () => _navigateAndRefresh('/server-detail', arguments: {
+          'serverId': id,
+          'serverName': name,
+          'members': members,
+          'imageUrl': '',
+        }),
+        child: Card(
+          elevation: 0,
+          color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Hero(
+                  tag: 'server_avatar_$id',
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: grad,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      if (isAdmin) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: DhanWiserColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Admin',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: DhanWiserColors.primary,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(groupIcon, color: Colors.white, size: 24),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: cs.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (isAdmin) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: cs.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Admin',
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: cs.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        members,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w400,
                         ),
-                      ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    members,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: sub,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                  size: 22,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyGroups(ColorScheme cs, bool isDark) {
+    return Card(
+      elevation: 0,
+      color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.people_outline_rounded,
+                size: 32,
+                color: cs.primary,
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: sub.withValues(alpha: 0.5),
-              size: 22,
+            const SizedBox(height: 16),
+            Text(
+              'No groups yet',
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Create a group and start splitting expenses\nwith friends and flatmates',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: cs.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () => _navigateAndRefresh('/create-server'),
+              child: const Text('Create Your First Group'),
             ),
           ],
         ),
@@ -706,180 +815,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildEmptyGroups(bool isDark, Color text, Color sub) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      decoration: BoxDecoration(
-        color: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark
-              ? DhanWiserColors.gray700.withValues(alpha: 0.5)
-              : DhanWiserColors.gray200,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: DhanWiserColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              Icons.people_outline_rounded,
-              size: 32,
-              color: DhanWiserColors.primary.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No groups yet',
-            style: GoogleFonts.inter(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: text,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Create a group and start splitting expenses\nwith friends and flatmates',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: sub,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          TextButton(
-            onPressed: () => _navigateAndRefresh('/create-server'),
-            style: TextButton.styleFrom(
-              backgroundColor: DhanWiserColors.primary,
-              foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: Text(
-              'Create Your First Group',
-              style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w600, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildShimmerCards(bool isDark) {
+  Widget _buildShimmerCards(ColorScheme cs, bool isDark) {
     return Column(
       children: List.generate(3, (index) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           height: 84,
           decoration: BoxDecoration(
-            color: isDark
-                ? DhanWiserColors.surfaceElevatedDark
-                : DhanWiserColors.gray100,
-            borderRadius: BorderRadius.circular(20),
+            color: cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildBottomNav(bool isDark, Color surface, Color sub) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? DhanWiserColors.surfaceDark : Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                  0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(
-                  1, Icons.search_rounded, Icons.search_rounded, 'Explore'),
-              const SizedBox(width: 56),
-              _buildNavItem(3, Icons.receipt_long_rounded,
-                  Icons.receipt_long_outlined, 'Activity'),
-              _buildNavItem(
-                  4, Icons.person_rounded, Icons.person_outline_rounded, 'Me'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-      int index, IconData activeIcon, IconData inactiveIcon, String label) {
-    final isActive = _selectedIndex == index;
-    return GestureDetector(
-      onTap: () {
-        if (index == 1) {
-          Navigator.pushNamed(context, '/friend-discovery');
-        } else if (index == 3) {
-          Navigator.pushNamed(context, '/activity');
-        } else if (index == 4) {
-          Navigator.pushNamed(context, '/profile');
-        } else {
-          setState(() => _selectedIndex = index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : inactiveIcon,
-              color:
-                  isActive ? DhanWiserColors.primary : DhanWiserColors.gray400,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive
-                    ? DhanWiserColors.primary
-                    : DhanWiserColors.gray400,
-              ),
-            ),
-            const SizedBox(height: 2),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: isActive ? 20 : 0,
-              height: 3,
-              decoration: BoxDecoration(
-                color: DhanWiserColors.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

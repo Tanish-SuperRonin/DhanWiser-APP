@@ -78,16 +78,14 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       return;
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
+    final cs = Theme.of(context).colorScheme;
     final serverProv = Provider.of<ServerProvider>(context, listen: false);
     final servers = serverProv.servers;
 
     if (servers.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Create a group first before inviting friends'),
+          content: const Text('Create a group first before inviting friends'),
           backgroundColor: DhanWiserColors.coral,
         ),
       );
@@ -96,59 +94,67 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? DhanWiserColors.gray600 : DhanWiserColors.gray300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               Text(
                 'Invite ${user.fullName}',
                 style: GoogleFonts.inter(
-                  fontSize: 18, fontWeight: FontWeight.w700, color: text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Select a group to invite @${user.username} to:',
-                style: GoogleFonts.inter(fontSize: 14, color: sub),
+                style:
+                    GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
               ...servers.map((server) {
-                final initial = server.name.isNotEmpty ? server.name[0].toUpperCase() : 'G';
+                final initial = server.name.isNotEmpty
+                    ? server.name[0].toUpperCase()
+                    : 'G';
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   leading: Container(
-                    width: 44, height: 44,
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: DhanWiserColors.primary.withValues(alpha: 0.1),
+                      color: cs.primaryContainer.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(13),
                     ),
                     child: Center(
-                      child: Text(initial, style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700, color: DhanWiserColors.primary, fontSize: 18)),
+                      child: Text(
+                        initial,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: cs.primary,
+                          fontSize: 18,
+                        ),
+                      ),
                     ),
                   ),
-                  title: Text(server.name, style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600, color: text, fontSize: 15)),
-                  subtitle: Text('${server.memberCount} members', style: GoogleFonts.inter(
-                    fontSize: 12, color: sub)),
-                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16, color: sub),
+                  title: Text(
+                    server.name,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface,
+                      fontSize: 15,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${server.memberCount} members',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: cs.onSurfaceVariant),
+                  ),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded,
+                      size: 16, color: cs.onSurfaceVariant),
                   onTap: () async {
                     Navigator.pop(ctx);
                     await _sendInvite(user, server.id, server.name);
@@ -162,7 +168,8 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
     );
   }
 
-  Future<void> _sendInvite(PublicUser user, int serverId, String serverName) async {
+  Future<void> _sendInvite(
+      PublicUser user, int serverId, String serverName) async {
     setState(() => _inviteStates[user.id] = 'loading');
     try {
       final serverProv = Provider.of<ServerProvider>(context, listen: false);
@@ -207,109 +214,73 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? DhanWiserColors.backgroundDark : DhanWiserColors.backgroundLight;
-    final text = isDark ? DhanWiserColors.textPrimaryDark : DhanWiserColors.textPrimaryLight;
-    final sub = isDark ? DhanWiserColors.textSecondaryDark : DhanWiserColors.textSecondaryLight;
-    final surface = isDark ? DhanWiserColors.surfaceElevatedDark : Colors.white;
 
     return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.surfaceElevatedDark : DhanWiserColors.gray100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.arrow_back_rounded, color: text, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    'Find People',
-                    style: GoogleFonts.inter(
-                      fontSize: 22, fontWeight: FontWeight.w700,
-                      color: text, letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Search bar ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: TextField(
-                controller: _searchController,
-                style: GoogleFonts.inter(color: text, fontSize: 15),
-                onChanged: (q) {
-                  if (q.length >= 2) _performSearch(q);
-                },
-                onSubmitted: _performSearch,
-                decoration: InputDecoration(
-                  hintText: 'Search by username or email',
-                  hintStyle: GoogleFonts.inter(
-                    color: isDark ? DhanWiserColors.gray500 : DhanWiserColors.gray400,
-                    fontSize: 15,
-                  ),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(Icons.search_rounded, color: sub, size: 20),
-                  ),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                  filled: true,
-                  fillColor: isDark ? DhanWiserColors.inputDark : DhanWiserColors.inputLight,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: DhanWiserColors.primary.withValues(alpha: 0.5),
-                      width: 1.5,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Results ──
-            Expanded(child: _buildResults(isDark, surface, text, sub)),
-          ],
+      appBar: AppBar(
+        title: const Text('Find People'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Search bar ──
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: SearchBar(
+              controller: _searchController,
+              hintText: 'Search by username or email',
+              leading: Icon(Icons.search_rounded,
+                  color: cs.onSurfaceVariant, size: 22),
+              onChanged: (q) {
+                if (q.length >= 2) _performSearch(q);
+              },
+              onSubmitted: _performSearch,
+              textStyle: WidgetStateProperty.all(
+                GoogleFonts.inter(color: cs.onSurface, fontSize: 15),
+              ),
+              elevation: WidgetStateProperty.all(0),
+              backgroundColor:
+                  WidgetStateProperty.all(isDark
+                      ? cs.surfaceContainerHigh
+                      : cs.surfaceContainerHighest),
+              shape: WidgetStateProperty.all(
+                RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+              ),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 16),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // ── Results ──
+          Expanded(child: _buildResults(cs, isDark)),
+        ],
       ),
     );
   }
 
-  Widget _buildInviteButton(PublicUser user, Color text) {
+  Widget _buildInviteButton(PublicUser user, ColorScheme cs) {
     final state = _inviteStates[user.id];
 
     if (state == 'loading') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: DhanWiserColors.primary.withValues(alpha: 0.1),
+          color: cs.primaryContainer.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(10),
         ),
         child: SizedBox(
-          width: 18, height: 18,
+          width: 18,
+          height: 18,
           child: CircularProgressIndicator(
-            color: DhanWiserColors.primary, strokeWidth: 2),
+              color: cs.primary, strokeWidth: 2),
         ),
       );
     }
@@ -318,7 +289,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: DhanWiserColors.mint.withValues(alpha: 0.1),
+          color: DhanWiserColors.mint.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -326,36 +297,36 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           children: [
             Icon(Icons.check_rounded, color: DhanWiserColors.mint, size: 16),
             const SizedBox(width: 4),
-            Text('Sent', style: GoogleFonts.inter(
-              color: DhanWiserColors.mint, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              'Sent',
+              style: GoogleFonts.inter(
+                color: DhanWiserColors.mint,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       );
     }
 
-    return GestureDetector(
-      onTap: () => _showInviteDialog(user),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: DhanWiserColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          'Invite',
-          style: GoogleFonts.inter(
-            color: DhanWiserColors.primary,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+    return FilledButton.tonal(
+      onPressed: () => _showInviteDialog(user),
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        'Invite',
+        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _buildResults(bool isDark, Color surface, Color text, Color sub) {
+  Widget _buildResults(ColorScheme cs, bool isDark) {
     if (_isSearching) {
-      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+      return Center(child: CircularProgressIndicator(color: cs.primary));
     }
 
     if (_searchError != null) {
@@ -363,9 +334,11 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded, color: DhanWiserColors.coral, size: 32),
+            Icon(Icons.warning_amber_rounded, color: cs.error, size: 32),
             const SizedBox(height: 12),
-            Text(_searchError!, style: GoogleFonts.inter(color: sub, fontSize: 14)),
+            Text(_searchError!,
+                style:
+                    GoogleFonts.inter(color: cs.onSurfaceVariant, fontSize: 14)),
           ],
         ),
       );
@@ -377,19 +350,30 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 64, height: 64,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
-                color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.12 : 0.06),
+                color: cs.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(Icons.search_off_rounded, color: DhanWiserColors.primary, size: 28),
+              child:
+                  Icon(Icons.search_off_rounded, color: cs.primary, size: 28),
             ),
             const SizedBox(height: 16),
-            Text('No users found', style: GoogleFonts.inter(
-              fontSize: 17, fontWeight: FontWeight.w600, color: text)),
+            Text(
+              'No users found',
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Try a different search term', style: GoogleFonts.inter(
-              fontSize: 14, color: sub)),
+            Text(
+              'Try a different search term',
+              style: GoogleFonts.inter(
+                  fontSize: 14, color: cs.onSurfaceVariant),
+            ),
           ],
         ),
       );
@@ -400,13 +384,22 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.waving_hand_rounded, color: DhanWiserColors.primary, size: 40),
+            Icon(Icons.waving_hand_rounded, color: cs.primary, size: 40),
             const SizedBox(height: 16),
-            Text('Find your friends', style: GoogleFonts.inter(
-              fontSize: 17, fontWeight: FontWeight.w600, color: text)),
+            Text(
+              'Find your friends',
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Search by username or email', style: GoogleFonts.inter(
-              fontSize: 14, color: sub)),
+            Text(
+              'Search by username or email',
+              style: GoogleFonts.inter(
+                  fontSize: 14, color: cs.onSurfaceVariant),
+            ),
           ],
         ),
       );
@@ -417,57 +410,72 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       DhanWiserColors.teal,
       DhanWiserColors.coral,
       DhanWiserColors.warning,
-      const Color(0xFF74B9FF),
+      DhanWiserColors.tertiary,
     ];
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final user = _searchResults[index];
         final color = userColors[index % userColors.length];
-        final initial = user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?';
+        final initial =
+            user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?';
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
-                blurRadius: 8, offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48, height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(14),
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          elevation: 0,
+          color: isDark
+              ? cs.surfaceContainerHigh
+              : cs.surfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
                 ),
-                child: Center(
-                  child: Text(initial, style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700, color: color, fontSize: 20)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.fullName,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          color: cs.onSurface,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        '@${user.username}',
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: cs.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(user.fullName, style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600, color: text, fontSize: 15)),
-                    Text('@${user.username}', style: GoogleFonts.inter(
-                      fontSize: 13, color: sub)),
-                  ],
-                ),
-              ),
-              _buildInviteButton(user, text),
-            ],
+                _buildInviteButton(user, cs),
+              ],
+            ),
           ),
         );
       },

@@ -129,12 +129,15 @@ export const settlementController = {
     }
   },
 
-  // Get settlements for a server
+  // Get settlements for a server (paginated)
   async getServerSettlements(req, res) {
     try {
       const { serverId } = req.params;
       const userId = req.user.userId;
-      const { status } = req.query; // Optional filter: 'pending', 'approved', 'rejected'
+      const { status } = req.query;
+      const page = Math.max(1, parseInt(req.query.page) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
+      const offset = (page - 1) * limit;
 
       // Verify membership
       const memberCheck = await pool.query(
@@ -149,27 +152,36 @@ export const settlementController = {
         });
       }
 
-      // Build query
-      let query = `
-        SELECT s.id, s.amount, s.status, s.notes, s.proof_image, s.initiated_at, s.approved_at,
+      // Build WHERE clause
+      let whereClause = 'WHERE s.server_id = $1';
+      const params = [serverId];
+
+      if (status) {
+        whereClause += ` AND s.status = $${params.length + 1}`;
+        params.push(status);
+      }
+
+      // Get total count
+      const countResult = await pool.query(
+        `SELECT COUNT(*) FROM settlements s ${whereClause}`,
+        params
+      );
+      const total = parseInt(countResult.rows[0].count);
+      const totalPages = Math.ceil(total / limit);
+
+      // Get paginated settlements
+      const result = await pool.query(
+        `SELECT s.id, s.amount, s.status, s.notes, s.proof_image, s.initiated_at, s.approved_at,
                u1.id as payer_id, u1.username as payer_username, u1.full_name as payer_name,
                u2.id as receiver_id, u2.username as receiver_username, u2.full_name as receiver_name
         FROM settlements s
         JOIN users u1 ON s.payer_id = u1.id
         JOIN users u2 ON s.receiver_id = u2.id
-        WHERE s.server_id = $1
-      `;
-
-      const params = [serverId];
-
-      if (status) {
-        query += ` AND s.status = $2`;
-        params.push(status);
-      }
-
-      query += ` ORDER BY s.initiated_at DESC`;
-
-      const result = await pool.query(query, params);
+        ${whereClause}
+        ORDER BY s.initiated_at DESC
+        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+        [...params, limit, offset]
+      );
 
       res.json({
         success: true,
@@ -193,7 +205,14 @@ export const settlementController = {
             initiatedAt: settlement.initiated_at,
             approvedAt: settlement.approved_at
           })),
-          count: result.rows.length
+          count: result.rows.length,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasMore: page < totalPages
+          }
         }
       });
     } catch (error) {
@@ -252,6 +271,60 @@ export const settlementController = {
       });
     } catch (error) {
       console.error('Get pending settlements error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error: error.message
+      });
+    }
+  },
+
+  // Get outgoing settlements for current user (where they're the payer)
+  async getMyOutgoingSettlements(req, res) {
+    try {
+      const userId = req.user.userId;
+
+      const result = await pool.query(
+        `SELECT s.id, s.server_id, s.amount, s.notes, s.proof_image, s.initiated_at,
+                srv.name as server_name,
+                u.id as payer_id, u.username as payer_username, u.full_name as payer_name,
+                receiver.id as receiver_id, receiver.username as receiver_username, receiver.full_name as receiver_name
+         FROM settlements s
+         JOIN servers srv ON s.server_id = srv.id
+         JOIN users u ON s.payer_id = u.id
+         JOIN users receiver ON s.receiver_id = receiver.id
+         WHERE s.payer_id = $1 AND s.status = 'pending'
+         ORDER BY s.initiated_at DESC`,
+        [userId]
+      );
+
+      res.json({
+        success: true,
+        data: {
+          settlements: result.rows.map(settlement => ({
+            id: settlement.id,
+            serverId: settlement.server_id,
+            serverName: settlement.server_name,
+            payer: {
+              id: settlement.payer_id,
+              username: settlement.payer_username,
+              fullName: settlement.payer_name
+            },
+            receiver: {
+              id: settlement.receiver_id,
+              username: settlement.receiver_username,
+              fullName: settlement.receiver_name
+            },
+            amount: parseFloat(settlement.amount),
+            notes: settlement.notes,
+            proofImage: settlement.proof_image,
+            initiatedAt: settlement.initiated_at
+          })),
+          count: result.rows.length
+        }
+      });
+    } catch (error) {
+      console.error('Get outgoing settlements error:', error);
       res.status(500).json({
         success: false,
         message: 'Server error',
