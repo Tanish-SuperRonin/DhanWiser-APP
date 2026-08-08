@@ -21,6 +21,7 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+  final FocusNode _amountFocusNode = FocusNode();
   String _selectedCategory = 'Food';
   String _splitType = 'equally';
   int? _selectedServerId;
@@ -48,7 +49,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final serverProv = Provider.of<ServerProvider>(context, listen: false);
       if (_selectedServerId == null) {
-        serverProv.fetchServers();
+        serverProv.fetchServers().then((_) {
+          if (!mounted) return;
+          final prov = Provider.of<ServerProvider>(context, listen: false);
+          if (prov.servers.isNotEmpty) {
+            _onServerSelected(prov.servers.first.id);
+          }
+        });
       } else {
         serverProv.fetchServerDetails(_selectedServerId!).then((_) {
           // Auto-select the first channel
@@ -69,6 +76,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _amountFocusNode.dispose();
     for (final c in _customAmountControllers.values) {
       c.dispose();
     }
@@ -255,7 +263,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -269,7 +277,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert_rounded, color: DhanWiserColors.textPrimary),
+            icon: Icon(Icons.more_vert_rounded, color: DhanWiserColors.textPrimary),
             onPressed: () {},
           ),
         ],
@@ -277,85 +285,90 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       body: Column(
         children: [
           // ── Amount Input Hero ──
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            alignment: Alignment.center,
-            child: Stack(
+          GestureDetector(
+            onTap: () => FocusScope.of(context).requestFocus(_amountFocusNode),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 32),
               alignment: Alignment.center,
-              children: [
-                // Subtle Glow
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-                  child: Container(
-                    width: 192,
-                    height: 192,
-                    decoration: BoxDecoration(
-                      color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                  ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                    .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
-                ),
-                
-                Column(
-                  children: [
-                    Text(
-                      'TOTAL AMOUNT',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        letterSpacing: 0.05,
-                        fontWeight: FontWeight.w600,
-                        color: DhanWiserColors.textSecondary,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Subtle Glow
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+                    child: Container(
+                      width: 192,
+                      height: 192,
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '₹',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: DhanWiserColors.textPrimary.withValues(alpha: 0.6),
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
+                    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                      .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
+                  ),
+                  
+                  Column(
+                    children: [
+                      Text(
+                        'TOTAL AMOUNT',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          letterSpacing: 0.05,
+                          fontWeight: FontWeight.w600,
+                          color: DhanWiserColors.textSecondary,
                         ),
-                        const SizedBox(width: 8),
-                        IntrinsicWidth(
-                          child: TextField(
-                            controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            textAlign: TextAlign.center,
-                            onChanged: (_) => setState(() {}),
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '₹',
                             style: GoogleFonts.plusJakartaSans(
-                              fontSize: 56,
+                              fontSize: 40,
                               fontWeight: FontWeight.w700,
-                              color: DhanWiserColors.textPrimary,
-                              height: 1.1,
+                              color: DhanWiserColors.textPrimary.withValues(alpha: 0.6),
                               fontFeatures: const [FontFeature.tabularFigures()],
                             ),
-                            decoration: InputDecoration(
-                              hintText: '0.00',
-                              hintStyle: GoogleFonts.plusJakartaSans(
+                          ),
+                          SizedBox(width: 8),
+                          IntrinsicWidth(
+                            child: TextField(
+                              controller: _amountController,
+                              focusNode: _amountFocusNode,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              textAlign: TextAlign.center,
+                              onChanged: (_) => setState(() {}),
+                              style: GoogleFonts.plusJakartaSans(
                                 fontSize: 56,
                                 fontWeight: FontWeight.w700,
-                                color: DhanWiserColors.textPrimary.withValues(alpha: 0.3),
+                                color: DhanWiserColors.textPrimary,
                                 height: 1.1,
                                 fontFeatures: const [FontFeature.tabularFigures()],
                               ),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
+                              decoration: InputDecoration(
+                                hintText: '0.00',
+                                hintStyle: GoogleFonts.plusJakartaSans(
+                                  fontSize: 56,
+                                  fontWeight: FontWeight.w700,
+                                  color: DhanWiserColors.textPrimary.withValues(alpha: 0.3),
+                                  height: 1.1,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           
@@ -384,7 +397,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     children: [
                       // Expense Title
                       _buildSectionTitle('EXPENSE TITLE'),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         decoration: BoxDecoration(
@@ -393,8 +406,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.edit_rounded, color: DhanWiserColors.textSecondary, size: 20),
-                            const SizedBox(width: 12),
+                            Icon(Icons.edit_rounded, color: DhanWiserColors.textSecondary, size: 20),
+                            SizedBox(width: 12),
                             Expanded(
                               child: TextField(
                                 controller: _noteController,
@@ -411,7 +424,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Category
                       _buildSectionTitle('CATEGORY'),
@@ -452,7 +465,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                         size: 24,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
+                                    SizedBox(height: 4),
                                     Text(
                                       cat['name']!,
                                       style: GoogleFonts.inter(
@@ -467,7 +480,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Split Engine
                       Container(
@@ -496,7 +509,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                           value: _selectedServerId,
                                           dropdownColor: DhanWiserColors.surface,
                                           hint: Text('Select group', style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14)),
-                                          icon: const Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
+                                          icon: Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
                                           style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14),
                                           onChanged: (val) {
                                             if (val != null) _onServerSelected(val);
@@ -510,7 +523,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   ),
                                 ],
                               ),
-                              const Divider(color: DhanWiserColors.surfaceBright, height: 24),
+                              Divider(color: DhanWiserColors.surfaceBright, height: 24),
                             ],
 
                             // Paid by
@@ -539,7 +552,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                               ? _paidByUserId
                                               : (members.isNotEmpty ? members.first.userId : null),
                                           dropdownColor: DhanWiserColors.surface,
-                                          icon: const Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
+                                          icon: Icon(Icons.expand_more_rounded, color: DhanWiserColors.textDisabled, size: 16),
                                           style: GoogleFonts.inter(color: DhanWiserColors.textPrimary, fontSize: 14),
                                           onChanged: (val) => setState(() => _paidByUserId = val),
                                           items: members.map((m) {
@@ -573,7 +586,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
 
                             // Segmented Control
                             Container(
@@ -630,7 +643,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
 
                             // Split Preview Rows
                             if (_selectedServerId != null)
@@ -658,7 +671,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                       if (_splitType == 'custom') ...[
                                         const SizedBox(height: 12),
                                         Divider(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1), height: 1),
-                                        const SizedBox(height: 12),
+                                        SizedBox(height: 12),
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
@@ -682,7 +695,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                       
                       // Primary Action
                       SizedBox(
@@ -698,7 +711,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                           ),
                           child: _isSaving
-                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onTertiaryFixed))
+                              ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onTertiaryFixed))
                               : Text(
                                   'Add Expense',
                                   style: GoogleFonts.plusJakartaSans(
@@ -708,7 +721,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -748,7 +761,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 Container(
                   width: 32,
                   height: 32,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: DhanWiserColors.surfaceBright,
                     shape: BoxShape.circle,
                   ),
@@ -767,9 +780,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.person_rounded, color: DhanWiserColors.secondaryFixed, size: 18),
+                  child: Icon(Icons.person_rounded, color: DhanWiserColors.secondaryFixed, size: 18),
                 ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text(
                 isYou ? 'You' : member.fullName,
                 style: GoogleFonts.inter(fontSize: 14, color: DhanWiserColors.textPrimary),

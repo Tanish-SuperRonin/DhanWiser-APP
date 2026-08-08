@@ -1,117 +1,110 @@
 import 'package:flutter/material.dart';
 
-/// DhanWiser Design System Colors — v3 (Lime & Violet)
-///
-/// Lime Green (#C0F500) and Violet (#C9BFFF) on a deep black background (#131315).
-/// Matches the new HTML/Tailwind frontend design tokens.
+/// Midnight Ledger's stable design tokens. New widgets should use ThemeData
+/// where possible so they automatically respond to bright mode.
 class DhanWiserColors {
   DhanWiserColors._();
-
-  // ──────────────────────────────────────────────
-  // Base Palette (from Tailwind Config)
-  // ──────────────────────────────────────────────
-  static const Color background = Color(0xFF131315);
-  static const Color surface = Color(0xFF161618);
-  static const Color surfaceDim = Color(0xFF131315);
-  static const Color surfaceBright = Color(0xFF39393B);
-
-  // Surface Containers
-  static const Color surfaceContainerLowest = Color(0xFF0E0E10);
-  static const Color surfaceContainerLow = Color(0xFF1C1B1D);
-  static const Color surfaceContainer = Color(0xFF201F21);
-  static const Color surfaceContainerHigh = Color(0xFF2A2A2C);
-  static const Color surfaceContainerHighest = Color(0xFF353437);
-  static const Color card = Color(0xFF1E1E22);
-
-  // Primary (White in this config)
-  static const Color primary = Color(0xFFFFFFFF);
-  static const Color onPrimary = Color(0xFF273500);
-  
-  // Primary Fixed (Lime Green - main brand color)
-  static const Color primaryFixed = Color(0xFFC0F500);
-  static const Color primaryFixedDim = Color(0xFFA8D700);
-  static const Color onPrimaryFixed = Color(0xFF161F00);
-  static const Color onPrimaryFixedVariant = Color(0xFF3B4D00);
-  static const Color primaryContainer = Color(0xFFC0F500);
-  static const Color onPrimaryContainer = Color(0xFF546D00);
-
-  // Secondary (Violet)
-  static const Color secondary = Color(0xFFC9BFFF);
-  static const Color onSecondary = Color(0xFF2E009C);
-  static const Color secondaryFixed = Color(0xFFE5DEFF);
-  static const Color secondaryFixedDim = Color(0xFFC9BFFF);
-  static const Color onSecondaryFixed = Color(0xFF1A0063);
-  static const Color onSecondaryFixedVariant = Color(0xFF441CC8);
-  static const Color secondaryContainer = Color(0xFF4720CA);
-  static const Color onSecondaryContainer = Color(0xFFBAAEFF);
-
-  // Tertiary (Mint Green)
-  static const Color tertiary = Color(0xFFFFFFFF);
-  static const Color onTertiary = Color(0xFF00391C);
-  static const Color tertiaryFixed = Color(0xFF66FEA2);
-  static const Color tertiaryFixedDim = Color(0xFF43E188);
-  static const Color onTertiaryFixed = Color(0xFF00210E);
-  static const Color onTertiaryFixedVariant = Color(0xFF00522B);
-  static const Color tertiaryContainer = Color(0xFF66FEA2);
-  static const Color onTertiaryContainer = Color(0xFF00743F);
-
-  // Error / Financial Negatives
-  static const Color error = Color(0xFFFF5C5C);
-  static const Color onError = Color(0xFF690005);
-  static const Color errorContainer = Color(0xFF93000A);
-  static const Color onErrorContainer = Color(0xFFFFDAD6);
-
-  // Text Colors
-  static const Color textPrimary = Color(0xFFF7F7F5);
-  static const Color textSecondary = Color(0xFF9A9AA2);
-  static const Color textDisabled = Color(0xFF5C5C63);
-
-  // Outlines
-  static const Color outline = Color(0xFF8E9479);
-  static const Color outlineVariant = Color(0xFF434933);
-
-  // Additional Mappings
-  static const Color onSurface = Color(0xFFE5E1E4);
-  static const Color onSurfaceVariant = Color(0xFFC4CAAC);
-  static const Color inverseSurface = Color(0xFFE5E1E4);
-  static const Color inverseOnSurface = Color(0xFF313032);
-  static const Color inversePrimary = Color(0xFF4F6600);
-
-  // ──────────────────────────────────────────────
-  // Financial Indicator Aliases (backward compat)
-  // ──────────────────────────────────────────────
-  static const Color positive = primaryFixed;
-  static const Color positiveSoft = Color(0x26C0F500); 
-  static const Color negative = secondary; 
-  static const Color negativeSoft = Color(0x26C9BFFF);
-  static const Color warning = Color(0xFFFBBF24);
-  static const Color coral = error;
-  static const Color teal = tertiaryFixed;
-  static const Color mint = tertiaryFixed;
-  static const Color success = tertiaryFixed;
-
-  // Tints for subtle backgrounds
-  static const Color coralTint = Color(0x1AF87171);
-  static const Color tealTint = Color(0x1A34D399);
-  static const Color primaryTint = Color(0x1AF5A623);
-
-  // ──────────────────────────────────────────────
-  // Category Colors (for expenses)
-  // ──────────────────────────────────────────────
-  static const Color catFood = primaryFixed;
-  static const Color catTransport = secondary;
-  static const Color catRent = tertiaryFixed;
-  static const Color catGroceries = Color(0xFF10B981);
-  static const Color catUtilities = Color(0xFFF97316);
-  static const Color catFun = Color(0xFFEC4899);
-
-  // Group avatar colors
-  static const List<Color> groupColors = [
+  static Color background = Color(0xFF0B0D10);
+  static Color surface = Color(0xFF111419);
+  static Color surfaceDim = Color(0xFF090B0E);
+  static Color surfaceBright = Color(0xFF2A303A);
+  static Color surfaceContainerLowest = Color(0xFF0E1014);
+  static Color surfaceContainerLow = Color(0xFF15181E);
+  static Color surfaceContainer = Color(0xFF191D24);
+  static Color surfaceContainerHigh = Color(0xFF20252D);
+  static Color surfaceContainerHighest = Color(0xFF292F39);
+  static Color surfaceVariant = Color(0xFF262C35);
+  static Color card = surfaceContainer;
+  static Color primary = Color(0xFFC9F542);
+  static Color onPrimary = Color(0xFF172000);
+  static Color primaryFixed = Color(0xFFC9F542);
+  static Color primaryFixedDim = Color(0xFFA9D72E);
+  static Color onPrimaryFixed = Color(0xFF172000);
+  static Color onPrimaryFixedVariant = Color(0xFF344800);
+  static Color primaryContainer = Color(0xFFB7E83B);
+  static Color onPrimaryContainer = Color(0xFF172000);
+  static Color secondary = Color(0xFFB7ABFF);
+  static Color onSecondary = Color(0xFF21185E);
+  static Color secondaryFixed = Color(0xFFDCD7FF);
+  static Color secondaryFixedDim = secondary;
+  static Color onSecondaryFixed = onSecondary;
+  static Color onSecondaryFixedVariant = Color(0xFF504995);
+  static Color secondaryContainer = Color(0xFF3A356E);
+  static Color onSecondaryContainer = Color(0xFFDCD7FF);
+  static Color tertiary = Color(0xFF66FEA2);
+  static Color onTertiary = Color(0xFF00391C);
+  static Color tertiaryFixed = tertiary;
+  static Color tertiaryFixedDim = Color(0xFF43E188);
+  static Color onTertiaryFixed = onTertiary;
+  static Color onTertiaryFixedVariant = Color(0xFF00522B);
+  static Color tertiaryContainer = tertiary;
+  static Color onTertiaryContainer = Color(0xFF00743F);
+  static Color error = Color(0xFFFF817A);
+  static Color onError = Color(0xFF690005);
+  static Color errorContainer = Color(0xFF93000A);
+  static Color onErrorContainer = Color(0xFFFFDAD6);
+  static Color textPrimary = Color(0xFFF5F7FA);
+  static Color textSecondary = Color(0xFFA5ACB9);
+  static Color textDisabled = Color(0xFF707887);
+  static Color outline = Color(0xFF677081);
+  static Color outlineVariant = Color(0xFF2D3440);
+  static Color onSurface = textPrimary;
+  static Color onSurfaceVariant = textSecondary;
+  static Color inverseSurface = Color(0xFFF5F7FA);
+  static Color inverseOnSurface = Color(0xFF191D24);
+  static Color inversePrimary = Color(0xFF415900);
+  static Color positive = primaryFixed;
+  static Color positiveSoft = Color(0x26C9F542);
+  static Color negative = error;
+  static Color negativeSoft = Color(0x26FF817A);
+  static Color warning = Color(0xFFF2A93B);
+  static Color coral = error;
+  static Color teal = tertiary;
+  static Color mint = tertiary;
+  static Color success = tertiary;
+  static Color coralTint = Color(0x1AFF817A);
+  static Color tealTint = Color(0x1A66FEA2);
+  static Color primaryTint = Color(0x1AC9F542);
+  static Color catFood = primaryFixed;
+  static Color catTransport = secondary;
+  static Color catRent = tertiary;
+  static Color catGroceries = Color(0xFF10B981);
+  static Color catUtilities = Color(0xFFF97316);
+  static Color catFun = Color(0xFFEC4899);
+  static List<Color> groupColors = [
     primaryFixed,
     secondary,
-    tertiaryFixed,
+    tertiary,
     Color(0xFF3B82F6),
     Color(0xFFEC4899),
-    Color(0xFF10B981),
+    Color(0xFF10B981)
   ];
+  static void setBrightness(Brightness brightness) {
+    final light = brightness == Brightness.light;
+    background = light ? const Color(0xFFF8F9F7) : const Color(0xFF0B0D10);
+    surface = light ? Colors.white : const Color(0xFF111419);
+    surfaceDim = light ? const Color(0xFFF0F2EE) : const Color(0xFF090B0E);
+    surfaceBright = light ? Colors.white : const Color(0xFF2A303A);
+    surfaceContainerLowest = light ? Colors.white : const Color(0xFF0E1014);
+    surfaceContainerLow = light ? const Color(0xFFF4F6F2) : const Color(0xFF15181E);
+    surfaceContainer = light ? Colors.white : const Color(0xFF191D24);
+    surfaceContainerHigh = light ? const Color(0xFFF2F4F1) : const Color(0xFF20252D);
+    surfaceContainerHighest = light ? const Color(0xFFE9EDE8) : const Color(0xFF292F39);
+    surfaceVariant = light ? const Color(0xFFE6EAE5) : const Color(0xFF262C35);
+    card = surfaceContainer;
+    primary = primaryFixed = light ? const Color(0xFF587900) : const Color(0xFFC9F542);
+    primaryContainer = light ? const Color(0xFFE5F4B8) : const Color(0xFFB7E83B);
+    onPrimary = onPrimaryFixed = light ? Colors.white : const Color(0xFF172000);
+    onPrimaryContainer = light ? const Color(0xFF253600) : const Color(0xFF172000);
+    secondary = light ? const Color(0xFF5C57A9) : const Color(0xFFB7ABFF);
+    tertiary = light ? const Color(0xFF087552) : const Color(0xFF66FEA2);
+    error = light ? const Color(0xFFC43F38) : const Color(0xFFFF817A);
+    textPrimary = light ? const Color(0xFF171B20) : const Color(0xFFF5F7FA);
+    textSecondary = light ? const Color(0xFF596270) : const Color(0xFFA5ACB9);
+    textDisabled = light ? const Color(0xFF88919C) : const Color(0xFF707887);
+    outline = light ? const Color(0xFF737D89) : const Color(0xFF677081);
+    outlineVariant = light ? const Color(0xFFDCE1DD) : const Color(0xFF2D3440);
+    onSurface = textPrimary; onSurfaceVariant = textSecondary;
+  }
+
 }

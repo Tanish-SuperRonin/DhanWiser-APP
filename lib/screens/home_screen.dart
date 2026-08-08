@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../widgets/bouncing_button.dart';
 import '../widgets/shimmer_loading.dart';
+import '../widgets/dhanwiser_ui.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
@@ -13,6 +13,10 @@ import '../services/expense_service.dart';
 import '../services/cache_service.dart';
 import '../models/balance_model.dart';
 import '../models/server_model.dart';
+import '../theme/design_tokens.dart';
+import 'friend_discovery_screen.dart';
+import 'activity_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -188,43 +192,55 @@ class _HomeScreenState extends State<HomeScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final homeContent = RefreshIndicator(
+      onRefresh: () async {
+        // Force invalidate caches on manual pull-to-refresh
+        _lastRefreshTime = null;
+        await CacheService.invalidate(_balanceSummaryKey);
+        await CacheService.invalidate('servers_list');
+        await _loadData();
+      },
+      color: DhanWiserColors.primaryFixed,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: DhanWiserTokens.pagePadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              _buildHeader(cs),
+              const SizedBox(height: 32),
+              _buildBalanceCard(cs, isDark),
+              const SizedBox(height: 32),
+              _buildQuickActionsGrid(cs, isDark),
+              const SizedBox(height: 32),
+              _buildGroupsSection(cs, isDark),
+              const SizedBox(height: 120),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final tabIndexMap = _selectedIndex == 2 ? 0 : (_selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex);
+
     return Scaffold(
       extendBody: true,
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            // Force invalidate caches on manual pull-to-refresh
-            _lastRefreshTime = null;
-            await CacheService.invalidate(_balanceSummaryKey);
-            await CacheService.invalidate('servers_list');
-            await _loadData();
-          },
-          color: DhanWiserColors.primaryFixed,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  _buildHeader(cs),
-                  const SizedBox(height: 32),
-                  _buildBalanceCard(cs, isDark),
-                  const SizedBox(height: 32),
-                  _buildQuickActionsGrid(cs, isDark),
-                  const SizedBox(height: 32),
-                  _buildGroupsSection(cs, isDark),
-                  const SizedBox(height: 120),
-                ],
-              ),
-            ),
-          ),
+        child: IndexedStack(
+          index: tabIndexMap,
+          children: [
+            homeContent,
+            const FriendDiscoveryScreen(),
+            const ActivityScreen(),
+            const ProfileScreen(),
+          ],
         ),
       ),
 
-      // Floating Glass NavigationBar (Matching Tailwind)
+      // Floating Glass NavigationBar (Matching Airbnb UX Standards)
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
         child: ClipRRect(
@@ -247,12 +263,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onDestinationSelected: (index) {
                   if (index == 2) {
                     _navigateAndRefresh('/add-expense');
-                  } else if (index == 1) {
-                    Navigator.pushNamed(context, '/friend-discovery');
-                  } else if (index == 3) {
-                    Navigator.pushNamed(context, '/activity');
-                  } else if (index == 4) {
-                    Navigator.pushNamed(context, '/profile');
                   } else {
                     setState(() => _selectedIndex = index);
                   }
@@ -272,11 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Container(
                       width: 48,
                       height: 48,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: DhanWiserColors.primaryFixed,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add_rounded,
                         color: DhanWiserColors.onPrimaryFixed,
                         size: 28,
@@ -307,9 +317,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final name = auth.currentUser?.fullName ?? 'there';
-        final initial =
-            (auth.currentUser?.fullName ?? 'U').isNotEmpty ? (auth.currentUser?.fullName ?? 'U')[0].toUpperCase() : 'U';
-            
+        final initial = (auth.currentUser?.fullName ?? 'U').isNotEmpty
+            ? (auth.currentUser?.fullName ?? 'U')[0].toUpperCase()
+            : 'U';
+
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -319,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: DhanWiserColors.surface,
                   shape: BoxShape.circle,
                 ),
@@ -335,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            
+
             // Greeting center
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -359,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            
+
             // Notification bell right
             Consumer<NotificationProvider>(
               builder: (context, notif, _) {
@@ -372,13 +383,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         color: DhanWiserColors.surface,
                         shape: BoxShape.circle,
-                        border: Border.all(color: DhanWiserColors.outlineVariant),
+                        border:
+                            Border.all(color: DhanWiserColors.outlineVariant),
                       ),
                       child: IconButton(
                         onPressed: () =>
                             Navigator.pushNamed(context, '/activity'),
-                        icon: const Icon(
-                            Icons.notifications_outlined, size: 20),
+                        icon:
+                            const Icon(Icons.notifications_outlined, size: 20),
                         color: DhanWiserColors.textPrimary,
                       ),
                     ),
@@ -389,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: DhanWiserColors.primaryFixed,
                             shape: BoxShape.circle,
                           ),
@@ -412,21 +424,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ? DhanWiserColors.primaryFixed
             : DhanWiserColors.textPrimary;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: DhanWiserColors.surface,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: DhanWiserColors.primaryFixed.withValues(alpha: 0.05),
-            blurRadius: 40,
-            spreadRadius: 0,
-            offset: const Offset(0, 10),
-          )
-        ]
-      ),
+    return DhanWiserSurface(
+      padding: const EdgeInsets.all(24),
+      tint: DhanWiserColors.surfaceContainer,
+      radius: DhanWiserTokens.radiusLarge,
       child: Column(
         children: [
           Text(
@@ -480,7 +481,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    ).animate().fade(duration: 300.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
+    ).animate().fade(duration: 300.ms).slideY(
+        begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
   }
 
   Widget _buildBalanceItem(
@@ -537,32 +539,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       children: actions.map((action) {
         return Expanded(
-          child: GestureDetector(
+          child: DhanWiserSurface(
             onTap: () => _navigateAndRefresh(action.route),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: DhanWiserColors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: DhanWiserColors.outlineVariant),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(action.icon, color: action.color, size: 28),
-                  const SizedBox(height: 8),
-                  Text(
-                    action.label,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(action.icon, color: action.color, size: 28),
+                const SizedBox(height: 8),
+                Text(
+                  action.label,
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: DhanWiserColors.textPrimary,
                   ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         );
@@ -574,31 +569,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Your Groups',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: DhanWiserColors.textPrimary,
-                letterSpacing: -0.3,
-              ),
-            ),
-            TextButton(
-              onPressed: () {}, // Optional see all logic
-              child: Text(
-                'See All',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.primaryFixed,
-                ),
-              ),
-            ),
-          ],
-        ),
+        const DhanWiserSectionHeader(title: 'Your groups'),
         const SizedBox(height: 16),
         Consumer<ServerProvider>(
           builder: (context, serverProv, _) {
@@ -622,8 +593,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   server.name,
                   '${server.memberCount} members',
                   server.role == 'admin',
-                ).animate().fade(duration: 200.ms, delay: (index * 50).ms)
-                 .slideX(begin: 0.05, end: 0, curve: Curves.easeOutCubic, duration: 200.ms);
+                )
+                    .animate()
+                    .fade(duration: 200.ms, delay: (index * 50).ms)
+                    .slideX(
+                        begin: 0.05,
+                        end: 0,
+                        curve: Curves.easeOutCubic,
+                        duration: 200.ms);
               }).toList(),
             );
           },
@@ -650,149 +627,138 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: BouncingButton(
+      child: DhanWiserSurface(
         onTap: () => _navigateAndRefresh('/server-detail', arguments: {
           'serverId': id,
           'serverName': name,
           'members': members,
           'imageUrl': '',
         }),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: DhanWiserColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: DhanWiserColors.outlineVariant),
-          ),
-          child: Row(
-            children: [
-              Hero(
-                tag: 'server_avatar_$id',
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(groupIcon, color: DhanWiserColors.primaryFixed, size: 24),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Hero(
+              tag: 'server_avatar_$id',
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(groupIcon,
+                    color: DhanWiserColors.primaryFixed, size: 24),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: DhanWiserColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isAdmin) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: DhanWiserColors.secondary
+                                .withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Text(
-                            name,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
+                            'Admin',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: DhanWiserColors.textPrimary,
+                              color: DhanWiserColors.secondary,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isAdmin) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: DhanWiserColors.secondary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Admin',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: DhanWiserColors.secondary,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    members,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: DhanWiserColors.textSecondary,
+                      fontWeight: FontWeight.w400,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      members,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: DhanWiserColors.textSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: DhanWiserColors.textDisabled,
-                size: 24,
-              ),
-            ],
-          ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: DhanWiserColors.textDisabled,
+              size: 24,
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildEmptyGroups(ColorScheme cs, bool isDark) {
-    return Card(
-      elevation: 0,
-      color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: cs.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.people_outline_rounded,
-                size: 32,
-                color: cs.primary,
-              ),
+    return DhanWiserSurface(
+      tint: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+      radius: DhanWiserTokens.radiusLarge,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(20),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No groups yet',
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
+            child: Icon(
+              Icons.people_outline_rounded,
+              size: 32,
+              color: cs.primary,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Create a group and start splitting expenses\nwith friends and flatmates',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: cs.onSurfaceVariant,
-                height: 1.5,
-              ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No groups yet',
+            style: GoogleFonts.manrope(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface,
             ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => _navigateAndRefresh('/create-server'),
-              child: const Text('Create Your First Group'),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Create a group and start splitting expenses\nwith friends and flatmates',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.manrope(
+              fontSize: 14,
+              color: cs.onSurfaceVariant,
+              height: 1.5,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: () => _navigateAndRefresh('/create-server'),
+            child: const Text('Create Your First Group'),
+          ),
+        ],
       ),
     );
   }

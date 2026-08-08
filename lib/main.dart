@@ -25,6 +25,8 @@ import "package:dhanwiser_fixed/screens/settlement_screen.dart";
 import "package:dhanwiser_fixed/screens/settlement_request_screen.dart";
 import "package:dhanwiser_fixed/screens/settings_screen.dart";
 import "package:dhanwiser_fixed/screens/expense_detail_screen.dart";
+import "package:dhanwiser_fixed/screens/settlement_successful_screen.dart";
+import "package:dhanwiser_fixed/screens/group_settings_screen.dart";
 
 void main() => runApp(const MyApp());
 
@@ -108,6 +110,22 @@ class MyApp extends StatelessWidget {
               final args = settings.arguments as Map<String, dynamic>?;
               page = SettlementRequestScreen(
                 settlementId: args?['settlementId'] ?? 0,
+              );
+            }
+            if (settings.name == '/settlement-successful') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = SettlementSuccessfulScreen(
+                amount: args?['amount'] ?? 0.0,
+                receiverName: args?['receiverName'] ?? 'Unknown',
+              );
+            }
+            if (settings.name == '/group-settings') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = GroupSettingsScreen(
+                serverId: args?['serverId'] ?? 0,
+                serverName: args?['serverName'] ?? '',
+                isAdmin: args?['isAdmin'] ?? false,
+                isCreator: args?['isCreator'] ?? false,
               );
             }
 

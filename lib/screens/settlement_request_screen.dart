@@ -178,14 +178,14 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   alignment: Alignment.topLeft,
                   child: IconButton(
                     padding: const EdgeInsets.all(20),
-                    icon: const Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
+                    icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
                 const Spacer(),
                 // Settlement Bottom Sheet
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: DhanWiserColors.primaryFixed))
+                    ? Center(child: CircularProgressIndicator(color: DhanWiserColors.primaryFixed))
                     : _error != null
                         ? _buildErrorView()
                         : _buildSettlementSheet(),
@@ -216,9 +216,9 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
               color: DhanWiserColors.errorContainer.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.error_outline_rounded, color: DhanWiserColors.error, size: 32),
+            child: Icon(Icons.error_outline_rounded, color: DhanWiserColors.error, size: 32),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
@@ -287,7 +287,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 settlement.payerFullName,
                 style: GoogleFonts.plusJakartaSans(
@@ -296,7 +296,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   color: DhanWiserColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 'is requesting',
                 style: GoogleFonts.inter(
@@ -304,7 +304,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   color: DhanWiserColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Amount
               Row(
@@ -334,7 +334,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
 
               // Context Card
               if (settlement.serverName != null) ...[
@@ -350,13 +350,13 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                       Container(
                         width: 40,
                         height: 40,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: DhanWiserColors.surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.flight_takeoff_rounded, color: DhanWiserColors.primaryFixed, size: 20),
+                        child: Icon(Icons.flight_takeoff_rounded, color: DhanWiserColors.primaryFixed, size: 20),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,18 +380,18 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: DhanWiserColors.textSecondary, size: 20),
+                      Icon(Icons.chevron_right_rounded, color: DhanWiserColors.textSecondary, size: 20),
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
               ],
 
               // Split Details / Notes
               if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(color: DhanWiserColors.surfaceContainerHighest),
                     ),
@@ -420,7 +420,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
               ],
               
               if (settlement.proofImage != null && settlement.proofImage!.isNotEmpty) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 _buildProofImage(settlement.proofImage!),
               ],
               const SizedBox(height: 32),
@@ -439,7 +439,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                   ),
                   child: _isSubmitting
-                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onPrimaryFixed))
+                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onPrimaryFixed))
                       : Text(
                           'Settle Now',
                           style: GoogleFonts.plusJakartaSans(
@@ -449,14 +449,14 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                         ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: OutlinedButton(
                   onPressed: _isSubmitting ? null : _showRejectDialog,
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: DhanWiserColors.surfaceContainerHighest),
+                    side: BorderSide(color: DhanWiserColors.surfaceContainerHighest),
                     foregroundColor: DhanWiserColors.textSecondary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                   ),
@@ -469,7 +469,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
             ],
           ),
         ),

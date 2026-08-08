@@ -66,25 +66,25 @@ class _SignupScreenState extends State<SignupScreen> {
       fillColor: DhanWiserColors.surfaceContainer,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: DhanWiserColors.outline),
+        borderSide: BorderSide(color: DhanWiserColors.outline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: DhanWiserColors.outline),
+        borderSide: BorderSide(color: DhanWiserColors.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide:
-            const BorderSide(color: DhanWiserColors.primary, width: 2),
+            BorderSide(color: DhanWiserColors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: DhanWiserColors.negative),
+        borderSide: BorderSide(color: DhanWiserColors.negative),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide:
-            const BorderSide(color: DhanWiserColors.negative, width: 2),
+            BorderSide(color: DhanWiserColors.negative, width: 2),
       ),
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -103,14 +103,14 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // ── D Logo (centered) ──
                 Center(
                   child: Container(
                     width: 56,
                     height: 56,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: DhanWiserColors.primary,
                       shape: BoxShape.circle,
                     ),
@@ -126,7 +126,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Center(
                   child: Text(
                     'DhanWiser',
@@ -137,7 +137,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // ── Title ──
                 Text(
@@ -148,7 +148,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: DhanWiserColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(
                   'Join your friends on DhanWiser',
                   style: GoogleFonts.dmSans(
@@ -156,7 +156,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: DhanWiserColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
 
                 // ── Error ──
                 Consumer<AuthProvider>(
@@ -172,9 +172,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.info_outline_rounded,
+                          Icon(Icons.info_outline_rounded,
                               color: DhanWiserColors.negative, size: 18),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               auth.error!,
@@ -193,7 +193,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                 // ── Full Name ──
                 _buildLabel('FULL NAME'),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextFormField(
                   controller: _fullNameController,
                   style: GoogleFonts.dmSans(
@@ -202,7 +202,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: (v) =>
                       v == null || v.isEmpty ? 'Full name is required' : null,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // ── Username ──
                 _buildLabel('USERNAME'),
@@ -233,7 +233,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   'Others find you by this',
                   style: GoogleFonts.dmSans(
@@ -241,7 +241,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: DhanWiserColors.textDisabled,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // ── Email ──
                 _buildLabel('EMAIL'),
@@ -258,7 +258,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // ── Password ──
                 _buildLabel('PASSWORD'),
@@ -288,7 +288,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // ── UPI ID (optional) — highlighted in amber ──
                 Text(
@@ -300,14 +300,14 @@ class _SignupScreenState extends State<SignupScreen> {
                     letterSpacing: 1,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 TextFormField(
                   controller: _upiController,
                   style: GoogleFonts.dmSans(
                       color: DhanWiserColors.textPrimary, fontSize: 16),
                   decoration: _inputDeco(hint: 'name@okbank'),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   'Add later in settings. We encrypt and never expose this.',
                   style: GoogleFonts.dmSans(
@@ -315,7 +315,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     color: DhanWiserColors.textDisabled,
                   ),
                 ),
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
 
                 // ── Continue Button ──
                 Consumer<AuthProvider>(
@@ -334,7 +334,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               borderRadius: BorderRadius.circular(14)),
                         ),
                         child: auth.isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
@@ -353,7 +353,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // ── Login link ──
                 Row(
@@ -366,7 +366,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         fontSize: 14,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     GestureDetector(
                       onTap: () =>
                           Navigator.pushReplacementNamed(context, '/login'),
@@ -381,7 +381,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
               ],
             ),
           ),

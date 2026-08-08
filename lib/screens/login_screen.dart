@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -75,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Container(
                   width: 72,
                   height: 72,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: DhanWiserColors.primary,
                     shape: BoxShape.circle,
                   ),
@@ -155,17 +156,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   fillColor: DhanWiserColors.surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
@@ -215,17 +216,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                         color: DhanWiserColors.primary, width: 2),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
@@ -270,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   child: _isSubmitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
@@ -292,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Divider ──
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                       child: Divider(color: DhanWiserColors.outline)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -304,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                       child: Divider(color: DhanWiserColors.outline)),
                 ],
               ),
@@ -338,63 +339,64 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ── Skip Login (Testing) ──
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                        color: DhanWiserColors.outline),
-                    borderRadius: BorderRadius.circular(12),
-                    color: DhanWiserColors.surfaceContainer,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '⚠️  Server down?',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: DhanWiserColors.warning,
-                          fontWeight: FontWeight.w600,
+              // ── Skip Login (Testing Mode - Debug Only) ──
+              if (kDebugMode)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: DhanWiserColors.outline),
+                      borderRadius: BorderRadius.circular(12),
+                      color: DhanWiserColors.surfaceContainer,
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '⚠️  Server down?',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12,
+                            color: DhanWiserColors.warning,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            final auth = Provider.of<AuthProvider>(
-                                context,
-                                listen: false);
-                            auth.loginAsGuest();
-                            Navigator.pushReplacementNamed(
-                                context, '/home');
-                          },
-                          icon: const Icon(Icons.science_rounded,
-                              size: 18),
-                          label: Text(
-                            'Skip Login (Testing Mode)',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              final auth = Provider.of<AuthProvider>(
+                                  context,
+                                  listen: false);
+                              auth.loginAsGuest();
+                              Navigator.pushReplacementNamed(
+                                  context, '/home');
+                            },
+                            icon: const Icon(Icons.science_rounded,
+                                size: 18),
+                            label: Text(
+                              'Skip Login (Testing Mode)',
+                              style: GoogleFonts.dmSans(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: DhanWiserColors.warning,
+                              side: BorderSide(
+                                  color: DhanWiserColors.warning
+                                      .withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: DhanWiserColors.warning,
-                            side: BorderSide(
-                                color: DhanWiserColors.warning
-                                    .withValues(alpha: 0.5)),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: 40),
             ],
           ),

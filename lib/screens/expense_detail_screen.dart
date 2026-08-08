@@ -16,343 +16,325 @@ class ExpenseDetailScreen extends StatelessWidget {
     this.amount = '₹0',
     this.date = '',
     this.paidBy = 'Unknown',
-    this.categoryIcon = Icons.inventory_2_rounded,
+    this.categoryIcon = Icons.restaurant_rounded,
     this.participants,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final parsedAmount = double.tryParse(amount.replaceAll('₹', '').replaceAll(',', '').trim()) ?? 0.0;
+    final splitShare = parsedAmount > 0 ? (parsedAmount / 2).toStringAsFixed(2) : '0.00';
 
-    // Use real participants if available, otherwise show a simple paidBy row
     final splits = participants ?? [
+      {'name': 'You', 'amount': '₹$splitShare', 'status': 'Owe'},
       {'name': paidBy, 'amount': amount, 'status': 'Paid'},
     ];
 
-    final splitColors = [
-      DhanWiserColors.primary,
-      DhanWiserColors.coral,
-      DhanWiserColors.teal,
-      DhanWiserColors.warning,
-      DhanWiserColors.tertiary,
-    ];
+    final isPaidByMe = paidBy.toLowerCase() == 'you';
 
     return Scaffold(
+      backgroundColor: DhanWiserColors.background,
       appBar: AppBar(
+        backgroundColor: DhanWiserColors.background,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
           onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Split Receipt',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: DhanWiserColors.primary,
+          ),
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
-
-            // ── Hero card ──
-            Card(
-              elevation: 1,
-              color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-              surfaceTintColor: cs.primary,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: cs.primaryContainer.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(categoryIcon, color: cs.primary, size: 28),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      title,
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (date.isNotEmpty)
-                      Text(
-                        date,
-                        style: GoogleFonts.inter(
-                            fontSize: 14, color: cs.onSurfaceVariant),
-                      ),
-                    const SizedBox(height: 16),
-                    Text(
-                      amount,
-                      style: GoogleFonts.inter(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w800,
-                        color: cs.onSurface,
-                        letterSpacing: -2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // M3 tonal chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.teal.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Paid by $paidBy',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: DhanWiserColors.teal,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+            // Receipt Card
+            Container(
+              decoration: BoxDecoration(
+                color: DhanWiserColors.card,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: DhanWiserColors.surfaceVariant),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── How This Split Works — Explainer ──
-            Card(
-              elevation: 0,
-              color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.calculate_rounded, size: 18, color: cs.primary),
-                        const SizedBox(width: 8),
+                        // Icon
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: DhanWiserColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(categoryIcon, color: DhanWiserColors.onPrimaryContainer, size: 28),
+                        ),
+                        SizedBox(height: 16),
                         Text(
-                          'How this split works',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
+                          title,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: DhanWiserColors.textPrimary,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Step 1: Payer
-                    _buildStepRow(
-                      '1',
-                      DhanWiserColors.teal,
-                      RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.inter(fontSize: 13, color: cs.onSurface, height: 1.4),
-                          children: [
-                            TextSpan(
-                              text: paidBy,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            const TextSpan(text: ' paid '),
-                            TextSpan(
-                              text: amount,
-                              style: TextStyle(fontWeight: FontWeight.w700, color: DhanWiserColors.teal),
-                            ),
-                            const TextSpan(text: ' upfront (the Payer)'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Step 2: Split
-                    _buildStepRow(
-                      '2',
-                      cs.primary,
-                      Text(
-                        'The total is split among ${splits.length} ${splits.length == 1 ? 'person' : 'people'} — each person\'s share is shown below.',
-                        style: GoogleFonts.inter(fontSize: 13, color: cs.onSurface, height: 1.4),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Step 3: Debtors
-                    _buildStepRow(
-                      '3',
-                      DhanWiserColors.coral,
-                      Text(
-                        'Everyone except the payer owes their share to the payer (they are Debtors).',
-                        style: GoogleFonts.inter(fontSize: 13, color: cs.onSurface, height: 1.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Split section ──
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 12),
-              child: Text(
-                'SPLIT DETAILS',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-            ...List.generate(splits.length, (index) {
-              final split = splits[index];
-              final color = splitColors[index % splitColors.length];
-              final name = split['name']?.toString() ??
-                  split['fullName']?.toString() ??
-                  'Member';
-              final splitAmount = split['amount']?.toString() ?? '₹0';
-              final amountOwed = split['amountOwed'];
-              final amountPaid = split['amountPaid'];
-
-              // Determine display amount and status
-              String displayAmount;
-              bool isPaid;
-              if (amountOwed != null) {
-                final owed = amountOwed is num
-                    ? amountOwed.toDouble()
-                    : double.tryParse(amountOwed.toString()) ?? 0;
-                final paid = amountPaid is num
-                    ? amountPaid.toDouble()
-                    : double.tryParse(amountPaid?.toString() ?? '0') ?? 0;
-                displayAmount = '₹${owed.toStringAsFixed(2)}';
-                isPaid = paid > 0;
-              } else {
-                displayAmount =
-                    splitAmount.startsWith('₹') ? splitAmount : '₹$splitAmount';
-                isPaid = split['status'] == 'Paid';
-              }
-
-              final initial =
-                  name.isNotEmpty ? name[0].toUpperCase() : '?';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                elevation: 0,
-                color: isDark
-                    ? cs.surfaceContainerHigh
-                    : cs.surfaceContainerLowest,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                        child: Center(
-                          child: Text(
-                            initial,
+                        if (date.isNotEmpty) ...[
+                          SizedBox(height: 4),
+                          Text(
+                            date,
                             style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700,
-                              color: color,
-                              fontSize: 18,
+                              fontSize: 14,
+                              color: DhanWiserColors.textSecondary,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Text(
-                              displayAmount,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: isPaid
-                              ? DhanWiserColors.mint.withValues(alpha: 0.10)
-                              : DhanWiserColors.coral.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          isPaid ? 'Payer' : 'Owes',
+                        ],
+                        SizedBox(height: 32),
+
+                        // Bill Details
+                        Text(
+                          'BILL DETAILS',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isPaid
-                                ? DhanWiserColors.mint
-                                : DhanWiserColors.coral,
+                            color: DhanWiserColors.textSecondary,
+                            letterSpacing: 1,
                           ),
+                        ),
+                        SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Amount',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: DhanWiserColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              amount,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: DhanWiserColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Paid by',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: DhanWiserColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              paidBy,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: DhanWiserColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Dashed separator
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: DhanWiserColors.background,
+                          borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
+                        ),
+                      ),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final dashCount = (constraints.constrainWidth() / 8).floor();
+                            return Flex(
+                              direction: Axis.horizontal,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(dashCount, (_) {
+                                return SizedBox(
+                                  width: 4,
+                                  height: 1,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(color: DhanWiserColors.surfaceVariant),
+                                  ),
+                                );
+                              }),
+                            );
+                          },
+                        ),
+                      ),
+                      Container(
+                        width: 12,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: DhanWiserColors.background,
+                          borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
                         ),
                       ),
                     ],
                   ),
+
+                  // Split Info
+                  Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'YOUR SHARE',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: DhanWiserColors.textSecondary,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        ...splits.where((s) => s['status'] != 'Paid').map((split) {
+                          final name = split['name']?.toString() ?? 'Member';
+                          final splitAmount = split['amount']?.toString() ?? '₹0';
+                          final amountOwed = split['amountOwed'];
+
+                          String displayAmount;
+                          if (amountOwed != null) {
+                            final owed = amountOwed is num ? amountOwed.toDouble() : double.tryParse(amountOwed.toString()) ?? 0;
+                            displayAmount = '₹${owed.toStringAsFixed(2)}';
+                          } else {
+                            displayAmount = splitAmount.startsWith('₹') ? splitAmount : '₹$splitAmount';
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: DhanWiserColors.surfaceVariant,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(Icons.person_rounded, color: DhanWiserColors.textPrimary, size: 20),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name == 'You' ? 'You owe $paidBy' : '$name owes you',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: DhanWiserColors.textPrimary,
+                                          ),
+                                        ),
+                                        Text(
+                                          '1 of ${splits.length} people split',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            color: DhanWiserColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  displayAmount,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: DhanWiserColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 32),
+
+            // Actions
+            ElevatedButton(
+              onPressed: () {
+                if (!isPaidByMe) {
+                  // Actually, Settle Now would go to Settlement Request flow, or just "Settlement Successful" for demo
+                  Navigator.pushNamed(context, '/settlement-request');
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DhanWiserColors.primary,
+                foregroundColor: DhanWiserColors.background,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              );
-            }),
-            const SizedBox(height: 40),
+                elevation: 0,
+              ),
+              child: Text(
+                isPaidByMe ? 'Remind All' : 'Settle Now',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.download_rounded, size: 20),
+              label: Text(
+                'Download PDF',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: DhanWiserColors.textPrimary,
+                side: BorderSide(color: DhanWiserColors.surfaceVariant),
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStepRow(String step, Color color, Widget content) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Center(
-            child: Text(
-              step,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: content),
-      ],
     );
   }
 }

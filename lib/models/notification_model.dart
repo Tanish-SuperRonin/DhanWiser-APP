@@ -8,6 +8,7 @@ class AppNotification {
   final bool isRead;
   final int? relatedId;
   final DateTime? createdAt;
+  final double? amount;
 
   AppNotification({
     required this.id,
@@ -17,6 +18,7 @@ class AppNotification {
     this.isRead = false,
     this.relatedId,
     this.createdAt,
+    this.amount,
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class AppNotification {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,
+      amount: json['amount'] != null ? double.tryParse(json['amount'].toString()) : null,
     );
   }
 }

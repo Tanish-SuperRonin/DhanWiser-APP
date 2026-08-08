@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
+import '../providers/server_provider.dart';
 import '../services/settlement_service.dart';
 import '../models/settlement_model.dart';
 
@@ -467,36 +468,111 @@ class _SettlementScreenState extends State<SettlementScreen>
   }
 
   Widget _buildHistoryTab(ColorScheme cs, bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(Icons.history_rounded, color: cs.primary, size: 32),
+    return Consumer<ServerProvider>(
+      builder: (context, serverProv, _) {
+        final servers = serverProv.servers;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'FILTER BY GROUP',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: cs.onSurfaceVariant,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (servers.isNotEmpty)
+                SizedBox(
+                  height: 40,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: servers.length + 1,
+                    itemBuilder: (context, index) {
+                      final isAll = index == 0;
+                      final server = isAll ? null : servers[index - 1];
+                      final title = isAll ? 'All Groups' : server!.name;
+                      final isSelected = isAll;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(title),
+                          selected: isSelected,
+                          onSelected: (_) {
+                            if (!isAll && server != null) {
+                              Navigator.pushNamed(context, '/server-detail', arguments: {
+                                'serverId': server.id,
+                                'serverName': server.name,
+                                'members': '${server.memberCount} members',
+                              });
+                            }
+                          },
+                          selectedColor: cs.primaryContainer,
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 32),
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(Icons.history_rounded, color: cs.primary, size: 32),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Settlement History',
+                      style: GoogleFonts.inter(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Tap any group above to inspect settled payments',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 20),
+                    if (servers.isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/server-detail', arguments: {
+                            'serverId': servers.first.id,
+                            'serverName': servers.first.name,
+                            'members': '${servers.first.memberCount} members',
+                          });
+                        },
+                        icon: const Icon(Icons.groups_rounded, size: 18),
+                        label: Text('View ${servers.first.name} History'),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'Settlement history',
-            style: GoogleFonts.inter(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Select a group to view history',
-            style:
-                GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

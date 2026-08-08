@@ -102,7 +102,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                 color: DhanWiserColors.negativeSoft,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.warning_rounded,
                 color: DhanWiserColors.negative,
                 size: 32,
@@ -130,7 +130,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                   const TextSpan(text: 'Are you sure you want to delete '),
                   TextSpan(
                     text: "'${widget.title}'",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: DhanWiserColors.textPrimary,
                     ),
@@ -151,7 +151,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                         _close();
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(
+                        side: BorderSide(
                             color: DhanWiserColors.outline),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -234,7 +234,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                               border: Border.all(
                                   color: DhanWiserColors.outline),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.edit_rounded,
                               color: DhanWiserColors.textPrimary,
                               size: 20,
@@ -266,7 +266,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                           Container(
                             width: 40,
                             height: 40,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: DhanWiserColors.negative,
                               shape: BoxShape.circle,
                             ),
