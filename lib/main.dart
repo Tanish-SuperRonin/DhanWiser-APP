@@ -28,7 +28,60 @@ import "package:dhanwiser_fixed/screens/expense_detail_screen.dart";
 import "package:dhanwiser_fixed/screens/settlement_successful_screen.dart";
 import "package:dhanwiser_fixed/screens/group_settings_screen.dart";
 
-void main() => runApp(const MyApp());
+void main() {
+  // Prevent white screen crashes by rendering a graceful error boundary UI
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFF0F172A),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 56),
+                const SizedBox(height: 16),
+                const Text(
+                  'Something went wrong',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  details.exceptionAsString(),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                ),
+                const SizedBox(height: 24),
+                Builder(
+                  builder: (ctx) {
+                    return ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pushNamedAndRemoveUntil('/home', (r) => false);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.home_rounded, size: 20),
+                      label: const Text('Back to Home'),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  };
+
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -76,31 +129,44 @@ class MyApp extends StatelessWidget {
             '/settings': (context) => const SettingsScreen(),
           },
           onGenerateRoute: (settings) {
-            // M3 shared axis transition
             Widget? page;
+
+            int parseId(dynamic val) {
+              if (val is int) return val;
+              if (val is String) return int.tryParse(val) ?? 0;
+              return 0;
+            }
+
+            double parseDouble(dynamic val) {
+              if (val is double) return val;
+              if (val is int) return val.toDouble();
+              if (val is String) return double.tryParse(val) ?? 0.0;
+              return 0.0;
+            }
 
             if (settings.name == '/server-detail') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = ServerDetailScreen(
-                serverId: args?['serverId'] ?? 0,
-                serverName: args?['serverName'] ?? 'Server',
-                members: args?['members'] ?? '0 members',
-                imageUrl: args?['imageUrl'] ?? '',
+                serverId: parseId(args?['serverId']),
+                serverName: args?['serverName']?.toString() ?? 'Server',
+                members: args?['members']?.toString() ?? '0 members',
+                imageUrl: args?['imageUrl']?.toString() ?? '',
               );
             }
             if (settings.name == '/add-expense') {
               final args = settings.arguments as Map<String, dynamic>?;
+              final rawId = args?['serverId'];
               page = AddExpenseScreen(
-                serverId: args?['serverId'],
+                serverId: rawId != null ? parseId(rawId) : null,
               );
             }
             if (settings.name == '/expense-detail') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = ExpenseDetailScreen(
-                title: args?['title'] ?? 'Expense',
-                amount: args?['amount'] ?? '₹0',
-                date: args?['date'] ?? '',
-                paidBy: args?['paidBy'] ?? 'Unknown',
+                title: args?['title']?.toString() ?? 'Expense',
+                amount: args?['amount']?.toString() ?? '₹0',
+                date: args?['date']?.toString() ?? '',
+                paidBy: args?['paidBy']?.toString() ?? 'Unknown',
                 participants: args?['participants'] != null
                     ? List<Map<String, dynamic>>.from(args!['participants'])
                     : null,
@@ -109,30 +175,30 @@ class MyApp extends StatelessWidget {
             if (settings.name == '/settlement-request') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = SettlementRequestScreen(
-                settlementId: args?['settlementId'] ?? 0,
+                settlementId: parseId(args?['settlementId']),
               );
             }
             if (settings.name == '/settlement-successful') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = SettlementSuccessfulScreen(
-                amount: args?['amount'] ?? 0.0,
-                receiverName: args?['receiverName'] ?? 'Unknown',
+                amount: parseDouble(args?['amount']),
+                receiverName: args?['receiverName']?.toString() ?? 'Unknown',
               );
             }
             if (settings.name == '/group-settings') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = GroupSettingsScreen(
-                serverId: args?['serverId'] ?? 0,
-                serverName: args?['serverName'] ?? '',
-                isAdmin: args?['isAdmin'] ?? false,
-                isCreator: args?['isCreator'] ?? false,
+                serverId: parseId(args?['serverId']),
+                serverName: args?['serverName']?.toString() ?? '',
+                isAdmin: args?['isAdmin'] == true,
+                isCreator: args?['isCreator'] == true,
               );
             }
 
             if (page != null) {
               return _buildM3PageRoute(page, settings);
             }
-            return null;
+            return _buildM3PageRoute(const HomeScreen(), settings);
           },
         ),
       ),

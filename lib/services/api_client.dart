@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   // Render free-tier cold starts can take 30-60s
@@ -17,20 +17,10 @@ class ApiClient {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
 
-  static bool _isRecoverableStorageError(Object error) {
-    final message = error.toString().toLowerCase();
-    return message.contains('failed to unwrap key') ||
-        message.contains('invalidkeyexception') ||
-        message.contains('keystore') ||
-        message.contains('key permanently invalidated');
-  }
-
   static Future<void> _resetStorage() async {
     try {
       await _storage.deleteAll();
-    } catch (_) {
-      // Best effort reset for broken keystore state.
-    }
+    } catch (_) {}
   }
 
   static Future<http.Response> _sendRequest(
@@ -60,51 +50,50 @@ class ApiClient {
     }
   }
 
-  // Token management
+  // Token management with web & SharedPreferences fallback
   static Future<void> saveTokens(String accessToken, String refreshToken) async {
     try {
       await _storage.write(key: _accessTokenKey, value: accessToken);
       await _storage.write(key: _refreshTokenKey, value: refreshToken);
-    } on PlatformException catch (e) {
-      if (_isRecoverableStorageError(e)) {
-        await _resetStorage();
-        await _storage.write(key: _accessTokenKey, value: accessToken);
-        await _storage.write(key: _refreshTokenKey, value: refreshToken);
-        return;
-      }
-      throw ApiException(
-        statusCode: 0,
-        message: 'Secure storage failed. Please clear app data and try again.',
-      );
-    }
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_accessTokenKey, accessToken);
+      await prefs.setString(_refreshTokenKey, refreshToken);
+    } catch (_) {}
   }
 
   static Future<String?> getAccessToken() async {
     try {
-      return await _storage.read(key: _accessTokenKey);
-    } on PlatformException catch (e) {
-      if (_isRecoverableStorageError(e)) {
-        await _resetStorage();
-        return null;
-      }
-      rethrow;
-    }
+      final token = await _storage.read(key: _accessTokenKey);
+      if (token != null && token.isNotEmpty) return token;
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_accessTokenKey);
+    } catch (_) {}
+    return null;
   }
 
   static Future<String?> getRefreshToken() async {
     try {
-      return await _storage.read(key: _refreshTokenKey);
-    } on PlatformException catch (e) {
-      if (_isRecoverableStorageError(e)) {
-        await _resetStorage();
-        return null;
-      }
-      rethrow;
-    }
+      final token = await _storage.read(key: _refreshTokenKey);
+      if (token != null && token.isNotEmpty) return token;
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_refreshTokenKey);
+    } catch (_) {}
+    return null;
   }
 
   static Future<void> clearTokens() async {
     await _resetStorage();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_accessTokenKey);
+      await prefs.remove(_refreshTokenKey);
+    } catch (_) {}
   }
 
   // Build headers with JWT
@@ -121,7 +110,7 @@ class ApiClient {
     return headers;
   }
 
-  // Auto-refresh token on 403
+  // Auto-refresh token on 401 or 403
   static Future<bool> _tryRefreshToken() async {
     final refreshToken = await getRefreshToken();
     if (refreshToken == null) return false;
@@ -139,7 +128,7 @@ class ApiClient {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           final newAccessToken = data['data']['accessToken'];
-          await _storage.write(key: _accessTokenKey, value: newAccessToken);
+          await saveTokens(newAccessToken, refreshToken);
           return true;
         }
       }
@@ -158,8 +147,8 @@ class ApiClient {
       ),
     );
 
-    // Auto-refresh on 403
-    if (response.statusCode == 403 && withAuth) {
+    // Auto-refresh on 401 or 403
+    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -187,7 +176,7 @@ class ApiClient {
       ),
     );
 
-    if (response.statusCode == 403 && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -216,7 +205,7 @@ class ApiClient {
       ),
     );
 
-    if (response.statusCode == 403 && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -244,7 +233,7 @@ class ApiClient {
       ),
     );
 
-    if (response.statusCode == 403 && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);

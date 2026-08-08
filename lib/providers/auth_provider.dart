@@ -59,7 +59,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Background token validation. Fetches fresh profile to confirm token is still valid.
-  /// If it fails, clears auth state (user will see login on next navigation).
+  /// If explicitly rejected by server (401/403), clears auth state.
+  /// Network timeouts / server cold starts keep the user logged in with cached profile.
   Future<void> _backgroundValidate() async {
     try {
       final freshUser = await AuthService.getProfile();
@@ -67,13 +68,16 @@ class AuthProvider extends ChangeNotifier {
       // Profile is already cached inside getProfile()
       notifyListeners();
     } catch (e) {
-      debugPrint('Background token validation failed: $e');
-      // Token is invalid — force logout
-      await ApiClient.clearTokens();
-      await AuthService.clearCachedProfile();
-      _isAuthenticated = false;
-      _currentUser = null;
-      notifyListeners();
+      debugPrint('Background token validation exception: $e');
+      if (e is ApiException && (e.statusCode == 401 || e.statusCode == 403)) {
+        // Token is explicitly revoked or invalid — force logout
+        await ApiClient.clearTokens();
+        await AuthService.clearCachedProfile();
+        _isAuthenticated = false;
+        _currentUser = null;
+        notifyListeners();
+      }
+      // Non-401/403 errors (e.g. offline, 502/503 cold start): keep cached profile & stay logged in!
     }
   }
 

@@ -29,8 +29,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   int? _paidByUserId;
   bool _isSaving = false;
 
-  // Per-member custom amounts
+  // Per-member custom amounts & selected participants
   final Map<int, TextEditingController> _customAmountControllers = {};
+  final Set<int> _selectedUserIds = {};
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Food', 'icon': Icons.restaurant_rounded},
@@ -92,17 +93,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final members = _getMembers();
     if (members.isEmpty) return [];
 
+    final activeMembers = members.where((m) => _selectedUserIds.contains(m.userId)).toList();
+    if (activeMembers.isEmpty) return [];
+
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
     if (amount <= 0) return [];
 
     if (_splitType == 'equally') {
-      final rounded = double.parse((amount / members.length).toStringAsFixed(2));
-      // Last person absorbs rounding difference so sum == amount exactly
+      final rounded = double.parse((amount / activeMembers.length).toStringAsFixed(2));
+      // Last active person absorbs rounding difference so sum == amount exactly
       final remainder = double.parse(
-          (amount - rounded * (members.length - 1)).toStringAsFixed(2));
-      return List.generate(members.length, (i) {
-        final m = members[i];
-        final owed = (i == members.length - 1) ? remainder : rounded;
+          (amount - rounded * (activeMembers.length - 1)).toStringAsFixed(2));
+      return List.generate(activeMembers.length, (i) {
+        final m = activeMembers[i];
+        final owed = (i == activeMembers.length - 1) ? remainder : rounded;
         return {
           'userId': m.userId,
           'amountPaid': m.userId == _paidByUserId ? amount : 0.0,
@@ -110,8 +114,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         };
       });
     } else {
-      // Custom split
-      return members.map((m) {
+      // Custom split: only selected members
+      return activeMembers.map((m) {
         final controller = _customAmountControllers[m.userId];
         final owed = double.tryParse(controller?.text.trim() ?? '0') ?? 0;
         return {
@@ -151,6 +155,10 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     }
     if (members.isEmpty) {
       _showError('No members found in this group');
+      return;
+    }
+    if (_selectedUserIds.isEmpty) {
+      _showError('Select at least 1 person to split with');
       return;
     }
 
@@ -235,6 +243,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _selectedServerId = serverId;
       _selectedChannelId = null; // reset channel when switching servers
       _paidByUserId = auth.currentUser?.id; // reset payer to current user
+      _selectedUserIds.clear();
     });
     Provider.of<ServerProvider>(context, listen: false)
         .fetchServerDetails(serverId).then((_) {
@@ -248,6 +257,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   }
 
   void _initCustomControllers(List<ServerMember> members) {
+    if (_selectedUserIds.isEmpty && members.isNotEmpty) {
+      _selectedUserIds.addAll(members.map((m) => m.userId));
+    }
     for (final m in members) {
       if (!_customAmountControllers.containsKey(m.userId)) {
         _customAmountControllers[m.userId] = TextEditingController();
@@ -574,14 +586,29 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Split with', style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 16)),
-                                TextButton.icon(
-                                  onPressed: () {},
-                                  icon: const Icon(Icons.group_add_rounded, size: 18),
-                                  label: const Text('Add people'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: DhanWiserColors.tertiaryFixed,
-                                    textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                                Text(
+                                  'Split with (${_selectedUserIds.length}/${_getMembers().length})',
+                                  style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 16),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    final members = _getMembers();
+                                    setState(() {
+                                      if (_selectedUserIds.length == members.length) {
+                                        _selectedUserIds.clear();
+                                        if (_paidByUserId != null) _selectedUserIds.add(_paidByUserId!);
+                                      } else {
+                                        _selectedUserIds.addAll(members.map((m) => m.userId));
+                                      }
+                                    });
+                                  },
+                                  child: Text(
+                                    _selectedUserIds.length == _getMembers().length ? 'Select None' : 'Select All',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: DhanWiserColors.tertiaryFixed,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -653,12 +680,13 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                   if (members.isEmpty) return const SizedBox.shrink();
 
                                   _initCustomControllers(members);
+                                  final activeMembers = members.where((m) => _selectedUserIds.contains(m.userId)).toList();
                                   final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-                                  final perPerson = members.isNotEmpty ? amount / members.length : 0.0;
+                                  final perPerson = activeMembers.isNotEmpty ? amount / activeMembers.length : 0.0;
                                   
                                   double sumCustom = 0;
                                   if (_splitType == 'custom') {
-                                    for (final m in members) {
+                                    for (final m in activeMembers) {
                                       sumCustom += double.tryParse(_customAmountControllers[m.userId]?.text.trim() ?? '0') ?? 0;
                                     }
                                   }
@@ -749,92 +777,148 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final isYou = member.userId == auth.currentUser?.id;
     final initial = member.fullName.isNotEmpty ? member.fullName[0].toUpperCase() : '?';
+    final isSelected = _selectedUserIds.contains(member.userId);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            if (isSelected) {
+              if (_selectedUserIds.length > 1) {
+                _selectedUserIds.remove(member.userId);
+              }
+            } else {
+              _selectedUserIds.add(member.userId);
+            }
+          });
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (isYou)
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: DhanWiserColors.surfaceBright,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DhanWiserColors.textPrimary, fontSize: 14),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: isSelected,
+                      activeColor: DhanWiserColors.tertiaryFixed,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            _selectedUserIds.add(member.userId);
+                          } else if (_selectedUserIds.length > 1) {
+                            _selectedUserIds.remove(member.userId);
+                          }
+                        });
+                      },
                     ),
                   ),
-                )
-              else
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+                  const SizedBox(width: 12),
+                  Opacity(
+                    opacity: isSelected ? 1.0 : 0.4,
+                    child: Row(
+                      children: [
+                        if (isYou)
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: DhanWiserColors.surfaceBright,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                initial,
+                                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: DhanWiserColors.textPrimary, fontSize: 14),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.person_rounded, color: DhanWiserColors.secondaryFixed, size: 18),
+                          ),
+                        const SizedBox(width: 12),
+                        Text(
+                          isYou ? 'You' : member.fullName,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: DhanWiserColors.textPrimary,
+                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Icon(Icons.person_rounded, color: DhanWiserColors.secondaryFixed, size: 18),
+                ],
+              ),
+              Opacity(
+                opacity: isSelected ? 1.0 : 0.4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.surfaceContainerLow,
+                    border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: isSelected
+                      ? Row(
+                          children: [
+                            Text('₹', style: GoogleFonts.inter(fontSize: 12, color: DhanWiserColors.textDisabled)),
+                            if (_splitType == 'equally')
+                              Text(
+                                equalAmount.toStringAsFixed(2),
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: DhanWiserColors.textPrimary,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
+                              )
+                            else
+                              SizedBox(
+                                width: 60,
+                                child: TextField(
+                                  controller: _customAmountControllers[member.userId],
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  textAlign: TextAlign.right,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: DhanWiserColors.textPrimary,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                  decoration: const InputDecoration(
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    hintText: '0.00',
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Text(
+                          'Excluded',
+                          style: GoogleFonts.inter(fontSize: 12, color: DhanWiserColors.textDisabled),
+                        ),
                 ),
-              SizedBox(width: 12),
-              Text(
-                isYou ? 'You' : member.fullName,
-                style: GoogleFonts.inter(fontSize: 14, color: DhanWiserColors.textPrimary),
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: DhanWiserColors.surfaceContainerLow,
-              border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.1)),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Text('₹', style: GoogleFonts.inter(fontSize: 12, color: DhanWiserColors.textDisabled)),
-                if (_splitType == 'equally')
-                  Text(
-                    equalAmount.toStringAsFixed(2),
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: DhanWiserColors.textPrimary,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  )
-                else
-                  SizedBox(
-                    width: 60,
-                    child: TextField(
-                      controller: _customAmountControllers[member.userId],
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      textAlign: TextAlign.right,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: DhanWiserColors.textPrimary,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                      onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintText: '0.00',
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
