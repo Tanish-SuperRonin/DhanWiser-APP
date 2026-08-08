@@ -418,63 +418,134 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBalanceCard(ColorScheme cs, bool isDark) {
-    final balanceColor = _netBalance < -0.01
+    final netColor = _netBalance < -0.01
         ? DhanWiserColors.error
         : _netBalance > 0.01
-            ? DhanWiserColors.primaryFixed
+            ? DhanWiserColors.tertiary
             : DhanWiserColors.textPrimary;
 
-    return DhanWiserSurface(
+    return Container(
       padding: const EdgeInsets.all(24),
-      tint: DhanWiserColors.surfaceContainer,
-      radius: DhanWiserTokens.radiusLarge,
+      decoration: BoxDecoration(
+        color: DhanWiserColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.5)),
+      ),
       child: Column(
         children: [
-          Text(
-            'Total Net Balance',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: DhanWiserColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          _loadingBalanceSummary
-              ? const ShimmerBox(width: 200, height: 56, borderRadius: 12)
-              : Text(
-                  _formatCurrency(_netBalance, withDecimals: true),
-                  style: GoogleFonts.inter(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w700,
-                    color: balanceColor,
-                    letterSpacing: -1.5,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-          const SizedBox(height: 32),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _buildBalanceItem(
-                  'You Owe',
-                  _formatCurrency(_youOwe, withDecimals: true),
-                  DhanWiserColors.error,
-                  Icons.arrow_upward_rounded,
-                  cs,
+              Text(
+                'NET BALANCE',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  letterSpacing: 1.0,
+                  fontWeight: FontWeight.w700,
+                  color: DhanWiserColors.textSecondary,
                 ),
               ),
               Container(
-                width: 1,
-                height: 48,
-                color: DhanWiserColors.outlineVariant,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: netColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _netBalance < -0.01
+                      ? 'You Owe'
+                      : _netBalance > 0.01
+                          ? 'You Get Back'
+                          : 'Settled',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: netColor,
+                  ),
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _loadingBalanceSummary
+              ? const ShimmerBox(width: 200, height: 48, borderRadius: 12)
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _formatCurrency(_netBalance, withDecimals: true),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w800,
+                      color: netColor,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 20),
+          Divider(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3), height: 1),
+          const SizedBox(height: 16),
+
+          // Detailed Owed / Owe split pills
+          Row(
+            children: [
               Expanded(
-                child: _buildBalanceItem(
-                  'Owed to You',
-                  _formatCurrency(_owedToYou, withDecimals: true),
-                  DhanWiserColors.primaryFixed,
-                  Icons.arrow_downward_rounded,
-                  cs,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_downward_rounded, size: 14, color: DhanWiserColors.tertiary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Owed to you',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: DhanWiserColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatCurrency(_owedToYou),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: DhanWiserColors.tertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(width: 1, height: 36, color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, size: 14, color: DhanWiserColors.error),
+                        const SizedBox(width: 4),
+                        Text(
+                          'You owe',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: DhanWiserColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatCurrency(_youOwe),
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: DhanWiserColors.error,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -483,47 +554,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ).animate().fade(duration: 300.ms).slideY(
         begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
-  }
-
-  Widget _buildBalanceItem(
-      String label, String amount, Color color, IconData icon, ColorScheme cs) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 14),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: DhanWiserColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          amount,
-          style: GoogleFonts.inter(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: color,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildQuickActionsGrid(ColorScheme cs, bool isDark) {

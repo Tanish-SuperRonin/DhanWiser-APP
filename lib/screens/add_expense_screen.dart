@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
@@ -296,86 +294,69 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       ),
       body: Column(
         children: [
-          // ── Amount Input Hero ──
+          // ── Amount Input Hero (Tactile Obsidian Header) ──
           GestureDetector(
             onTap: () => FocusScope.of(context).requestFocus(_amountFocusNode),
             behavior: HitTestBehavior.opaque,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 32),
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
               alignment: Alignment.center,
-              child: Stack(
-                alignment: Alignment.center,
+              child: Column(
                 children: [
-                  // Subtle Glow
-                  ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-                    child: Container(
-                      width: 192,
-                      height: 192,
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.secondaryContainer.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                      ),
-                    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-                      .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
+                  Text(
+                    'TOTAL AMOUNT',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      letterSpacing: 1.0,
+                      fontWeight: FontWeight.w700,
+                      color: DhanWiserColors.textSecondary,
+                    ),
                   ),
-                  
-                  Column(
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        'TOTAL AMOUNT',
+                        '₹',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          letterSpacing: 0.05,
-                          fontWeight: FontWeight.w600,
-                          color: DhanWiserColors.textSecondary,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w700,
+                          color: DhanWiserColors.primary,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '₹',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w700,
-                              color: DhanWiserColors.textPrimary.withValues(alpha: 0.6),
+                      const SizedBox(width: 8),
+                      IntrinsicWidth(
+                        child: TextField(
+                          controller: _amountController,
+                          focusNode: _amountFocusNode,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          textAlign: TextAlign.center,
+                          onChanged: (_) => setState(() {}),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 52,
+                            fontWeight: FontWeight.w800,
+                            color: DhanWiserColors.textPrimary,
+                            height: 1.0,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0.00',
+                            hintStyle: GoogleFonts.plusJakartaSans(
+                              fontSize: 52,
+                              fontWeight: FontWeight.w800,
+                              color: DhanWiserColors.textDisabled.withValues(alpha: 0.5),
+                              height: 1.0,
                               fontFeatures: const [FontFeature.tabularFigures()],
                             ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
                           ),
-                          SizedBox(width: 8),
-                          IntrinsicWidth(
-                            child: TextField(
-                              controller: _amountController,
-                              focusNode: _amountFocusNode,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textAlign: TextAlign.center,
-                              onChanged: (_) => setState(() {}),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 56,
-                                fontWeight: FontWeight.w700,
-                                color: DhanWiserColors.textPrimary,
-                                height: 1.1,
-                                fontFeatures: const [FontFeature.tabularFigures()],
-                              ),
-                              decoration: InputDecoration(
-                                hintText: '0.00',
-                                hintStyle: GoogleFonts.plusJakartaSans(
-                                  fontSize: 56,
-                                  fontWeight: FontWeight.w700,
-                                  color: DhanWiserColors.textPrimary.withValues(alpha: 0.3),
-                                  height: 1.1,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
