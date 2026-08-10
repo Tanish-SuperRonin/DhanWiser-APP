@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/server_provider.dart';
 import '../services/expense_service.dart';
 import '../models/balance_model.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isRootTab;
+  const ProfileScreen({super.key, this.isRootTab = false});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -67,26 +69,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: DhanWiserColors.background,
+        backgroundColor: DhanWiserColors.of(context).background,
         scrolledUnderElevation: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textSecondary),
+        leading: widget.isRootTab ? null : PremiumIconButton(
+          icon: Icon(Icons.arrow_back_rounded,
+              color: DhanWiserColors.of(context).textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Profile',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: DhanWiserColors.primary,
-          ),
+          style: DhanWiserTextStyles.buttonLarge(context)
+              .copyWith(color: DhanWiserColors.of(context).primary),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.settings_outlined, color: DhanWiserColors.textSecondary),
+          PremiumIconButton(
+            icon: Icon(Icons.settings_outlined,
+                color: DhanWiserColors.of(context).textSecondary),
             onPressed: () => Navigator.pushNamed(context, '/settings'),
           ),
         ],
@@ -94,8 +95,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final user = auth.currentUser;
-          final name = user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
-          final username = user?.username.isNotEmpty == true ? user!.username : 'user';
+          final name =
+              user?.fullName.isNotEmpty == true ? user!.fullName : 'User';
+          final username =
+              user?.username.isNotEmpty == true ? user!.username : 'user';
           final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
           return SingleChildScrollView(
@@ -114,8 +117,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 128,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: DhanWiserColors.surfaceVariant,
-                            border: Border.all(color: DhanWiserColors.surfaceContainerHighest, width: 2),
+                            color: DhanWiserColors.of(context).surfaceVariant,
+                            border: Border.all(
+                                color: DhanWiserColors.of(context).surfaceContainerHighest,
+                                width: 2),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.2),
@@ -127,25 +132,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Center(
                             child: Text(
                               initial,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w700,
-                                color: DhanWiserColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayMedium!
+                                  .copyWith(
+                                      color: DhanWiserColors.of(context).textSecondary),
                             ),
                           ),
                         ),
                         Container(
                           margin: const EdgeInsets.only(right: 4, bottom: 4),
                           decoration: BoxDecoration(
-                            color: DhanWiserColors.surfaceContainerHighest,
+                            color: DhanWiserColors.of(context).surfaceContainerHighest,
                             shape: BoxShape.circle,
-                            border: Border.all(color: DhanWiserColors.surfaceContainerLow),
+                            border: Border.all(
+                                color: DhanWiserColors.of(context).surfaceContainerLow),
                           ),
-                          child: IconButton(
-                            icon: Icon(Icons.edit_rounded, size: 16, color: DhanWiserColors.textPrimary),
+                          child: PremiumIconButton(
+                            icon: Icon(Icons.edit_rounded,
+                                size: 16, color: DhanWiserColors.of(context).textPrimary),
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Edit avatar coming soon')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Edit avatar coming soon')));
                             },
                             constraints: const BoxConstraints(),
                             padding: const EdgeInsets.all(8),
@@ -156,38 +166,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(height: 16),
                     Text(
                       name,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                        color: DhanWiserColors.textPrimary,
-                        letterSpacing: -0.5,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium!
+                          .copyWith(
+                              color: DhanWiserColors.of(context).textPrimary,
+                              letterSpacing: -0.5),
                     ),
                     SizedBox(height: 4),
                     Text(
                       '@$username • Member since 2024',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        color: DhanWiserColors.textSecondary,
-                      ),
+                      style: DhanWiserTextStyles.bodyRegular(context)
+                          .copyWith(color: DhanWiserColors.of(context).textSecondary),
                     ),
                     SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: user == null ? null : () => _showEditProfileModal(context, name, username, user.upiId),
+                    PremiumOutlinedButton(
+                      onPressed: user == null
+                          ? null
+                          : () => _showEditProfileModal(
+                              context, name, username, user.upiId),
                       style: OutlinedButton.styleFrom(
-                        backgroundColor: DhanWiserColors.surfaceContainerHigh,
-                        side: BorderSide(color: DhanWiserColors.outlineVariant),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        backgroundColor: DhanWiserColors.of(context).surfaceContainerHigh,
+                        side: BorderSide(color: DhanWiserColors.of(context).outlineVariant),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                       ),
                       child: Text(
                         'Edit Profile',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                          color: DhanWiserColors.textPrimary,
-                        ),
+                        style: DhanWiserTextStyles.overline(context).copyWith(
+                            letterSpacing: 0.5,
+                            color: DhanWiserColors.of(context).textPrimary),
                       ),
                     ),
                   ],
@@ -197,24 +207,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Lifetime Stats (Bento Grid)
                 Text(
                   'Lifetime Stats',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: DhanWiserColors.textPrimary,
-                  ),
+                  style: DhanWiserTextStyles.buttonLarge(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                 ),
                 SizedBox(height: 16),
-                
+
                 // Total Settled (Positive)
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: DhanWiserColors.card.withValues(alpha: 0.6),
+                    color: DhanWiserColors.of(context).card.withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.05)),
                     boxShadow: [
                       BoxShadow(
-                        color: DhanWiserColors.tertiaryContainer.withValues(alpha: 0.15),
+                        color: DhanWiserColors.of(context).tertiaryContainer
+                            .withValues(alpha: 0.15),
                         blurRadius: 32,
                         offset: const Offset(0, 8),
                         spreadRadius: -8,
@@ -229,14 +238,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Text(
                             'TOTAL SETTLED',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                              color: DhanWiserColors.textSecondary,
-                            ),
+                            style: DhanWiserTextStyles.overline(context)
+                                .copyWith(
+                                    letterSpacing: 0.5,
+                                    color: DhanWiserColors.of(context).textSecondary),
                           ),
-                          Icon(Icons.trending_up_rounded, color: DhanWiserColors.tertiaryContainer, size: 20),
+                          Icon(Icons.trending_up_rounded,
+                              color: DhanWiserColors.of(context).tertiaryContainer,
+                              size: 20),
                         ],
                       ),
                       SizedBox(height: 8),
@@ -244,18 +253,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _loadingStats
                             ? '...'
                             : '₹${_totalOwed.toStringAsFixed(0)}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 40,
-                          fontWeight: FontWeight.w700,
-                          color: DhanWiserColors.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
+                        style: DhanWiserTextStyles.displayLarge(context)
+                            .copyWith(
+                                color: DhanWiserColors.of(context).textPrimary,
+                                letterSpacing: -0.5),
                       ),
                     ],
                   ),
                 ),
                 SizedBox(height: 16),
-                
+
                 Row(
                   children: [
                     // Total Owed / Spent
@@ -263,12 +270,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.card.withValues(alpha: 0.6),
+                          color: DhanWiserColors.of(context).card.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.05)),
                           boxShadow: [
                             BoxShadow(
-                              color: DhanWiserColors.secondary.withValues(alpha: 0.15),
+                              color: DhanWiserColors.of(context).secondary
+                                  .withValues(alpha: 0.15),
                               blurRadius: 32,
                               offset: const Offset(0, 8),
                               spreadRadius: -8,
@@ -280,35 +289,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               'TOTAL YOU OWE',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                                color: DhanWiserColors.textSecondary,
-                              ),
+                              style: DhanWiserTextStyles.overline(context)
+                                  .copyWith(
+                                      letterSpacing: 0.5,
+                                      color: DhanWiserColors.of(context).textSecondary),
                             ),
                             SizedBox(height: 8),
                             Text(
                               _loadingStats
                                   ? '...'
                                   : '₹${_totalOwe.toStringAsFixed(0)}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: DhanWiserColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium!
+                                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
                             ),
                             SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.arrow_downward_rounded, color: DhanWiserColors.secondary, size: 14),
+                                Icon(Icons.arrow_downward_rounded,
+                                    color: DhanWiserColors.of(context).secondary, size: 14),
                                 SizedBox(width: 4),
                                 Text(
                                   'This year',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: DhanWiserColors.secondary,
-                                  ),
+                                  style: DhanWiserTextStyles.caption(context)
+                                      .copyWith(
+                                          color: DhanWiserColors.of(context).secondary),
                                 ),
                               ],
                             ),
@@ -322,42 +328,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.card.withValues(alpha: 0.6),
+                          color: DhanWiserColors.of(context).card.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.05)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'ACTIVE GROUPS',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                                color: DhanWiserColors.textSecondary,
-                              ),
+                              style: DhanWiserTextStyles.overline(context)
+                                  .copyWith(
+                                      letterSpacing: 0.5,
+                                      color: DhanWiserColors.of(context).textSecondary),
                             ),
                             SizedBox(height: 8),
                             Text(
                               '$_groupCount',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: DhanWiserColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium!
+                                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
                             ),
                             SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.group_rounded, color: DhanWiserColors.textDisabled, size: 14),
+                                Icon(Icons.group_rounded,
+                                    color: DhanWiserColors.of(context).textDisabled,
+                                    size: 14),
                                 SizedBox(width: 4),
                                 Text(
                                   'Groups joined',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: DhanWiserColors.textDisabled,
-                                  ),
+                                  style: DhanWiserTextStyles.caption(context)
+                                      .copyWith(
+                                          color: DhanWiserColors.of(context).textDisabled),
                                 ),
                               ],
                             ),
@@ -375,21 +380,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Text(
                       'Recent Achievements',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: DhanWiserColors.textPrimary,
-                      ),
+                      style: DhanWiserTextStyles.buttonLarge(context)
+                          .copyWith(color: DhanWiserColors.of(context).textPrimary),
                     ),
-                    TextButton(
+                    PremiumTextButton(
                       onPressed: () {},
                       child: Text(
                         'View All',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: DhanWiserColors.textSecondary,
-                        ),
+                        style: DhanWiserTextStyles.overline(context)
+                            .copyWith(color: DhanWiserColors.of(context).textSecondary),
                       ),
                     ),
                   ],
@@ -397,44 +396,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SizedBox(height: 8),
                 _buildAchievementItem(
                   icon: Icons.workspace_premium_rounded,
-                  iconColor: DhanWiserColors.tertiaryContainer,
+                  iconColor: DhanWiserColors.of(context).tertiaryContainer,
                   title: 'Early Settler',
                   description: 'Settled 10 expenses within 24h',
                 ),
                 _buildAchievementItem(
                   icon: Icons.account_balance_wallet_rounded,
-                  iconColor: DhanWiserColors.secondary,
+                  iconColor: DhanWiserColors.of(context).secondary,
                   title: 'Big Spender',
                   description: 'Contributed over ₹5k in groups',
                 ),
                 _buildAchievementItem(
                   icon: Icons.lock_rounded,
-                  iconColor: DhanWiserColors.textDisabled,
+                  iconColor: DhanWiserColors.of(context).textDisabled,
                   title: 'Perfect Balance',
                   description: 'Maintain 0 balance for 30 days',
                   isLocked: true,
                 ),
 
                 SizedBox(height: 32),
-                
+
                 // Sign Out Button
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton(
+                  child: PremiumOutlinedButton(
                     onPressed: () async {
-                      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                      final authProvider =
+                          Provider.of<AuthProvider>(context, listen: false);
                       await authProvider.logout();
                       if (context.mounted) {
-                        Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/login', (route) => false);
                       }
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: DhanWiserColors.error,
-                      side: BorderSide(color: DhanWiserColors.error.withValues(alpha: 0.3)),
+                      foregroundColor: DhanWiserColors.of(context).error,
+                      side: BorderSide(
+                          color: DhanWiserColors.of(context).error.withValues(alpha: 0.3)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: Text('Sign Out', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    child: Text('Sign Out',
+                        style: Theme.of(context).textTheme.titleSmall!),
                   ),
                 ),
                 SizedBox(height: 40),
@@ -456,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: DhanWiserColors.card,
+        color: DhanWiserColors.of(context).card,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
@@ -474,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: DhanWiserColors.surfaceContainerHighest,
+                      color: DhanWiserColors.of(context).surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: iconColor),
@@ -486,24 +490,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text(
                           title,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            color: isLocked ? DhanWiserColors.textDisabled : DhanWiserColors.textPrimary,
-                          ),
+                          style: DhanWiserTextStyles.bodyRegular(context)
+                              .copyWith(
+                                  color: isLocked
+                                      ? DhanWiserColors.of(context).textDisabled
+                                      : DhanWiserColors.of(context).textPrimary),
                         ),
                         Text(
                           description,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: isLocked ? DhanWiserColors.textDisabled : DhanWiserColors.textSecondary,
-                          ),
+                          style: DhanWiserTextStyles.caption(context).copyWith(
+                              color: isLocked
+                                  ? DhanWiserColors.of(context).textDisabled
+                                  : DhanWiserColors.of(context).textSecondary),
                         ),
                       ],
                     ),
                   ),
                   if (!isLocked)
-                    Icon(Icons.chevron_right_rounded, color: DhanWiserColors.textDisabled),
+                    Icon(Icons.chevron_right_rounded,
+                        color: DhanWiserColors.of(context).textDisabled),
                 ],
               ),
             ),
@@ -513,7 +518,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfileModal(BuildContext context, String currentName, String currentUsername, String? currentUpiId) {
+  void _showEditProfileModal(BuildContext context, String currentName,
+      String currentUsername, String? currentUpiId) {
     final nameCtrl = TextEditingController(text: currentName);
     final upiCtrl = TextEditingController(text: currentUpiId ?? '');
     bool isSaving = false;
@@ -521,7 +527,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: DhanWiserColors.surface,
+      backgroundColor: DhanWiserColors.of(context).surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -544,7 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.outline,
+                        color: DhanWiserColors.of(context).outline,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -552,82 +558,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Edit Profile',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: DhanWiserColors.textPrimary,
-                    ),
+                    style: DhanWiserTextStyles.buttonLarge(context)
+                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'FULL NAME',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.textSecondary,
-                      letterSpacing: 0.8,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: DhanWiserColors.of(context).textSecondary,
+                        letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: nameCtrl,
-                    style: GoogleFonts.inter(color: DhanWiserColors.textPrimary),
+                    style: DhanWiserTextStyles.caption(context)
+                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Full Name',
                       filled: true,
-                      fillColor: DhanWiserColors.surfaceContainer,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      fillColor: DhanWiserColors.of(context).surfaceContainer,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'UPI ID (FOR SETTLEMENTS)',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.textSecondary,
-                      letterSpacing: 0.8,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: DhanWiserColors.of(context).textSecondary,
+                        letterSpacing: 0.8),
                   ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: upiCtrl,
-                    style: GoogleFonts.inter(color: DhanWiserColors.textPrimary),
+                    style: DhanWiserTextStyles.caption(context)
+                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
                     decoration: InputDecoration(
                       hintText: 'name@okbank',
                       filled: true,
-                      fillColor: DhanWiserColors.surfaceContainer,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      fillColor: DhanWiserColors.of(context).surfaceContainer,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
-                    child: FilledButton(
+                    child: PremiumFilledButton(
                       onPressed: isSaving
                           ? null
                           : () async {
                               setModalState(() => isSaving = true);
-                              final auth = Provider.of<AuthProvider>(context, listen: false);
+                              final auth = Provider.of<AuthProvider>(context,
+                                  listen: false);
                               await auth.updateProfile(
                                 fullName: nameCtrl.text.trim(),
-                                upiId: upiCtrl.text.trim().isEmpty ? null : upiCtrl.text.trim(),
+                                upiId: upiCtrl.text.trim().isEmpty
+                                    ? null
+                                    : upiCtrl.text.trim(),
                               );
                               if (ctx.mounted) {
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Profile updated successfully!')),
+                                  const SnackBar(
+                                      content: Text(
+                                          'Profile updated successfully!')),
                                 );
                               }
                             },
                       style: FilledButton.styleFrom(
-                        backgroundColor: DhanWiserColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: DhanWiserColors.of(context).primary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       child: isSaving
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Text('Save Changes', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : Text('Save Changes',
+                              style: Theme.of(context).textTheme.titleSmall!),
                     ),
                   ),
                 ],
@@ -639,4 +651,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-

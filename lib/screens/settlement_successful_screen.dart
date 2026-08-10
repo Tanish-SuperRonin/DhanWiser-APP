@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class SettlementSuccessfulScreen extends StatelessWidget {
   final double amount;
@@ -15,7 +16,7 @@ class SettlementSuccessfulScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       body: SafeArea(
         child: Column(
           children: [
@@ -38,10 +39,12 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                               height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: DhanWiserColors.primary.withValues(alpha: 0.2),
+                                color: DhanWiserColors.of(context).primary
+                                    .withValues(alpha: 0.2),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: DhanWiserColors.primary.withValues(alpha: 0.3),
+                                    color: DhanWiserColors.of(context).primary
+                                        .withValues(alpha: 0.3),
                                     blurRadius: 40,
                                     spreadRadius: 10,
                                   ),
@@ -53,11 +56,11 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                               height: 80,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: DhanWiserColors.primaryContainer,
+                                color: DhanWiserColors.of(context).primaryContainer,
                               ),
                               child: Icon(
                                 Icons.check_rounded,
-                                color: DhanWiserColors.onPrimaryContainer,
+                                color: DhanWiserColors.of(context).onPrimaryContainer,
                                 size: 48,
                               ),
                             ),
@@ -67,20 +70,17 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                       const SizedBox(height: 32),
                       Text(
                         'Payment Successful!',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: DhanWiserColors.textPrimary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium!
+                            .copyWith(color: DhanWiserColors.of(context).textPrimary),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Your settlement request has been sent to $receiverName.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          color: DhanWiserColors.textSecondary,
-                        ),
+                        style: DhanWiserTextStyles.bodyRegular(context)
+                            .copyWith(color: DhanWiserColors.of(context).textSecondary),
                       ),
                       const SizedBox(height: 32),
                       // Amount Card
@@ -88,34 +88,32 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.card.withValues(alpha: 0.8),
+                          color: DhanWiserColors.of(context).card.withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: DhanWiserColors.surfaceVariant),
+                          border:
+                              Border.all(color: DhanWiserColors.of(context).surfaceVariant),
                         ),
                         child: Column(
                           children: [
                             Text(
                               'Amount Settled',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: DhanWiserColors.textSecondary,
-                              ),
+                              style: DhanWiserTextStyles.caption(context)
+                                  .copyWith(
+                                      color: DhanWiserColors.of(context).textSecondary),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               '₹${amount.toStringAsFixed(0)}',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
-                                color: DhanWiserColors.primary,
-                                letterSpacing: -1,
-                              ),
+                              style: DhanWiserTextStyles.displayLarge(context)
+                                  .copyWith(
+                                      color: DhanWiserColors.of(context).primary,
+                                      letterSpacing: -1),
                             ),
                             const SizedBox(height: 24),
                             // Split line
                             Container(
                               height: 1,
-                              color: DhanWiserColors.surfaceVariant,
+                              color: DhanWiserColors.of(context).surfaceVariant,
                             ),
                             const SizedBox(height: 24),
                             // Split between
@@ -128,7 +126,7 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                       width: 48,
                                       height: 48,
                                       decoration: BoxDecoration(
-                                        color: DhanWiserColors.surfaceVariant,
+                                        color: DhanWiserColors.of(context).surfaceVariant,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Center(
@@ -137,7 +135,7 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: DhanWiserColors.textPrimary,
+                                            color: DhanWiserColors.of(context).textPrimary,
                                           ),
                                         ),
                                       ),
@@ -145,11 +143,12 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     Text(
                                       'You',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: DhanWiserColors.textPrimary,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall!
+                                          .copyWith(
+                                              color:
+                                                  DhanWiserColors.of(context).textPrimary),
                                     ),
                                   ],
                                 ),
@@ -161,17 +160,17 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                       height: 8,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: DhanWiserColors.primary,
+                                        color: DhanWiserColors.of(context).primary,
                                       ),
                                     ),
                                     Container(
                                       width: 40,
                                       height: 2,
-                                      color: DhanWiserColors.primary,
+                                      color: DhanWiserColors.of(context).primary,
                                     ),
                                     Icon(
                                       Icons.arrow_forward_ios_rounded,
-                                      color: DhanWiserColors.primary,
+                                      color: DhanWiserColors.of(context).primary,
                                       size: 14,
                                     ),
                                   ],
@@ -182,16 +181,18 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                       width: 48,
                                       height: 48,
                                       decoration: BoxDecoration(
-                                        color: DhanWiserColors.surfaceVariant,
+                                        color: DhanWiserColors.of(context).surfaceVariant,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Center(
                                         child: Text(
-                                          receiverName.isNotEmpty ? receiverName[0].toUpperCase() : '?',
+                                          receiverName.isNotEmpty
+                                              ? receiverName[0].toUpperCase()
+                                              : '?',
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: DhanWiserColors.textPrimary,
+                                            color: DhanWiserColors.of(context).textPrimary,
                                           ),
                                         ),
                                       ),
@@ -199,11 +200,12 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     Text(
                                       receiverName,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: DhanWiserColors.textPrimary,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall!
+                                          .copyWith(
+                                              color:
+                                                  DhanWiserColors.of(context).textPrimary),
                                     ),
                                   ],
                                 ),
@@ -222,13 +224,14 @@ class SettlementSuccessfulScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
-                  ElevatedButton(
+                  PremiumElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, '/home', (route) => false);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DhanWiserColors.primary,
-                      foregroundColor: DhanWiserColors.background,
+                      backgroundColor: DhanWiserColors.of(context).primary,
+                      foregroundColor: DhanWiserColors.of(context).background,
                       minimumSize: const Size(double.infinity, 56),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -237,20 +240,17 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                     ),
                     child: Text(
                       'Back to Home',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium!,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextButton(
+                  PremiumTextButton(
                     onPressed: () {
                       Navigator.pushNamedAndRemoveUntil(
                           context, '/home', (route) => false);
                     },
                     style: TextButton.styleFrom(
-                      foregroundColor: DhanWiserColors.textPrimary,
+                      foregroundColor: DhanWiserColors.of(context).textPrimary,
                       minimumSize: const Size(double.infinity, 56),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -258,10 +258,7 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                     ),
                     child: Text(
                       'Back to Home',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium!,
                     ),
                   ),
                 ],

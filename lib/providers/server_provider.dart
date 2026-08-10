@@ -75,8 +75,10 @@ class ServerProvider extends ChangeNotifier {
 
   /// Fetch server details — serves cached data, refreshes in background.
   Future<void> fetchServerDetails(int serverId) async {
-    final cachedDetail = CacheService.get<ServerDetail>(_serverDetailKey(serverId));
-    final cachedChannels = CacheService.get<List<ChannelModel>>(_channelsKey(serverId));
+    final cachedDetail =
+        CacheService.get<ServerDetail>(_serverDetailKey(serverId));
+    final cachedChannels =
+        CacheService.get<List<ChannelModel>>(_channelsKey(serverId));
 
     if (cachedDetail != null && cachedChannels != null) {
       _currentServerDetail = cachedDetail;
@@ -95,7 +97,8 @@ class ServerProvider extends ChangeNotifier {
     try {
       _currentServerDetail = await ServerService.getServerDetails(serverId);
       _channels = await ServerService.getChannels(serverId);
-      CacheService.put(_serverDetailKey(serverId), _currentServerDetail!, ttl: _serverDetailTtl);
+      CacheService.put(_serverDetailKey(serverId), _currentServerDetail!,
+          ttl: _serverDetailTtl);
       CacheService.put(_channelsKey(serverId), _channels, ttl: _channelsTtl);
       _error = null;
     } catch (e) {
@@ -113,8 +116,10 @@ class ServerProvider extends ChangeNotifier {
       final freshChannels = await ServerService.getChannels(serverId);
       _currentServerDetail = freshDetail;
       _channels = freshChannels;
-      CacheService.put(_serverDetailKey(serverId), freshDetail, ttl: _serverDetailTtl);
-      CacheService.put(_channelsKey(serverId), freshChannels, ttl: _channelsTtl);
+      CacheService.put(_serverDetailKey(serverId), freshDetail,
+          ttl: _serverDetailTtl);
+      CacheService.put(_channelsKey(serverId), freshChannels,
+          ttl: _channelsTtl);
       _error = null;
       notifyListeners();
     } catch (e) {
@@ -123,12 +128,14 @@ class ServerProvider extends ChangeNotifier {
   }
 
   // Create a server
-  Future<bool> createServer(String name, {String? description, bool isPrivate = false}) async {
+  Future<bool> createServer(String name,
+      {String? description, bool isPrivate = false}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await ServerService.createServer(name: name, description: description, isPrivate: isPrivate);
+      await ServerService.createServer(
+          name: name, description: description, isPrivate: isPrivate);
       _error = null;
 
       // Invalidate server list cache to force fresh fetch

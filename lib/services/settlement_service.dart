@@ -82,8 +82,7 @@ class SettlementService {
   }
 
   // Get settlement history for a server
-  static Future<Map<String, dynamic>> getSettlementHistory(
-      int serverId) async {
+  static Future<Map<String, dynamic>> getSettlementHistory(int serverId) async {
     final response =
         await ApiClient.get('/settlements/server/$serverId/history');
     final data = response['data'];

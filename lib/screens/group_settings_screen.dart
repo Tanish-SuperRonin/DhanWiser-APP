@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import '../theme/colors.dart';
 import '../providers/server_provider.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class GroupSettingsScreen extends StatefulWidget {
   final int serverId;
@@ -24,31 +25,37 @@ class GroupSettingsScreen extends StatefulWidget {
 }
 
 class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
-  void _confirmDeleteOrLeave({required bool canDelete, required String groupName}) {
+  void _confirmDeleteOrLeave(
+      {required bool canDelete, required String groupName}) {
     final title = canDelete ? 'Delete Group?' : 'Leave Group?';
     final desc = canDelete
         ? 'Are you sure you want to delete "$groupName"? All expenses and balances will be lost forever. This cannot be undone.'
         : 'Are you sure you want to leave "$groupName"?';
     final confirmText = canDelete ? 'Delete' : 'Leave';
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: DhanWiserColors.surfaceContainerHigh,
+        backgroundColor: DhanWiserColors.of(context).surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title,
-            style: GoogleFonts.inter(
-                fontWeight: FontWeight.bold, color: DhanWiserColors.onSurface)),
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall!
+                .copyWith(color: DhanWiserColors.of(context).onSurface)),
         content: Text(desc,
-            style: GoogleFonts.inter(color: DhanWiserColors.onSurfaceVariant)),
+            style: DhanWiserTextStyles.caption(context)
+                .copyWith(color: DhanWiserColors.of(context).onSurfaceVariant)),
         actions: [
-          TextButton(
+          PremiumTextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: DhanWiserColors.primary)),
+            child: Text('Cancel',
+                style: DhanWiserTextStyles.caption(context)
+                    .copyWith(color: DhanWiserColors.of(context).primary)),
           ),
-          ElevatedButton(
+          PremiumElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: DhanWiserColors.coral,
+              backgroundColor: DhanWiserColors.of(context).coral,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
@@ -68,7 +75,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text(canDelete ? 'Group deleted' : 'Left group'),
-                    backgroundColor: DhanWiserColors.teal,
+                    backgroundColor: DhanWiserColors.of(context).teal,
                   ),
                 );
                 // Pop back to home
@@ -77,7 +84,7 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 messenger.showSnackBar(
                   SnackBar(
                     content: Text(sp.error ?? 'Action failed'),
-                    backgroundColor: DhanWiserColors.coral,
+                    backgroundColor: DhanWiserColors.of(context).coral,
                   ),
                 );
               }
@@ -90,11 +97,12 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
   }
 
   void _copyInviteLink() {
-    Clipboard.setData(ClipboardData(text: 'https://dhanwiser.app/join/${widget.serverId}'));
+    Clipboard.setData(
+        ClipboardData(text: 'https://dhanwiser.app/join/${widget.serverId}'));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Invite link copied to clipboard'),
-        backgroundColor: DhanWiserColors.primaryContainer,
+        backgroundColor: DhanWiserColors.of(context).primaryContainer,
       ),
     );
   }
@@ -102,27 +110,25 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: DhanWiserColors.background.withValues(alpha: 0.8),
+        backgroundColor: DhanWiserColors.of(context).background.withValues(alpha: 0.8),
         scrolledUnderElevation: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textSecondary),
+        leading: PremiumIconButton(
+          icon: Icon(Icons.arrow_back_rounded,
+              color: DhanWiserColors.of(context).textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Group Settings',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: DhanWiserColors.primary,
-          ),
+          style: DhanWiserTextStyles.buttonLarge(context)
+              .copyWith(color: DhanWiserColors.of(context).primary),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
-            color: DhanWiserColors.surfaceContainer.withValues(alpha: 0.5),
+            color: DhanWiserColors.of(context).surfaceContainer.withValues(alpha: 0.5),
             height: 1,
           ),
         ),
@@ -165,14 +171,16 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
               icon: Icons.exit_to_app_rounded,
               title: 'Leave Group',
               isDestructive: true,
-              onTap: () => _confirmDeleteOrLeave(canDelete: false, groupName: widget.serverName),
+              onTap: () => _confirmDeleteOrLeave(
+                  canDelete: false, groupName: widget.serverName),
             ),
           if (widget.isCreator)
             _buildSettingsItem(
               icon: Icons.delete_forever_rounded,
               title: 'Delete Group',
               isDestructive: true,
-              onTap: () => _confirmDeleteOrLeave(canDelete: true, groupName: widget.serverName),
+              onTap: () => _confirmDeleteOrLeave(
+                  canDelete: true, groupName: widget.serverName),
             ),
         ],
       ),
@@ -184,12 +192,8 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-          color: DhanWiserColors.textDisabled,
-        ),
+        style: DhanWiserTextStyles.overline(context)
+            .copyWith(letterSpacing: 1.2, color: DhanWiserColors.of(context).textDisabled),
       ),
     );
   }
@@ -200,13 +204,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? DhanWiserColors.error : DhanWiserColors.textSecondary;
+    final color =
+        isDestructive ? DhanWiserColors.of(context).error : DhanWiserColors.of(context).textSecondary;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: DhanWiserColors.surfaceContainerLow,
+        color: DhanWiserColors.of(context).surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DhanWiserColors.surfaceContainer),
+        border: Border.all(color: DhanWiserColors.of(context).surfaceContainer),
       ),
       child: Material(
         color: Colors.transparent,
@@ -222,14 +227,14 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
                 Expanded(
                   child: Text(
                     title,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: isDestructive ? DhanWiserColors.error : DhanWiserColors.textPrimary,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                        color: isDestructive
+                            ? DhanWiserColors.of(context).error
+                            : DhanWiserColors.of(context).textPrimary),
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded, color: DhanWiserColors.textDisabled, size: 16),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    color: DhanWiserColors.of(context).textDisabled, size: 16),
               ],
             ),
           ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/colors.dart';
 import '../theme/design_tokens.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 /// A quiet elevated container for information that belongs together.
 class DhanWiserSurface extends StatefulWidget {
@@ -36,9 +36,9 @@ class _DhanWiserSurfaceState extends State<DhanWiserSurface> {
       margin: widget.margin,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: widget.tint ?? DhanWiserColors.surfaceContainer,
+        color: widget.tint ?? DhanWiserColors.of(context).surfaceContainer,
         borderRadius: widget.radius,
-        border: Border.all(color: DhanWiserColors.outlineVariant),
+        border: Border.all(color: DhanWiserColors.of(context).outlineVariant),
       ),
       child: widget.child,
     );
@@ -53,8 +53,8 @@ class _DhanWiserSurfaceState extends State<DhanWiserSurface> {
           onTap: widget.onTap,
           onHighlightChanged: (pressed) => setState(() => _pressed = pressed),
           borderRadius: widget.radius,
-          splashColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.08),
-          highlightColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.04),
+          splashColor: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.08),
+          highlightColor: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.04),
           child: surface,
         ),
       ),
@@ -89,12 +89,8 @@ class DhanWiserSectionHeader extends StatelessWidget {
               if (eyebrow != null) ...[
                 Text(
                   eyebrow!.toUpperCase(),
-                  style: GoogleFonts.manrope(
-                    color: DhanWiserColors.textDisabled,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: DhanWiserColors.of(context).textDisabled, letterSpacing: 1.1),
                 ),
                 const SizedBox(height: DhanWiserTokens.space1),
               ],
@@ -103,7 +99,7 @@ class DhanWiserSectionHeader extends StatelessWidget {
           ),
         ),
         if (action != null)
-          TextButton(onPressed: action, child: Text(actionLabel ?? 'View all')),
+          PremiumTextButton(onPressed: action, child: Text(actionLabel ?? 'View all')),
       ],
     );
   }
@@ -128,11 +124,11 @@ class DhanWiserIconButton extends StatelessWidget {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: DhanWiserColors.surfaceContainer,
-        border: Border.all(color: DhanWiserColors.outlineVariant),
+        color: DhanWiserColors.of(context).surfaceContainer,
+        border: Border.all(color: DhanWiserColors.of(context).outlineVariant),
         borderRadius: DhanWiserTokens.radiusSmall,
       ),
-      child: IconButton(
+      child: PremiumIconButton(
         tooltip: tooltip,
         onPressed: onPressed,
         icon: Icon(icon, size: 20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class ExpenseDetailScreen extends StatelessWidget {
   final String title;
@@ -22,32 +23,34 @@ class ExpenseDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final parsedAmount = double.tryParse(amount.replaceAll('₹', '').replaceAll(',', '').trim()) ?? 0.0;
-    final splitShare = parsedAmount > 0 ? (parsedAmount / 2).toStringAsFixed(2) : '0.00';
+    final parsedAmount = double.tryParse(
+            amount.replaceAll('₹', '').replaceAll(',', '').trim()) ??
+        0.0;
+    final splitShare =
+        parsedAmount > 0 ? (parsedAmount / 2).toStringAsFixed(2) : '0.00';
 
-    final splits = participants ?? [
-      {'name': 'You', 'amount': '₹$splitShare', 'status': 'Owe'},
-      {'name': paidBy, 'amount': amount, 'status': 'Paid'},
-    ];
+    final splits = participants ??
+        [
+          {'name': 'You', 'amount': '₹$splitShare', 'status': 'Owe'},
+          {'name': paidBy, 'amount': amount, 'status': 'Paid'},
+        ];
 
     final isPaidByMe = paidBy.toLowerCase() == 'you';
 
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: DhanWiserColors.background,
+        backgroundColor: DhanWiserColors.of(context).background,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
+        leading: PremiumIconButton(
+          icon: Icon(Icons.arrow_back_rounded,
+              color: DhanWiserColors.of(context).textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Split Receipt',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: DhanWiserColors.primary,
-          ),
+          style: DhanWiserTextStyles.buttonLarge(context)
+              .copyWith(color: DhanWiserColors.of(context).primary),
         ),
       ),
       body: SingleChildScrollView(
@@ -57,9 +60,9 @@ class ExpenseDetailScreen extends StatelessWidget {
             // Receipt Card
             Container(
               decoration: BoxDecoration(
-                color: DhanWiserColors.card,
+                color: DhanWiserColors.of(context).card,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: DhanWiserColors.surfaceVariant),
+                border: Border.all(color: DhanWiserColors.of(context).surfaceVariant),
               ),
               child: Column(
                 children: [
@@ -73,28 +76,25 @@ class ExpenseDetailScreen extends StatelessWidget {
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            color: DhanWiserColors.primaryContainer,
+                            color: DhanWiserColors.of(context).primaryContainer,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(categoryIcon, color: DhanWiserColors.onPrimaryContainer, size: 28),
+                          child: Icon(categoryIcon,
+                              color: DhanWiserColors.of(context).onPrimaryContainer,
+                              size: 28),
                         ),
                         SizedBox(height: 16),
                         Text(
                           title,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: DhanWiserColors.textPrimary,
-                          ),
+                          style: DhanWiserTextStyles.headline2(context)
+                              .copyWith(color: DhanWiserColors.of(context).textPrimary),
                         ),
                         if (date.isNotEmpty) ...[
                           SizedBox(height: 4),
                           Text(
                             date,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: DhanWiserColors.textSecondary,
-                            ),
+                            style: DhanWiserTextStyles.caption(context)
+                                .copyWith(color: DhanWiserColors.of(context).textSecondary),
                           ),
                         ],
                         SizedBox(height: 32),
@@ -102,12 +102,9 @@ class ExpenseDetailScreen extends StatelessWidget {
                         // Bill Details
                         Text(
                           'BILL DETAILS',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: DhanWiserColors.textSecondary,
-                            letterSpacing: 1,
-                          ),
+                          style: DhanWiserTextStyles.overline(context).copyWith(
+                              color: DhanWiserColors.of(context).textSecondary,
+                              letterSpacing: 1),
                         ),
                         SizedBox(height: 16),
                         Row(
@@ -115,19 +112,15 @@ class ExpenseDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Total Amount',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: DhanWiserColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
                             ),
                             Text(
                               amount,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: DhanWiserColors.primary,
-                              ),
+                              style: DhanWiserTextStyles.headline2(context)
+                                  .copyWith(color: DhanWiserColors.of(context).primary),
                             ),
                           ],
                         ),
@@ -137,18 +130,16 @@ class ExpenseDetailScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Paid by',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: DhanWiserColors.textSecondary,
-                              ),
+                              style: DhanWiserTextStyles.caption(context)
+                                  .copyWith(
+                                      color: DhanWiserColors.of(context).textSecondary),
                             ),
                             Text(
                               paidBy,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: DhanWiserColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall!
+                                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
                             ),
                           ],
                         ),
@@ -163,14 +154,16 @@ class ExpenseDetailScreen extends StatelessWidget {
                         width: 12,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.background,
-                          borderRadius: BorderRadius.horizontal(right: Radius.circular(12)),
+                          color: DhanWiserColors.of(context).background,
+                          borderRadius: BorderRadius.horizontal(
+                              right: Radius.circular(12)),
                         ),
                       ),
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final dashCount = (constraints.constrainWidth() / 8).floor();
+                            final dashCount =
+                                (constraints.constrainWidth() / 8).floor();
                             return Flex(
                               direction: Axis.horizontal,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -179,7 +172,8 @@ class ExpenseDetailScreen extends StatelessWidget {
                                   width: 4,
                                   height: 1,
                                   child: DecoratedBox(
-                                    decoration: BoxDecoration(color: DhanWiserColors.surfaceVariant),
+                                    decoration: BoxDecoration(
+                                        color: DhanWiserColors.of(context).surfaceVariant),
                                   ),
                                 );
                               }),
@@ -191,8 +185,9 @@ class ExpenseDetailScreen extends StatelessWidget {
                         width: 12,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.background,
-                          borderRadius: BorderRadius.horizontal(left: Radius.circular(12)),
+                          color: DhanWiserColors.of(context).background,
+                          borderRadius: BorderRadius.horizontal(
+                              left: Radius.circular(12)),
                         ),
                       ),
                     ],
@@ -206,25 +201,29 @@ class ExpenseDetailScreen extends StatelessWidget {
                       children: [
                         Text(
                           'YOUR SHARE',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: DhanWiserColors.textSecondary,
-                            letterSpacing: 1,
-                          ),
+                          style: DhanWiserTextStyles.overline(context).copyWith(
+                              color: DhanWiserColors.of(context).textSecondary,
+                              letterSpacing: 1),
                         ),
                         SizedBox(height: 16),
-                        ...splits.where((s) => s['status'] != 'Paid').map((split) {
+                        ...splits
+                            .where((s) => s['status'] != 'Paid')
+                            .map((split) {
                           final name = split['name']?.toString() ?? 'Member';
-                          final splitAmount = split['amount']?.toString() ?? '₹0';
+                          final splitAmount =
+                              split['amount']?.toString() ?? '₹0';
                           final amountOwed = split['amountOwed'];
 
                           String displayAmount;
                           if (amountOwed != null) {
-                            final owed = amountOwed is num ? amountOwed.toDouble() : double.tryParse(amountOwed.toString()) ?? 0;
+                            final owed = amountOwed is num
+                                ? amountOwed.toDouble()
+                                : double.tryParse(amountOwed.toString()) ?? 0;
                             displayAmount = '₹${owed.toStringAsFixed(2)}';
                           } else {
-                            displayAmount = splitAmount.startsWith('₹') ? splitAmount : '₹$splitAmount';
+                            displayAmount = splitAmount.startsWith('₹')
+                                ? splitAmount
+                                : '₹$splitAmount';
                           }
 
                           return Padding(
@@ -238,29 +237,35 @@ class ExpenseDetailScreen extends StatelessWidget {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: DhanWiserColors.surfaceVariant,
+                                        color: DhanWiserColors.of(context).surfaceVariant,
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Icon(Icons.person_rounded, color: DhanWiserColors.textPrimary, size: 20),
+                                      child: Icon(Icons.person_rounded,
+                                          color: DhanWiserColors.of(context).textPrimary,
+                                          size: 20),
                                     ),
                                     SizedBox(width: 12),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          name == 'You' ? 'You owe $paidBy' : '$name owes you',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: DhanWiserColors.textPrimary,
-                                          ),
+                                          name == 'You'
+                                              ? 'You owe $paidBy'
+                                              : '$name owes you',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall!
+                                              .copyWith(
+                                                  color: DhanWiserColors.of(context).textPrimary),
                                         ),
                                         Text(
                                           '1 of ${splits.length} people split',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            color: DhanWiserColors.textSecondary,
-                                          ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall!
+                                              .copyWith(
+                                                  color: DhanWiserColors.of(context).textSecondary),
                                         ),
                                       ],
                                     ),
@@ -268,11 +273,10 @@ class ExpenseDetailScreen extends StatelessWidget {
                                 ),
                                 Text(
                                   displayAmount,
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: DhanWiserColors.error,
-                                  ),
+                                  style:
+                                      DhanWiserTextStyles.buttonLarge(context)
+                                          .copyWith(
+                                              color: DhanWiserColors.of(context).error),
                                 ),
                               ],
                             ),
@@ -287,7 +291,7 @@ class ExpenseDetailScreen extends StatelessWidget {
             SizedBox(height: 32),
 
             // Actions
-            ElevatedButton(
+            PremiumElevatedButton(
               onPressed: () {
                 if (!isPaidByMe) {
                   // Actually, Settle Now would go to Settlement Request flow, or just "Settlement Successful" for demo
@@ -295,8 +299,8 @@ class ExpenseDetailScreen extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: DhanWiserColors.primary,
-                foregroundColor: DhanWiserColors.background,
+                backgroundColor: DhanWiserColors.of(context).primary,
+                foregroundColor: DhanWiserColors.of(context).background,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -305,26 +309,20 @@ class ExpenseDetailScreen extends StatelessWidget {
               ),
               child: Text(
                 isPaidByMe ? 'Remind All' : 'Settle Now',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: DhanWiserTextStyles.buttonLarge(context),
               ),
             ),
             SizedBox(height: 12),
-            OutlinedButton.icon(
+            PremiumOutlinedButtonIcon(
               onPressed: () {},
               icon: const Icon(Icons.download_rounded, size: 20),
               label: Text(
                 'Download PDF',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: DhanWiserTextStyles.buttonLarge(context),
               ),
               style: OutlinedButton.styleFrom(
-                foregroundColor: DhanWiserColors.textPrimary,
-                side: BorderSide(color: DhanWiserColors.surfaceVariant),
+                foregroundColor: DhanWiserColors.of(context).textPrimary,
+                side: BorderSide(color: DhanWiserColors.of(context).surfaceVariant),
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),

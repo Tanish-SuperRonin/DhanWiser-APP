@@ -20,7 +20,8 @@ class NotificationProvider extends ChangeNotifier {
 
   // Fetch notifications — serves cached data, refreshes in background.
   Future<void> fetchNotifications({bool unreadOnly = false}) async {
-    final cacheKey = unreadOnly ? '${_notificationsKey}_unread' : _notificationsKey;
+    final cacheKey =
+        unreadOnly ? '${_notificationsKey}_unread' : _notificationsKey;
 
     // Check cache first
     final cached = CacheService.get<List<AppNotification>>(cacheKey);
@@ -52,7 +53,8 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   /// Background refresh for notifications.
-  Future<void> _backgroundFetchNotifications(bool unreadOnly, String cacheKey) async {
+  Future<void> _backgroundFetchNotifications(
+      bool unreadOnly, String cacheKey) async {
     try {
       final data =
           await NotificationService.getNotifications(unreadOnly: unreadOnly);
@@ -111,7 +113,8 @@ class NotificationProvider extends ChangeNotifier {
         _unreadCount = _unreadCount > 0 ? _unreadCount - 1 : 0;
 
         // Update cache
-        CacheService.put(_notificationsKey, _notifications, ttl: _notificationsTtl);
+        CacheService.put(_notificationsKey, _notifications,
+            ttl: _notificationsTtl);
         CacheService.put(_unreadCountKey, _unreadCount, ttl: _unreadCountTtl);
         notifyListeners();
       }
@@ -136,7 +139,8 @@ class NotificationProvider extends ChangeNotifier {
       _unreadCount = 0;
 
       // Update cache
-      CacheService.put(_notificationsKey, _notifications, ttl: _notificationsTtl);
+      CacheService.put(_notificationsKey, _notifications,
+          ttl: _notificationsTtl);
       CacheService.put(_unreadCountKey, 0, ttl: _unreadCountTtl);
       notifyListeners();
     } catch (_) {}

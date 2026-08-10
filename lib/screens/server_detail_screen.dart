@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../widgets/bouncing_button.dart';
@@ -16,6 +15,7 @@ import '../services/settlement_service.dart';
 import '../models/expense_model.dart';
 import '../models/balance_model.dart';
 import '../widgets/swipeable_expense_row.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
 
 class ServerDetailScreen extends StatefulWidget {
   final int serverId;
@@ -141,9 +141,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
   Future<void> _loadBalances() async {
     if (mounted) setState(() => _loadingBalances = true);
     try {
-      final balanceData = await ExpenseService.getServerBalances(widget.serverId);
+      final balanceData =
+          await ExpenseService.getServerBalances(widget.serverId);
       _balances = balanceData['balances'] as List<BalanceModel>;
-      _suggestions = balanceData['suggestedSettlements'] as List<SuggestedSettlement>;
+      _suggestions =
+          balanceData['suggestedSettlements'] as List<SuggestedSettlement>;
     } catch (_) {
       _balances = [];
       _suggestions = [];
@@ -185,7 +187,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(serverProv.error ?? 'Failed to load reminder settings'),
-          backgroundColor: DhanWiserColors.coral,
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
       return;
@@ -207,7 +209,9 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           builder: (ctx, setSheetState) {
             return Padding(
               padding: EdgeInsets.fromLTRB(
-                20, 8, 20,
+                20,
+                8,
+                20,
                 MediaQuery.of(ctx).viewInsets.bottom + 28,
               ),
               child: Column(
@@ -217,60 +221,81 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   const SizedBox(height: 8),
                   Text(
                     'Payment Reminders',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface,
-                    ),
+                    style: DhanWiserTextStyles.buttonLarge(context)
+                        .copyWith(color: cs.onSurface),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Automatic in-app reminders are on by default every 7 days.',
-                    style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant, height: 1.45),
+                    style: DhanWiserTextStyles.caption(context)
+                        .copyWith(color: cs.onSurfaceVariant, height: 1.45),
                   ),
                   const SizedBox(height: 18),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text('Enable automatic reminders',
-                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
+                        style: Theme.of(context).textTheme.titleMedium!),
                     value: reminderEnabled,
-                    onChanged: isSaving ? null : (v) => setSheetState(() => reminderEnabled = v),
+                    onChanged: isSaving
+                        ? null
+                        : (v) => setSheetState(() => reminderEnabled = v),
                   ),
                   if (reminderEnabled) ...[
                     const SizedBox(height: 12),
                     Text(
                       'Reminder interval: ${intervalDays.round()} day${intervalDays.round() == 1 ? '' : 's'}',
-                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall!
+                          .copyWith(color: cs.onSurface),
                     ),
                     Slider(
-                      value: intervalDays, min: 1, max: 30, divisions: 29,
+                      value: intervalDays,
+                      min: 1,
+                      max: 30,
+                      divisions: 29,
                       label: '${intervalDays.round()} days',
-                      onChanged: isSaving ? null : (v) => setSheetState(() => intervalDays = v),
+                      onChanged: isSaving
+                          ? null
+                          : (v) => setSheetState(() => intervalDays = v),
                     ),
                   ],
                   const SizedBox(height: 12),
                   SizedBox(
-                    width: double.infinity, height: 48,
-                    child: FilledButton(
-                      onPressed: isSaving ? null : () async {
-                        setSheetState(() => isSaving = true);
-                        final navigator = Navigator.of(ctx);
-                        final messenger = ScaffoldMessenger.of(context);
-                        final success = await serverProv.updateReminderSettings(
-                          serverId: widget.serverId,
-                          reminderEnabled: reminderEnabled,
-                          reminderIntervalDays: intervalDays.round(),
-                        );
-                        if (!mounted) return;
-                        navigator.pop();
-                        messenger.showSnackBar(SnackBar(
-                          content: Text(success ? 'Reminder settings updated' : (serverProv.error ?? 'Failed')),
-                          backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
-                        ));
-                      },
+                    width: double.infinity,
+                    height: 48,
+                    child: PremiumFilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              setSheetState(() => isSaving = true);
+                              final navigator = Navigator.of(ctx);
+                              final messenger = ScaffoldMessenger.of(context);
+                              final success =
+                                  await serverProv.updateReminderSettings(
+                                serverId: widget.serverId,
+                                reminderEnabled: reminderEnabled,
+                                reminderIntervalDays: intervalDays.round(),
+                              );
+                              if (!mounted) return;
+                              navigator.pop();
+                              messenger.showSnackBar(SnackBar(
+                                content: Text(success
+                                    ? 'Reminder settings updated'
+                                    : (serverProv.error ?? 'Failed')),
+                                backgroundColor: success
+                                    ? DhanWiserColors.of(context).mint
+                                    : DhanWiserColors.of(context).coral,
+                              ));
+                            },
                       child: isSaving
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text('Save Reminder Settings', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : Text('Save Reminder Settings',
+                              style: Theme.of(context).textTheme.titleSmall!),
                     ),
                   ),
                 ],
@@ -295,36 +320,56 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return AlertDialog(
-              icon: Icon(canDelete ? Icons.delete_outline_rounded : Icons.exit_to_app_rounded, color: DhanWiserColors.coral, size: 32),
+              icon: Icon(
+                  canDelete
+                      ? Icons.delete_outline_rounded
+                      : Icons.exit_to_app_rounded,
+                  color: DhanWiserColors.of(context).coral,
+                  size: 32),
               title: Text(canDelete ? 'Delete Group' : 'Leave Group'),
               content: Text(canDelete
                   ? 'Delete "$groupName"? This removes the group for everyone and cannot be undone.'
                   : 'Leave "$groupName"? You can join again only if someone invites you back.'),
               actions: [
-                TextButton(
+                PremiumTextButton(
                   onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
                   child: const Text('Cancel'),
                 ),
-                FilledButton(
-                  onPressed: isSubmitting ? null : () async {
-                    setDialogState(() => isSubmitting = true);
-                    final dialogNavigator = Navigator.of(ctx);
-                    final messenger = ScaffoldMessenger.of(context);
-                    final pageNavigator = Navigator.of(context);
-                    final success = canDelete
-                        ? await serverProv.deleteServer(widget.serverId)
-                        : await serverProv.leaveServer(widget.serverId);
-                    if (!mounted) return;
-                    dialogNavigator.pop();
-                    messenger.showSnackBar(SnackBar(
-                      content: Text(success ? (canDelete ? 'Group deleted' : 'You left the group') : (serverProv.error ?? 'Unable to update group')),
-                      backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
-                    ));
-                    if (success && mounted) pageNavigator.pop(true);
-                  },
-                  style: FilledButton.styleFrom(backgroundColor: DhanWiserColors.coral, foregroundColor: Colors.white),
+                PremiumFilledButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          setDialogState(() => isSubmitting = true);
+                          final dialogNavigator = Navigator.of(ctx);
+                          final messenger = ScaffoldMessenger.of(context);
+                          final pageNavigator = Navigator.of(context);
+                          final success = canDelete
+                              ? await serverProv.deleteServer(widget.serverId)
+                              : await serverProv.leaveServer(widget.serverId);
+                          if (!mounted) return;
+                          dialogNavigator.pop();
+                          messenger.showSnackBar(SnackBar(
+                            content: Text(success
+                                ? (canDelete
+                                    ? 'Group deleted'
+                                    : 'You left the group')
+                                : (serverProv.error ??
+                                    'Unable to update group')),
+                            backgroundColor: success
+                                ? DhanWiserColors.of(context).mint
+                                : DhanWiserColors.of(context).coral,
+                          ));
+                          if (success && mounted) pageNavigator.pop(true);
+                        },
+                  style: FilledButton.styleFrom(
+                      backgroundColor: DhanWiserColors.of(context).coral,
+                      foregroundColor: Colors.white),
                   child: isSubmitting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
                       : Text(canDelete ? 'Delete' : 'Leave'),
                 ),
               ],
@@ -337,8 +382,10 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   void _showSettleUpDialog(SuggestedSettlement suggestion) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final text = isDark ? DhanWiserColors.textPrimary : DhanWiserColors.textPrimary;
-    final sub = isDark ? DhanWiserColors.textSecondary : DhanWiserColors.textSecondary;
+    final text =
+        isDark ? DhanWiserColors.of(context).textPrimary : DhanWiserColors.of(context).textPrimary;
+    final sub =
+        isDark ? DhanWiserColors.of(context).textSecondary : DhanWiserColors.of(context).textSecondary;
     final transactionIdController = TextEditingController();
     final notesController = TextEditingController();
     bool isSending = false;
@@ -354,8 +401,9 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     if (currentUserId != fromUserId) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Only ${suggestion.fromUsername} can initiate this settlement'),
-          backgroundColor: DhanWiserColors.coral,
+          content: Text(
+              'Only ${suggestion.fromUsername} can initiate this settlement'),
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
       return;
@@ -364,7 +412,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? DhanWiserColors.surfaceContainer : Colors.white,
+      backgroundColor: isDark ? DhanWiserColors.of(context).surfaceContainer : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -373,7 +421,9 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           builder: (ctx, setSheetState) {
             return Padding(
               padding: EdgeInsets.fromLTRB(
-                20, 16, 20,
+                20,
+                16,
+                20,
                 MediaQuery.of(ctx).viewInsets.bottom + 32,
               ),
               child: Column(
@@ -382,9 +432,12 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 children: [
                   Center(
                     child: Container(
-                      width: 40, height: 4,
+                      width: 40,
+                      height: 4,
                       decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.outlineVariant : DhanWiserColors.outline,
+                        color: isDark
+                            ? DhanWiserColors.of(context).outlineVariant
+                            : DhanWiserColors.of(context).outline,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -392,51 +445,64 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   const SizedBox(height: 20),
                   Text(
                     'Settle Up',
-                    style: GoogleFonts.inter(
-                      fontSize: 20, fontWeight: FontWeight.w700, color: text),
+                    style: DhanWiserTextStyles.buttonLarge(context)
+                        .copyWith(color: text),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'You owe ₹${suggestion.amount.toStringAsFixed(0)} to ${suggestion.toUsername}',
-                    style: GoogleFonts.inter(fontSize: 15, color: sub),
+                    style: DhanWiserTextStyles.bodyRegular(context)
+                        .copyWith(color: sub),
                   ),
                   const SizedBox(height: 20),
 
                   // Transaction ID
                   Text('Transaction ID / UPI Ref *',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                      style: DhanWiserTextStyles.overline(context)
+                          .copyWith(color: sub)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: transactionIdController,
-                    style: GoogleFonts.inter(color: text, fontSize: 15),
+                    style: DhanWiserTextStyles.bodyRegular(context)
+                        .copyWith(color: text),
                     decoration: InputDecoration(
                       hintText: 'e.g. UPI123456789',
-                      hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 14),
+                      hintStyle: DhanWiserTextStyles.caption(context)
+                          .copyWith(color: sub.withValues(alpha: 0.4)),
                       filled: true,
-                      fillColor: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
-                      prefixIcon: Icon(Icons.receipt_long_rounded, color: sub, size: 20),
+                      fillColor: isDark
+                          ? DhanWiserColors.of(context).surfaceContainerLow
+                          : DhanWiserColors.of(context).surfaceContainerLow,
+                      prefixIcon: Icon(Icons.receipt_long_rounded,
+                          color: sub, size: 20),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
                   ),
                   const SizedBox(height: 14),
 
                   // Notes
                   Text('Payment details (optional)',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                      style: DhanWiserTextStyles.overline(context)
+                          .copyWith(color: sub)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: notesController,
                     maxLines: 2,
-                    style: GoogleFonts.inter(color: text, fontSize: 15),
+                    style: DhanWiserTextStyles.bodyRegular(context)
+                        .copyWith(color: text),
                     decoration: InputDecoration(
                       hintText: 'e.g. Paid via Google Pay, screenshot attached',
-                      hintStyle: GoogleFonts.inter(color: sub.withValues(alpha: 0.4), fontSize: 13),
+                      hintStyle: DhanWiserTextStyles.caption(context)
+                          .copyWith(color: sub.withValues(alpha: 0.4)),
                       filled: true,
-                      fillColor: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
+                      fillColor: isDark
+                          ? DhanWiserColors.of(context).surfaceContainerLow
+                          : DhanWiserColors.of(context).surfaceContainerLow,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -447,7 +513,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   const SizedBox(height: 20),
 
                   Text('Screenshot proof (optional)',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: sub)),
+                      style: DhanWiserTextStyles.overline(context)
+                          .copyWith(color: sub)),
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: isSending
@@ -468,18 +535,20 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                                   content: const Text(
                                     'Please choose an image smaller than 2 MB.',
                                   ),
-                                  backgroundColor: DhanWiserColors.coral,
+                                  backgroundColor: DhanWiserColors.of(context).coral,
                                 ),
                               );
                               return;
                             }
 
-                            final extension = (file.extension ?? 'png').toLowerCase();
-                            final mimeType = extension == 'jpg' || extension == 'jpeg'
-                                ? 'image/jpeg'
-                                : extension == 'webp'
-                                    ? 'image/webp'
-                                    : 'image/png';
+                            final extension =
+                                (file.extension ?? 'png').toLowerCase();
+                            final mimeType =
+                                extension == 'jpg' || extension == 'jpeg'
+                                    ? 'image/jpeg'
+                                    : extension == 'webp'
+                                        ? 'image/webp'
+                                        : 'image/png';
 
                             setSheetState(() {
                               proofBytes = file.bytes;
@@ -492,23 +561,27 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: isDark ? DhanWiserColors.surfaceContainerLow : DhanWiserColors.surfaceContainerLow,
+                        color: isDark
+                            ? DhanWiserColors.of(context).surfaceContainerLow
+                            : DhanWiserColors.of(context).surfaceContainerLow,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: proofBytes != null
-                              ? DhanWiserColors.primary.withValues(alpha: 0.35)
+                              ? DhanWiserColors.of(context).primary.withValues(alpha: 0.35)
                               : Colors.transparent,
                         ),
                       ),
                       child: proofBytes == null
                           ? Row(
                               children: [
-                                Icon(Icons.add_photo_alternate_outlined, color: sub, size: 20),
+                                Icon(Icons.add_photo_alternate_outlined,
+                                    color: sub, size: 20),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     'Attach payment screenshot',
-                                    style: GoogleFonts.inter(color: sub, fontSize: 14),
+                                    style: DhanWiserTextStyles.caption(context)
+                                        .copyWith(color: sub),
                                   ),
                                 ),
                               ],
@@ -529,20 +602,21 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                                 Row(
                                   children: [
                                     Icon(Icons.image_outlined,
-                                        color: DhanWiserColors.primary, size: 18),
+                                        color: DhanWiserColors.of(context).primary,
+                                        size: 18),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         proofFileName ?? 'Screenshot attached',
-                                        style: GoogleFonts.inter(
+                                        style: DhanWiserTextStyles.overline(
+                                                context)
+                                            .copyWith(
                                           color: text,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
                                         ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    TextButton(
+                                    PremiumTextButton(
                                       onPressed: isSending
                                           ? null
                                           : () {
@@ -554,10 +628,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                                             },
                                       child: Text(
                                         'Remove',
-                                        style: GoogleFonts.inter(
-                                          color: DhanWiserColors.coral,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall!
+                                            .copyWith(
+                                                color: DhanWiserColors.of(context).coral),
                                       ),
                                     ),
                                   ],
@@ -572,74 +647,83 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: ElevatedButton(
-                      onPressed: isSending ? null : () async {
-                        final txnId = transactionIdController.text.trim();
-                        if (txnId.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Please enter a transaction ID'),
-                              backgroundColor: DhanWiserColors.coral,
-                            ),
-                          );
-                          return;
-                        }
-                        setSheetState(() => isSending = true);
+                    child: PremiumElevatedButton(
+                      onPressed: isSending
+                          ? null
+                          : () async {
+                              final txnId = transactionIdController.text.trim();
+                              if (txnId.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Please enter a transaction ID'),
+                                    backgroundColor: DhanWiserColors.of(context).coral,
+                                  ),
+                                );
+                                return;
+                              }
+                              setSheetState(() => isSending = true);
 
-                        // Combine transaction ID and notes into proof string
-                        String proof = 'Transaction ID: $txnId';
-                        final notes = notesController.text.trim();
-                        if (notes.isNotEmpty) proof += '\n$notes';
+                              // Combine transaction ID and notes into proof string
+                              String proof = 'Transaction ID: $txnId';
+                              final notes = notesController.text.trim();
+                              if (notes.isNotEmpty) proof += '\n$notes';
 
-                        // Capture navigator/messenger before async gap
-                        final sheetNavigator = Navigator.of(ctx);
-                        final messenger = ScaffoldMessenger.of(context);
+                              // Capture navigator/messenger before async gap
+                              final sheetNavigator = Navigator.of(ctx);
+                              final messenger = ScaffoldMessenger.of(context);
 
-                        try {
-                          final toUserId = suggestion.to['userId'] ?? suggestion.to['id'];
-                          await SettlementService.initiateSettlement(
-                            serverId: widget.serverId,
-                            receiverId: toUserId,
-                            amount: suggestion.amount,
-                            notes: proof,
-                            proofImage: proofImage,
-                          );
-                          if (mounted) {
-                            sheetNavigator.pop();
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text('Settlement sent! Waiting for ${suggestion.toUsername} to approve.'),
-                                backgroundColor: DhanWiserColors.mint,
-                              ),
-                            );
-                            await _loadData();
-                          }
-                        } catch (e) {
-                          setSheetState(() => isSending = false);
-                          if (mounted) {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text('Failed: $e'),
-                                backgroundColor: DhanWiserColors.coral,
-                              ),
-                            );
-                          }
-                        }
-                      },
+                              try {
+                                final toUserId = suggestion.to['userId'] ??
+                                    suggestion.to['id'];
+                                await SettlementService.initiateSettlement(
+                                  serverId: widget.serverId,
+                                  receiverId: toUserId,
+                                  amount: suggestion.amount,
+                                  notes: proof,
+                                  proofImage: proofImage,
+                                );
+                                if (mounted) {
+                                  sheetNavigator.pop();
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Settlement sent! Waiting for ${suggestion.toUsername} to approve.'),
+                                      backgroundColor: DhanWiserColors.of(context).mint,
+                                    ),
+                                  );
+                                  await _loadData();
+                                }
+                              } catch (e) {
+                                setSheetState(() => isSending = false);
+                                if (mounted) {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed: $e'),
+                                      backgroundColor: DhanWiserColors.of(context).coral,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: DhanWiserColors.mint,
+                        backgroundColor: DhanWiserColors.of(context).mint,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        disabledBackgroundColor: DhanWiserColors.mint.withValues(alpha: 0.5),
+                        disabledBackgroundColor:
+                            DhanWiserColors.of(context).mint.withValues(alpha: 0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: isSending
-                          ? const SizedBox(width: 22, height: 22,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2.5))
                           : Text('Send Settlement Request',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                              style: Theme.of(context).textTheme.titleMedium!),
                     ),
                   ),
                 ],
@@ -651,24 +735,20 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = cs.surface;
-    final surface = isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest;
+    final surface =
+        isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest;
     final text = cs.onSurface;
     final sub = cs.onSurfaceVariant;
 
     // Deterministic gradient from server name
-    final grads = [
-      [const Color(0xFF4ECDC4), const Color(0xFF7EDDD6)],
-      [const Color(0xFF95E1D3), const Color(0xFFA8E6CF)],
-      [const Color(0xFFFFB5A7), const Color(0xFFFFCDBD)],
-      [const Color(0xFFFFD97D), const Color(0xFFFFE5A0)],
-    ];
-    final grad = grads[widget.serverName.hashCode.abs() % grads.length];
+    final palette = DhanWiserColors.of(context).groupColors;
+    final baseColor = palette[widget.serverName.hashCode.abs() % palette.length];
+    final grad = [baseColor, baseColor.withValues(alpha: 0.7)];
 
     return Scaffold(
       backgroundColor: bg,
@@ -689,7 +769,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       color: Colors.black.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                    child: const Icon(Icons.arrow_back_rounded,
+                        color: Colors.white, size: 20),
                   ),
                 ),
               ),
@@ -706,7 +787,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       await _loadData();
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
@@ -714,14 +796,14 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                          const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 18),
                           const SizedBox(width: 4),
                           Text(
                             'Expense',
-                            style: GoogleFonts.inter(
+                            style:
+                                DhanWiserTextStyles.overline(context).copyWith(
                               color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -738,10 +820,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     final groupName = detail?.server.name ?? widget.serverName;
 
                     return Padding(
-                      padding: const EdgeInsets.only(top: 8, right: 8, bottom: 8),
+                      padding:
+                          const EdgeInsets.only(top: 8, right: 8, bottom: 8),
                       child: PopupMenuButton<String>(
                         color: isDark
-                            ? DhanWiserColors.surfaceContainer
+                            ? DhanWiserColors.of(context).surfaceContainer
                             : Colors.white,
                         icon: Container(
                           width: 42,
@@ -777,7 +860,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                               value: 'reminder-settings',
                               child: Text(
                                 'Reminder Settings',
-                                style: GoogleFonts.inter(fontSize: 14),
+                                style: DhanWiserTextStyles.caption(context),
                               ),
                             ),
                           if (isCreator)
@@ -785,10 +868,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                               value: 'delete-group',
                               child: Text(
                                 'Delete Group',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: DhanWiserColors.coral,
-                                ),
+                                style: DhanWiserTextStyles.caption(context)
+                                    .copyWith(color: DhanWiserColors.of(context).coral),
                               ),
                             ),
                           if (!isCreator)
@@ -796,10 +877,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                               value: 'leave-group',
                               child: Text(
                                 'Leave Group',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: DhanWiserColors.coral,
-                                ),
+                                style: DhanWiserTextStyles.caption(context)
+                                    .copyWith(color: DhanWiserColors.of(context).coral),
                               ),
                             ),
                         ],
@@ -825,7 +904,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                         final memberCount = detail?.members.length ?? 0;
 
                         return Padding(
-                          padding: const EdgeInsets.only(left: 20, bottom: 56, right: 20),
+                          padding: const EdgeInsets.only(
+                              left: 20, bottom: 56, right: 20),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -842,11 +922,13 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                                   ),
                                   child: Center(
                                     child: Text(
-                                      name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                                      style: GoogleFonts.inter(
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : 'S',
+                                      style:
+                                          DhanWiserTextStyles.headline2(context)
+                                              .copyWith(
                                         color: Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ),
@@ -855,20 +937,17 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                               const SizedBox(height: 12),
                               Text(
                                 name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                  letterSpacing: -0.5,
-                                ),
+                                style: DhanWiserTextStyles.headline2(context)
+                                    .copyWith(
+                                        color: Colors.white,
+                                        letterSpacing: -0.5),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '$memberCount members',
-                                style: GoogleFonts.inter(
+                                style: DhanWiserTextStyles.caption(context)
+                                    .copyWith(
                                   color: Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
@@ -884,7 +963,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 child: Container(
                   decoration: BoxDecoration(
                     color: bg,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
                   ),
                   child: TabBar(
                     controller: _tabController,
@@ -894,8 +974,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     indicatorWeight: 3,
                     indicatorSize: TabBarIndicatorSize.label,
                     dividerColor: Colors.transparent,
-                    labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
-                    unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 14),
+                    labelStyle: Theme.of(context).textTheme.titleSmall!,
+                    unselectedLabelStyle: DhanWiserTextStyles.caption(context),
                     tabs: const [
                       Tab(text: 'Expenses'),
                       Tab(text: 'Balances'),
@@ -928,7 +1008,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
         itemCount: 6,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, __) => ShimmerLoading(
-          child: Container(height: 72, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18))),
+          child: Container(
+              height: 72,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18))),
         ),
       );
     }
@@ -941,12 +1025,22 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
       );
     }
 
-    final categoryIcons = [Icons.restaurant_rounded, Icons.directions_car_rounded, Icons.home_rounded, Icons.movie_rounded, Icons.shopping_cart_rounded, Icons.lightbulb_rounded, Icons.sports_esports_rounded, Icons.coffee_rounded];
+    final categoryIcons = [
+      Icons.restaurant_rounded,
+      Icons.directions_car_rounded,
+      Icons.home_rounded,
+      Icons.movie_rounded,
+      Icons.shopping_cart_rounded,
+      Icons.lightbulb_rounded,
+      Icons.sports_esports_rounded,
+      Icons.coffee_rounded
+    ];
 
     return ListView.builder(
       controller: _expenseScrollController,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      itemCount: _expenses.length + (_hasMoreExpenses || _loadingMoreExpenses ? 1 : 0),
+      itemCount:
+          _expenses.length + (_hasMoreExpenses || _loadingMoreExpenses ? 1 : 0),
       itemBuilder: (context, index) {
         // "Load more" indicator at the bottom
         if (index >= _expenses.length) {
@@ -965,7 +1059,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           );
         }
         final e = _expenses[index];
-        final catIcon = categoryIcons[e.title.hashCode.abs() % categoryIcons.length];
+        final catIcon =
+            categoryIcons[e.title.hashCode.abs() % categoryIcons.length];
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: SwipeableExpenseRow(
@@ -984,7 +1079,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text('Deleted "${e.title}"'),
-                      backgroundColor: DhanWiserColors.positive,
+                      backgroundColor: DhanWiserColors.of(context).positive,
                     ),
                   );
                 }
@@ -993,7 +1088,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text('Failed to delete: $err'),
-                      backgroundColor: DhanWiserColors.negative,
+                      backgroundColor: DhanWiserColors.of(context).negative,
                     ),
                   );
                 }
@@ -1004,7 +1099,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 Navigator.pushNamed(context, '/expense-detail', arguments: {
                   'title': e.title,
                   'amount': '₹${e.totalAmount.toStringAsFixed(2)}',
-                  'date': '${e.expenseDate.day}/${e.expenseDate.month}/${e.expenseDate.year}',
+                  'date':
+                      '${e.expenseDate.day}/${e.expenseDate.month}/${e.expenseDate.year}',
                   'paidBy': e.createdByUsername,
                   'participants': e.participants.map((p) {
                     return {
@@ -1022,7 +1118,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1046,40 +1143,42 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                         children: [
                           Text(
                             e.title,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: text,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium!
+                                .copyWith(color: text),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Paid by ${e.createdByUsername}',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              color: sub,
-                            ),
+                            style: DhanWiserTextStyles.caption(context)
+                                .copyWith(color: sub),
                           ),
                         ],
                       ),
                     ),
                     Text(
                       '₹${e.totalAmount.toStringAsFixed(0)}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: text,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium!
+                          .copyWith(color: text),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        ).animate().fade(duration: 200.ms, delay: ((index % 10) * 30).ms)
-         .slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 200.ms);
+        )
+            .animate()
+            .fade(duration: 200.ms, delay: ((index % 10) * 30).ms)
+            .slideY(
+                begin: 0.1,
+                end: 0,
+                curve: Curves.easeOutCubic,
+                duration: 200.ms);
       },
     );
   }
@@ -1123,25 +1222,27 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
               ),
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data:
+                  Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
-                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                tilePadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                leading: Icon(Icons.info_outline_rounded, color: cs.primary, size: 20),
+                leading: Icon(Icons.info_outline_rounded,
+                    color: cs.primary, size: 20),
                 title: Text(
                   'How balances work',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: cs.primary,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall!
+                      .copyWith(color: cs.primary),
                 ),
                 children: [
                   _buildExplainerRow(
                     Icons.person_rounded,
                     'Payer',
                     'The person who paid for an expense upfront.',
-                    DhanWiserColors.teal,
+                    DhanWiserColors.of(context).teal,
                     cs,
                   ),
                   const SizedBox(height: 8),
@@ -1149,7 +1250,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     Icons.people_rounded,
                     'Debtors',
                     'Everyone who shares the expense owes their portion to the payer.',
-                    DhanWiserColors.coral,
+                    DhanWiserColors.of(context).coral,
                     cs,
                   ),
                   const SizedBox(height: 12),
@@ -1165,36 +1266,40 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       children: [
                         Text(
                           'Calculation',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
-                          ),
+                          style: DhanWiserTextStyles.overline(context)
+                              .copyWith(color: cs.onSurface),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Balance = Total Paid − Total Owed',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                          ),
+                          style: DhanWiserTextStyles.overline(context)
+                              .copyWith(color: cs.onSurface),
                         ),
                         const SizedBox(height: 4),
                         Text.rich(
                           TextSpan(
-                            style: GoogleFonts.inter(fontSize: 12, color: cs.onSurfaceVariant, height: 1.5),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall!
+                                .copyWith(
+                                    color: cs.onSurfaceVariant, height: 1.5),
                             children: [
                               TextSpan(
                                 text: '▲ Positive',
-                                style: TextStyle(color: DhanWiserColors.teal, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: DhanWiserColors.of(context).teal,
+                                    fontWeight: FontWeight.w600),
                               ),
-                              const TextSpan(text: ' → Others owe you (you get back)\n'),
+                              const TextSpan(
+                                  text: ' → Others owe you (you get back)\n'),
                               TextSpan(
                                 text: '▼ Negative',
-                                style: TextStyle(color: DhanWiserColors.coral, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: DhanWiserColors.of(context).coral,
+                                    fontWeight: FontWeight.w600),
                               ),
-                              const TextSpan(text: ' → You owe others (you need to pay)'),
+                              const TextSpan(
+                                  text: ' → You owe others (you need to pay)'),
                             ],
                           ),
                         ),
@@ -1209,7 +1314,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           // Balance cards
           ..._balances.map((b) {
             final isPositive = b.balance >= 0;
-            final color = isPositive ? DhanWiserColors.teal : DhanWiserColors.coral;
+            final color =
+                isPositive ? DhanWiserColors.of(context).teal : DhanWiserColors.of(context).coral;
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
@@ -1235,12 +1341,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     ),
                     child: Center(
                       child: Text(
-                        b.fullName.isNotEmpty ? b.fullName[0].toUpperCase() : '?',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                          fontSize: 18,
-                        ),
+                        b.fullName.isNotEmpty
+                            ? b.fullName[0].toUpperCase()
+                            : '?',
+                        style: DhanWiserTextStyles.buttonLarge(context)
+                            .copyWith(color: color),
                       ),
                     ),
                   ),
@@ -1251,15 +1356,17 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       children: [
                         Text(
                           b.fullName,
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w600,
-                            color: text,
-                            fontSize: 15,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .copyWith(color: text),
                         ),
                         Text(
                           '@${b.username}',
-                          style: GoogleFonts.inter(fontSize: 12, color: sub),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall!
+                              .copyWith(color: sub),
                         ),
                       ],
                     ),
@@ -1269,15 +1376,15 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     children: [
                       Text(
                         '₹${b.balance.abs().toStringAsFixed(0)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: color,
-                        ),
+                        style: DhanWiserTextStyles.buttonLarge(context)
+                            .copyWith(color: color),
                       ),
                       Text(
                         isPositive ? 'gets back' : 'owes',
-                        style: GoogleFonts.inter(fontSize: 11, color: color.withValues(alpha: 0.7)),
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall!
+                            .copyWith(color: color.withValues(alpha: 0.7)),
                       ),
                     ],
                   ),
@@ -1292,15 +1399,21 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             SizedBox(
               width: double.infinity,
               height: 48,
-              child: OutlinedButton.icon(
+              child: PremiumOutlinedButtonIcon(
                 onPressed: () async {
-                  final serverProv = Provider.of<ServerProvider>(context, listen: false);
-                  final success = await serverProv.sendReminders(widget.serverId);
+                  final serverProv =
+                      Provider.of<ServerProvider>(context, listen: false);
+                  final success =
+                      await serverProv.sendReminders(widget.serverId);
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(success ? 'Reminders sent!' : 'Failed to send reminders'),
-                        backgroundColor: success ? DhanWiserColors.mint : DhanWiserColors.coral,
+                        content: Text(success
+                            ? 'Reminders sent!'
+                            : 'Failed to send reminders'),
+                        backgroundColor: success
+                            ? DhanWiserColors.of(context).mint
+                            : DhanWiserColors.of(context).coral,
                       ),
                     );
                   }
@@ -1308,12 +1421,14 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 icon: const Icon(Icons.notifications_active_rounded, size: 18),
                 label: Text(
                   'Send Reminders',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: Theme.of(context).textTheme.titleSmall!,
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: DhanWiserColors.primary,
-                  side: BorderSide(color: DhanWiserColors.primary.withValues(alpha: 0.5)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  foregroundColor: DhanWiserColors.of(context).primary,
+                  side: BorderSide(
+                      color: DhanWiserColors.of(context).primary.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ),
@@ -1324,66 +1439,72 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             const SizedBox(height: 24),
             Text(
               'SETTLE UP',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: sub,
-                letterSpacing: 1,
-              ),
+              style: DhanWiserTextStyles.overline(context)
+                  .copyWith(color: sub, letterSpacing: 1),
             ),
             const SizedBox(height: 10),
             ..._suggestions.map((s) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: DhanWiserColors.primary.withValues(alpha: isDark ? 0.1 : 0.04),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Text(
-                          s.fromUsername,
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Icon(Icons.arrow_forward_rounded, size: 16, color: DhanWiserColors.primary),
-                        ),
-                        Text(
-                          s.toUsername,
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 14),
-                        ),
-                      ],
-                    ),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: DhanWiserColors.of(context).primary
+                        .withValues(alpha: isDark ? 0.1 : 0.04),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  Text(
-                    '₹${s.amount.toStringAsFixed(0)}',
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      color: DhanWiserColors.primary,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: () => _showSettleUpDialog(s),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.mint,
-                        borderRadius: BorderRadius.circular(8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Text(
+                              s.fromUsername,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall!
+                                  .copyWith(color: text),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              child: Icon(Icons.arrow_forward_rounded,
+                                  size: 16, color: DhanWiserColors.of(context).primary),
+                            ),
+                            Text(
+                              s.toUsername,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall!
+                                  .copyWith(color: text),
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text('Settle',
-                        style: GoogleFonts.inter(
-                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                    ),
+                      Text(
+                        '₹${s.amount.toStringAsFixed(0)}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium!
+                            .copyWith(color: DhanWiserColors.of(context).primary),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () => _showSettleUpDialog(s),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: DhanWiserColors.of(context).mint,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('Settle',
+                              style: DhanWiserTextStyles.overline(context)
+                                  .copyWith(color: Colors.white)),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )),
+                )),
           ],
           const SizedBox(height: 80),
         ],
@@ -1415,10 +1536,10 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
         }
 
         final memberColors = [
-          DhanWiserColors.primary,
-          DhanWiserColors.teal,
-          DhanWiserColors.coral,
-          DhanWiserColors.warning,
+          DhanWiserColors.of(context).primary,
+          DhanWiserColors.of(context).teal,
+          DhanWiserColors.of(context).coral,
+          DhanWiserColors.of(context).warning,
           const Color(0xFF74B9FF),
         ];
 
@@ -1431,25 +1552,29 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 child: SizedBox(
                   width: double.infinity,
                   height: 48,
-                  child: ElevatedButton.icon(
+                  child: PremiumElevatedButtonIcon(
                     onPressed: () async {
                       await Navigator.pushNamed(
                         context,
                         '/friend-discovery',
-                        arguments: {'serverId': widget.serverId, 'serverName': widget.serverName},
+                        arguments: {
+                          'serverId': widget.serverId,
+                          'serverName': widget.serverName
+                        },
                       );
                       await _loadData();
                     },
                     icon: const Icon(Icons.person_add_rounded, size: 18),
                     label: Text(
                       'Invite Members',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14),
+                      style: Theme.of(context).textTheme.titleSmall!,
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DhanWiserColors.primary,
+                      backgroundColor: DhanWiserColors.of(context).primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
@@ -1457,7 +1582,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 itemCount: members.length,
                 itemBuilder: (context, index) {
                   final m = members[index];
@@ -1470,7 +1596,8 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.12 : 0.03),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -1487,12 +1614,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                           ),
                           child: Center(
                             child: Text(
-                              m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w700,
-                                color: color,
-                                fontSize: 18,
-                              ),
+                              m.fullName.isNotEmpty
+                                  ? m.fullName[0].toUpperCase()
+                                  : '?',
+                              style: DhanWiserTextStyles.buttonLarge(context)
+                                  .copyWith(color: color),
                             ),
                           ),
                         ),
@@ -1503,29 +1629,36 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                             children: [
                               Text(
                                 m.fullName,
-                                style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: text, fontSize: 15),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium!
+                                    .copyWith(color: text),
                               ),
                               Text(
                                 '@${m.username}',
-                                style: GoogleFonts.inter(fontSize: 12, color: sub),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall!
+                                    .copyWith(color: sub),
                               ),
                             ],
                           ),
                         ),
                         if (m.role == 'admin')
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: DhanWiserColors.primary.withValues(alpha: 0.1),
+                              color: DhanWiserColors.of(context).primary
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               'Admin',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: DhanWiserColors.primary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall!
+                                  .copyWith(color: DhanWiserColors.of(context).primary),
                             ),
                           ),
                       ],
@@ -1560,9 +1693,13 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             child: Icon(icon, size: 30, color: cs.primary),
           ),
           const SizedBox(height: 16),
-          Text(title, style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w600, color: cs.onSurface)),
+          Text(title,
+              style: DhanWiserTextStyles.buttonLarge(context)
+                  .copyWith(color: cs.onSurface)),
           const SizedBox(height: 4),
-          Text(subtitle, style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant)),
+          Text(subtitle,
+              style: DhanWiserTextStyles.caption(context)
+                  .copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -1594,19 +1731,15 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
+                style: DhanWiserTextStyles.overline(context)
+                    .copyWith(color: color),
               ),
               Text(
                 description,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: cs.onSurfaceVariant,
-                  height: 1.4,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall!
+                    .copyWith(color: cs.onSurfaceVariant, height: 1.4),
               ),
             ],
           ),

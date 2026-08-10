@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -15,7 +16,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        leading: IconButton(
+        leading: PremiumIconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
@@ -24,7 +25,7 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           // ── Appearance Section ──
-          _buildSectionHeader('Appearance', cs),
+          _buildSectionHeader(context, 'Appearance', cs),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -39,19 +40,17 @@ class SettingsScreen extends StatelessWidget {
                     return SwitchListTile(
                       title: Text(
                         'Dark Mode',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall!,
                       ),
                       subtitle: Text(
                         isDark ? 'Using dark theme' : 'Using light theme',
-                        style: GoogleFonts.inter(
-                          color: cs.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
+                        style: DhanWiserTextStyles.caption(context)
+                            .copyWith(color: cs.onSurfaceVariant),
                       ),
                       secondary: Icon(
-                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        isDark
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
                         color: cs.primary,
                       ),
                       value: themeProv.themeMode == ThemeMode.dark,
@@ -65,7 +64,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Account Section ──
-          _buildSectionHeader('Account', cs),
+          _buildSectionHeader(context, 'Account', cs),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -76,16 +75,26 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.person_outline_rounded, color: cs.primary),
-                  title: Text('Profile', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  leading:
+                      Icon(Icons.person_outline_rounded, color: cs.primary),
+                  title: Text('Profile',
+                      style: Theme.of(context).textTheme.titleSmall!),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurfaceVariant),
                   onTap: () => Navigator.pushNamed(context, '/profile'),
                 ),
-                Divider(height: 1, indent: 56, endIndent: 16, color: cs.outlineVariant),
+                Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: cs.outlineVariant),
                 ListTile(
-                  leading: Icon(Icons.notifications_outlined, color: cs.primary),
-                  title: Text('Notifications', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  leading:
+                      Icon(Icons.notifications_outlined, color: cs.primary),
+                  title: Text('Notifications',
+                      style: Theme.of(context).textTheme.titleSmall!),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurfaceVariant),
                   onTap: () => Navigator.pushNamed(context, '/activity'),
                 ),
               ],
@@ -94,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── More Section ──
-          _buildSectionHeader('More', cs),
+          _buildSectionHeader(context, 'More', cs),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -106,19 +115,30 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 ListTile(
                   leading: Icon(Icons.handshake_outlined, color: cs.primary),
-                  title: Text('Settlements', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
-                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  title: Text('Settlements',
+                      style: Theme.of(context).textTheme.titleSmall!),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurfaceVariant),
                   onTap: () => Navigator.pushNamed(context, '/settlement'),
                 ),
-                Divider(height: 1, indent: 56, endIndent: 16, color: cs.outlineVariant),
+                Divider(
+                    height: 1,
+                    indent: 56,
+                    endIndent: 16,
+                    color: cs.outlineVariant),
                 ListTile(
                   leading: Icon(Icons.info_outline_rounded, color: cs.primary),
-                  title: Text('About DhanWiser', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                  title: Text('About DhanWiser',
+                      style: Theme.of(context).textTheme.titleSmall!),
                   subtitle: Text(
                     'Version 1.0.0',
-                    style: GoogleFonts.inter(fontSize: 12, color: cs.onSurfaceVariant),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall!
+                        .copyWith(color: cs.onSurfaceVariant),
                   ),
-                  trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                  trailing: Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurfaceVariant),
                   onTap: () {
                     showAboutDialog(
                       context: context,
@@ -147,7 +167,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── Danger Zone ──
-          _buildSectionHeader('Danger Zone', cs),
+          _buildSectionHeader(context, 'Danger Zone', cs),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
@@ -159,10 +179,10 @@ class SettingsScreen extends StatelessWidget {
               leading: Icon(Icons.logout_rounded, color: cs.error),
               title: Text(
                 'Sign Out',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w500,
-                  color: cs.error,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall!
+                    .copyWith(color: cs.error),
               ),
               onTap: () => _showLogoutDialog(context, cs, isDark),
             ),
@@ -173,17 +193,15 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, ColorScheme cs) {
+  Widget _buildSectionHeader(BuildContext context, String title, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, top: 8),
       child: Text(
         title,
-        style: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: cs.primary,
-          letterSpacing: 0.2,
-        ),
+        style: Theme.of(context)
+            .textTheme
+            .titleSmall!
+            .copyWith(color: cs.primary, letterSpacing: 0.2),
       ),
     );
   }
@@ -195,13 +213,14 @@ class SettingsScreen extends StatelessWidget {
         return AlertDialog(
           icon: Icon(Icons.logout_rounded, color: cs.error, size: 32),
           title: const Text('Sign Out'),
-          content: const Text('Are you sure you want to sign out of DhanWiser?'),
+          content:
+              const Text('Are you sure you want to sign out of DhanWiser?'),
           actions: [
-            TextButton(
+            PremiumTextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            PremiumFilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _performLogout(context);

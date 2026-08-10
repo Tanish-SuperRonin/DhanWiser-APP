@@ -57,8 +57,7 @@ class ExpenseModel {
     this.createdAt,
   });
 
-  String get createdByUsername =>
-      createdBy?['username'] ?? 'Unknown';
+  String get createdByUsername => createdBy?['username'] ?? 'Unknown';
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
@@ -73,9 +72,8 @@ class ExpenseModel {
       participants: (json['participants'] as List<dynamic>? ?? [])
           .map((p) => ExpenseParticipant.fromJson(p))
           .toList(),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 }

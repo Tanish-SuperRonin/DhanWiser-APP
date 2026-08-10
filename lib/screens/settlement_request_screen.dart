@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/settlement_model.dart';
 import '../services/settlement_service.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class SettlementRequestScreen extends StatefulWidget {
   final int settlementId;
@@ -65,7 +66,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Settlement approved!'),
-          backgroundColor: DhanWiserColors.mint,
+          backgroundColor: DhanWiserColors.of(context).mint,
         ),
       );
       Navigator.pop(context, true);
@@ -74,7 +75,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to approve: $e'),
-          backgroundColor: DhanWiserColors.coral,
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
     } finally {
@@ -93,7 +94,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Settlement rejected'),
-          backgroundColor: DhanWiserColors.coral,
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
       Navigator.pop(context, true);
@@ -102,7 +103,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to reject: $e'),
-          backgroundColor: DhanWiserColors.coral,
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
     } finally {
@@ -118,7 +119,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       builder: (ctx) {
         return AlertDialog(
           icon: Icon(Icons.cancel_outlined,
-              color: DhanWiserColors.coral, size: 32),
+              color: DhanWiserColors.of(context).coral, size: 32),
           title: const Text('Reject Settlement'),
           content: TextField(
             controller: reasonController,
@@ -129,17 +130,17 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
             ),
           ),
           actions: [
-            TextButton(
+            PremiumTextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            PremiumFilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _reject(reasonController.text.trim());
               },
               style: FilledButton.styleFrom(
-                backgroundColor: DhanWiserColors.coral,
+                backgroundColor: DhanWiserColors.of(context).coral,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Reject'),
@@ -153,20 +154,20 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       body: Stack(
         children: [
           // Blurred Background Context (Simulated)
           Positioned.fill(
             child: Container(
-              color: DhanWiserColors.background,
+              color: DhanWiserColors.of(context).background,
               // Ideally an image or gradient goes here
             ),
           ),
           // Dimming Overlay
           Positioned.fill(
             child: Container(
-              color: DhanWiserColors.surfaceDim.withValues(alpha: 0.6),
+              color: DhanWiserColors.of(context).surfaceDim.withValues(alpha: 0.6),
             ),
           ),
           // Content
@@ -176,16 +177,19 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 // Top App Bar area
                 Align(
                   alignment: Alignment.topLeft,
-                  child: IconButton(
+                  child: PremiumIconButton(
                     padding: const EdgeInsets.all(20),
-                    icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textPrimary),
+                    icon: Icon(Icons.arrow_back_rounded,
+                        color: DhanWiserColors.of(context).textPrimary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
                 const Spacer(),
                 // Settlement Bottom Sheet
                 _isLoading
-                    ? Center(child: CircularProgressIndicator(color: DhanWiserColors.primaryFixed))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                            color: DhanWiserColors.of(context).primaryFixed))
                     : _error != null
                         ? _buildErrorView()
                         : _buildSettlementSheet(),
@@ -202,9 +206,10 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
-        color: DhanWiserColors.surface,
+        color: DhanWiserColors.of(context).surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border.all(color: DhanWiserColors.surfaceBright.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: DhanWiserColors.of(context).surfaceBright.withValues(alpha: 0.2)),
       ),
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -213,20 +218,18 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: DhanWiserColors.errorContainer.withValues(alpha: 0.2),
+              color: DhanWiserColors.of(context).errorContainer.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.error_outline_rounded, color: DhanWiserColors.error, size: 32),
+            child: Icon(Icons.error_outline_rounded,
+                color: DhanWiserColors.of(context).error, size: 32),
           ),
           SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: DhanWiserColors.textSecondary,
-              height: 1.4,
-            ),
+            style: DhanWiserTextStyles.bodyRegular(context)
+                .copyWith(color: DhanWiserColors.of(context).textSecondary, height: 1.4),
           ),
         ],
       ),
@@ -239,11 +242,11 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
-        color: DhanWiserColors.surface,
+        color: DhanWiserColors.of(context).surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+            color: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.15),
             blurRadius: 32,
             offset: const Offset(0, -8),
           )
@@ -262,7 +265,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 height: 6,
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.surfaceContainerHighest,
+                  color: DhanWiserColors.of(context).surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -273,36 +276,31 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 height: 64,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: DhanWiserColors.surfaceContainerHigh,
-                  border: Border.all(color: DhanWiserColors.surfaceBright, width: 2),
+                  color: DhanWiserColors.of(context).surfaceContainerHigh,
+                  border: Border.all(
+                      color: DhanWiserColors.of(context).surfaceBright, width: 2),
                 ),
                 child: Center(
                   child: Text(
-                    settlement.payerFullName.isNotEmpty ? settlement.payerFullName[0].toUpperCase() : '?',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: DhanWiserColors.textPrimary,
-                    ),
+                    settlement.payerFullName.isNotEmpty
+                        ? settlement.payerFullName[0].toUpperCase()
+                        : '?',
+                    style: DhanWiserTextStyles.headline2(context)
+                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   ),
                 ),
               ),
               SizedBox(height: 12),
               Text(
                 settlement.payerFullName,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.textPrimary,
-                ),
+                style: DhanWiserTextStyles.buttonLarge(context)
+                    .copyWith(color: DhanWiserColors.of(context).textPrimary),
               ),
               SizedBox(height: 4),
               Text(
                 'is requesting',
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: DhanWiserColors.textSecondary,
-                ),
+                style: DhanWiserTextStyles.caption(context)
+                    .copyWith(color: DhanWiserColors.of(context).textSecondary),
               ),
               SizedBox(height: 24),
 
@@ -315,22 +313,16 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                     padding: const EdgeInsets.only(top: 8, right: 4),
                     child: Text(
                       '₹',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 24,
-                        color: DhanWiserColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: DhanWiserTextStyles.headline2(context)
+                          .copyWith(color: DhanWiserColors.of(context).textSecondary),
                     ),
                   ),
                   Text(
                     settlement.amount.toStringAsFixed(2),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w700,
-                      color: DhanWiserColors.textPrimary,
-                      letterSpacing: -1,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                        color: DhanWiserColors.of(context).textPrimary,
+                        letterSpacing: -1,
+                        fontFeatures: const [FontFeature.tabularFigures()]),
                   ),
                 ],
               ),
@@ -341,9 +333,10 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: DhanWiserColors.surfaceContainerLow,
+                    color: DhanWiserColors.of(context).surfaceContainerLow,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: DhanWiserColors.surfaceContainerHighest),
+                    border: Border.all(
+                        color: DhanWiserColors.of(context).surfaceContainerHighest),
                   ),
                   child: Row(
                     children: [
@@ -351,10 +344,11 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.surfaceContainerHighest,
+                          color: DhanWiserColors.of(context).surfaceContainerHighest,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.flight_takeoff_rounded, color: DhanWiserColors.primaryFixed, size: 20),
+                        child: Icon(Icons.flight_takeoff_rounded,
+                            color: DhanWiserColors.of(context).primaryFixed, size: 20),
                       ),
                       SizedBox(width: 16),
                       Expanded(
@@ -363,24 +357,23 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                           children: [
                             Text(
                               settlement.serverName!,
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: DhanWiserColors.textPrimary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
                             ),
                             if (settlement.initiatedAt != null)
                               Text(
                                 'Requested recently', // In a real app, calculate time ago
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: DhanWiserColors.textSecondary,
-                                ),
+                                style: DhanWiserTextStyles.caption(context)
+                                    .copyWith(
+                                        color: DhanWiserColors.of(context).textSecondary),
                               ),
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: DhanWiserColors.textSecondary, size: 20),
+                      Icon(Icons.chevron_right_rounded,
+                          color: DhanWiserColors.of(context).textSecondary, size: 20),
                     ],
                   ),
                 ),
@@ -393,7 +386,8 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: DhanWiserColors.surfaceContainerHighest),
+                      bottom: BorderSide(
+                          color: DhanWiserColors.of(context).surfaceContainerHighest),
                     ),
                   ),
                   child: Row(
@@ -401,25 +395,23 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                     children: [
                       Text(
                         'Note',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: DhanWiserColors.textSecondary,
-                        ),
+                        style: DhanWiserTextStyles.caption(context)
+                            .copyWith(color: DhanWiserColors.of(context).textSecondary),
                       ),
                       Text(
                         settlement.notes!,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: DhanWiserColors.textPrimary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium!
+                            .copyWith(color: DhanWiserColors.of(context).textPrimary),
                       ),
                     ],
                   ),
                 ),
               ],
-              
-              if (settlement.proofImage != null && settlement.proofImage!.isNotEmpty) ...[
+
+              if (settlement.proofImage != null &&
+                  settlement.proofImage!.isNotEmpty) ...[
                 SizedBox(height: 16),
                 _buildProofImage(settlement.proofImage!),
               ],
@@ -429,23 +421,27 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton(
+                child: PremiumElevatedButton(
                   onPressed: _isSubmitting ? null : _approve,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: DhanWiserColors.primaryFixed,
-                    foregroundColor: DhanWiserColors.onPrimaryFixed,
+                    backgroundColor: DhanWiserColors.of(context).primaryFixed,
+                    foregroundColor: DhanWiserColors.of(context).onPrimaryFixed,
                     elevation: 8,
-                    shadowColor: DhanWiserColors.primaryFixed.withValues(alpha: 0.2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                    shadowColor:
+                        DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.2),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999)),
                   ),
                   child: _isSubmitting
-                      ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: DhanWiserColors.onPrimaryFixed))
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: DhanWiserColors.of(context).onPrimaryFixed))
                       : Text(
                           'Settle Now',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: DhanWiserTextStyles.buttonLarge(context),
                         ),
                 ),
               ),
@@ -453,19 +449,18 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: OutlinedButton(
+                child: PremiumOutlinedButton(
                   onPressed: _isSubmitting ? null : _showRejectDialog,
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: DhanWiserColors.surfaceContainerHighest),
-                    foregroundColor: DhanWiserColors.textSecondary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                    side: BorderSide(
+                        color: DhanWiserColors.of(context).surfaceContainerHighest),
+                    foregroundColor: DhanWiserColors.of(context).textSecondary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999)),
                   ),
                   child: Text(
                     'Decline Request',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium!,
                   ),
                 ),
               ),
@@ -488,7 +483,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
         height: 120,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DhanWiserColors.surfaceBright),
+          border: Border.all(color: DhanWiserColors.of(context).surfaceBright),
           image: DecorationImage(
             image: MemoryImage(imageBytes),
             fit: BoxFit.cover,
@@ -540,7 +535,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 top: 20,
                 right: 20,
                 child: SafeArea(
-                  child: IconButton(
+                  child: PremiumIconButton(
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),

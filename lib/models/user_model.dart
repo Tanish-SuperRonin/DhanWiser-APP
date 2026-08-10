@@ -27,9 +27,8 @@ class UserModel {
       fullName: json['fullName'] ?? '',
       upiId: json['upiId'],
       profilePicture: json['profilePicture'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
   }
 

@@ -2,13 +2,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/server_provider.dart';
 import '../services/settlement_service.dart';
 import '../models/settlement_model.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class SettlementScreen extends StatefulWidget {
   const SettlementScreen({super.key});
@@ -60,7 +61,7 @@ class _SettlementScreenState extends State<SettlementScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settlements'),
-        leading: IconButton(
+        leading: PremiumIconButton(
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
@@ -85,10 +86,8 @@ class _SettlementScreenState extends State<SettlementScreen>
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelColor: cs.onPrimary,
                 unselectedLabelColor: cs.onSurfaceVariant,
-                labelStyle: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600, fontSize: 13),
-                unselectedLabelStyle: GoogleFonts.inter(
-                    fontWeight: FontWeight.w400, fontSize: 13),
+                labelStyle: DhanWiserTextStyles.overline(context),
+                unselectedLabelStyle: DhanWiserTextStyles.caption(context),
                 dividerColor: Colors.transparent,
                 padding: const EdgeInsets.all(3),
                 tabs: const [
@@ -130,23 +129,20 @@ class _SettlementScreenState extends State<SettlementScreen>
                 color: cs.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(Icons.check_circle_rounded,
-                  color: cs.primary, size: 32),
+              child:
+                  Icon(Icons.check_circle_rounded, color: cs.primary, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
               'All settled!',
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
-              ),
+              style: DhanWiserTextStyles.buttonLarge(context)
+                  .copyWith(color: cs.onSurface),
             ),
             const SizedBox(height: 4),
             Text(
               'No pending settlements',
-              style: GoogleFonts.inter(
-                  fontSize: 14, color: cs.onSurfaceVariant),
+              style: DhanWiserTextStyles.caption(context)
+                  .copyWith(color: cs.onSurfaceVariant),
             ),
           ],
         ),
@@ -156,8 +152,8 @@ class _SettlementScreenState extends State<SettlementScreen>
     // Combine both lists with section headers
     final allItems = <_PendingListItem>[];
     if (hasIncoming) {
-      allItems.add(
-          _PendingListItem(isHeader: true, headerTitle: 'Awaiting Your Approval'));
+      allItems.add(_PendingListItem(
+          isHeader: true, headerTitle: 'Awaiting Your Approval'));
       allItems.addAll(
           _incomingSettlements.map((s) => _PendingListItem(settlement: s)));
     }
@@ -181,12 +177,8 @@ class _SettlementScreenState extends State<SettlementScreen>
               padding: const EdgeInsets.only(top: 16, bottom: 10, left: 4),
               child: Text(
                 item.headerTitle!.toUpperCase(),
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.8,
-                ),
+                style: DhanWiserTextStyles.overline(context)
+                    .copyWith(color: cs.onSurfaceVariant, letterSpacing: 0.8),
               ),
             );
           }
@@ -194,10 +186,9 @@ class _SettlementScreenState extends State<SettlementScreen>
           return Card(
             margin: const EdgeInsets.only(bottom: 8),
             elevation: 0,
-            color:
-                isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
+            color: isDark ? cs.surfaceContainerHigh : cs.surfaceContainerLowest,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -206,22 +197,20 @@ class _SettlementScreenState extends State<SettlementScreen>
                   // Payer → Receiver + amount
                   Row(
                     children: [
-                      _buildUserChip(s.payerUsername, DhanWiserColors.coral, cs),
+                      _buildUserChip(
+                          s.payerUsername, DhanWiserColors.of(context).coral, cs),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: Icon(Icons.arrow_forward_rounded,
                             size: 16, color: cs.onSurfaceVariant),
                       ),
                       _buildUserChip(
-                          s.receiverUsername, DhanWiserColors.teal, cs),
+                          s.receiverUsername, DhanWiserColors.of(context).teal, cs),
                       const Spacer(),
                       Text(
                         '₹${s.amount.toStringAsFixed(0)}',
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: cs.onSurface,
-                        ),
+                        style: DhanWiserTextStyles.buttonLarge(context)
+                            .copyWith(color: cs.onSurface),
                       ),
                     ],
                   ),
@@ -241,8 +230,10 @@ class _SettlementScreenState extends State<SettlementScreen>
                     const SizedBox(height: 8),
                     Text(
                       'Group: ${s.serverName}',
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: cs.onSurfaceVariant),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall!
+                          .copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
 
@@ -262,18 +253,15 @@ class _SettlementScreenState extends State<SettlementScreen>
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.warning
+                          color: DhanWiserColors.of(context).warning
                               .withValues(alpha: isDark ? 0.16 : 0.10),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'Waiting for ${s.receiverUsername} to approve',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: DhanWiserColors.warning,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: DhanWiserTextStyles.overline(context)
+                              .copyWith(color: DhanWiserColors.of(context).warning),
                         ),
                       );
                     }
@@ -281,12 +269,12 @@ class _SettlementScreenState extends State<SettlementScreen>
                     return Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton(
+                          child: PremiumOutlinedButton(
                             onPressed: () => _showRejectDialog(s),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: DhanWiserColors.coral,
+                              foregroundColor: DhanWiserColors.of(context).coral,
                               side: BorderSide(
-                                color: DhanWiserColors.coral
+                                color: DhanWiserColors.of(context).coral
                                     .withValues(alpha: 0.3),
                               ),
                             ),
@@ -295,10 +283,10 @@ class _SettlementScreenState extends State<SettlementScreen>
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: FilledButton(
+                          child: PremiumFilledButton(
                             onPressed: () => _showApproveDialog(s),
                             style: FilledButton.styleFrom(
-                              backgroundColor: DhanWiserColors.mint,
+                              backgroundColor: DhanWiserColors.of(context).mint,
                               foregroundColor: Colors.white,
                             ),
                             child: const Text('Approve'),
@@ -316,8 +304,7 @@ class _SettlementScreenState extends State<SettlementScreen>
     );
   }
 
-  Widget _buildProofNotesContainer(
-      String notes, ColorScheme cs, bool isDark) {
+  Widget _buildProofNotesContainer(String notes, ColorScheme cs, bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -337,19 +324,16 @@ class _SettlementScreenState extends State<SettlementScreen>
               const SizedBox(width: 6),
               Text(
                 'Payment Proof',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.primary,
-                ),
+                style: DhanWiserTextStyles.overline(context)
+                    .copyWith(color: cs.primary),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             notes,
-            style: GoogleFonts.inter(
-                fontSize: 13, color: cs.onSurface, height: 1.4),
+            style: DhanWiserTextStyles.caption(context)
+                .copyWith(color: cs.onSurface, height: 1.4),
           ),
         ],
       ),
@@ -366,7 +350,7 @@ class _SettlementScreenState extends State<SettlementScreen>
       builder: (ctx) {
         return AlertDialog(
           icon: Icon(Icons.check_circle_outline_rounded,
-              color: DhanWiserColors.mint, size: 32),
+              color: DhanWiserColors.of(context).mint, size: 32),
           title: const Text('Confirm Payment'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -375,8 +359,7 @@ class _SettlementScreenState extends State<SettlementScreen>
               Text(
                 '${settlement.payerFullName} says they paid you ₹${settlement.amount.toStringAsFixed(0)}.',
               ),
-              if (settlement.notes != null &&
-                  settlement.notes!.isNotEmpty) ...[
+              if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 _buildProofNotesContainer(settlement.notes!, cs, isDark),
               ],
@@ -388,23 +371,23 @@ class _SettlementScreenState extends State<SettlementScreen>
               const SizedBox(height: 14),
               Text(
                 'Did you actually receive this payment? Only approve if you can confirm.',
-                style: GoogleFonts.inter(
-                    fontSize: 13, color: cs.onSurfaceVariant, height: 1.4),
+                style: DhanWiserTextStyles.caption(context)
+                    .copyWith(color: cs.onSurfaceVariant, height: 1.4),
               ),
             ],
           ),
           actions: [
-            TextButton(
+            PremiumTextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            PremiumFilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _handleApprove(settlement.id);
               },
               style: FilledButton.styleFrom(
-                backgroundColor: DhanWiserColors.mint,
+                backgroundColor: DhanWiserColors.of(context).mint,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Yes, I Received It'),
@@ -424,7 +407,7 @@ class _SettlementScreenState extends State<SettlementScreen>
       builder: (ctx) {
         return AlertDialog(
           icon: Icon(Icons.cancel_outlined,
-              color: DhanWiserColors.coral, size: 32),
+              color: DhanWiserColors.of(context).coral, size: 32),
           title: const Text('Reject Settlement'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -445,18 +428,18 @@ class _SettlementScreenState extends State<SettlementScreen>
             ],
           ),
           actions: [
-            TextButton(
+            PremiumTextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
-            FilledButton(
+            PremiumFilledButton(
               onPressed: () {
                 Navigator.pop(ctx);
                 _handleReject(settlement.id,
                     reason: reasonController.text.trim());
               },
               style: FilledButton.styleFrom(
-                backgroundColor: DhanWiserColors.coral,
+                backgroundColor: DhanWiserColors.of(context).coral,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Reject'),
@@ -479,12 +462,10 @@ class _SettlementScreenState extends State<SettlementScreen>
             children: [
               Text(
                 'FILTER BY GROUP',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: cs.onSurfaceVariant,
-                  letterSpacing: 0.8,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .labelSmall!
+                    .copyWith(color: cs.onSurfaceVariant, letterSpacing: 0.8),
               ),
               const SizedBox(height: 10),
               if (servers.isNotEmpty)
@@ -506,19 +487,24 @@ class _SettlementScreenState extends State<SettlementScreen>
                           selected: isSelected,
                           onSelected: (_) {
                             if (!isAll && server != null) {
-                              Navigator.pushNamed(context, '/server-detail', arguments: {
-                                'serverId': server.id,
-                                'serverName': server.name,
-                                'members': '${server.memberCount} members',
-                              });
+                              Navigator.pushNamed(context, '/server-detail',
+                                  arguments: {
+                                    'serverId': server.id,
+                                    'serverName': server.name,
+                                    'members': '${server.memberCount} members',
+                                  });
                             }
                           },
                           selectedColor: cs.primaryContainer,
-                          labelStyle: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
-                          ),
+                          labelStyle: DhanWiserTextStyles.caption(context)
+                              .copyWith(
+                                  fontWeight:
+                                      isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                  color: isSelected
+                                      ? cs.onPrimaryContainer
+                                      : cs.onSurfaceVariant),
                         ),
                       );
                     },
@@ -536,32 +522,33 @@ class _SettlementScreenState extends State<SettlementScreen>
                         color: cs.primaryContainer.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Icon(Icons.history_rounded, color: cs.primary, size: 32),
+                      child: Icon(Icons.history_rounded,
+                          color: cs.primary, size: 32),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Settlement History',
-                      style: GoogleFonts.inter(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface,
-                      ),
+                      style: DhanWiserTextStyles.buttonLarge(context)
+                          .copyWith(color: cs.onSurface),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Tap any group above to inspect settled payments',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
+                      style: DhanWiserTextStyles.caption(context)
+                          .copyWith(color: cs.onSurfaceVariant),
                     ),
                     const SizedBox(height: 20),
                     if (servers.isNotEmpty)
-                      OutlinedButton.icon(
+                      PremiumOutlinedButtonIcon(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/server-detail', arguments: {
-                            'serverId': servers.first.id,
-                            'serverName': servers.first.name,
-                            'members': '${servers.first.memberCount} members',
-                          });
+                          Navigator.pushNamed(context, '/server-detail',
+                              arguments: {
+                                'serverId': servers.first.id,
+                                'serverName': servers.first.name,
+                                'members':
+                                    '${servers.first.memberCount} members',
+                              });
                         },
                         icon: const Icon(Icons.groups_rounded, size: 18),
                         label: Text('View ${servers.first.name} History'),
@@ -585,17 +572,12 @@ class _SettlementScreenState extends State<SettlementScreen>
       ),
       child: Text(
         username,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
+        style: DhanWiserTextStyles.overline(context).copyWith(color: color),
       ),
     );
   }
 
-  Widget _buildProofImage(
-      String proofImage, ColorScheme cs, bool isDark) {
+  Widget _buildProofImage(String proofImage, ColorScheme cs, bool isDark) {
     final imageBytes = _decodeProofImage(proofImage);
 
     return Container(
@@ -617,11 +599,8 @@ class _SettlementScreenState extends State<SettlementScreen>
               const SizedBox(width: 6),
               Text(
                 'Payment screenshot',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: cs.primary,
-                ),
+                style: DhanWiserTextStyles.overline(context)
+                    .copyWith(color: cs.primary),
               ),
             ],
           ),
@@ -642,17 +621,17 @@ class _SettlementScreenState extends State<SettlementScreen>
           else
             Text(
               'This screenshot could not be displayed.',
-              style: GoogleFonts.inter(
-                  fontSize: 13, color: cs.onSurfaceVariant),
+              style: DhanWiserTextStyles.caption(context)
+                  .copyWith(color: cs.onSurfaceVariant),
             ),
           if (imageBytes != null) ...[
             const SizedBox(height: 8),
             Text(
               'Tap the screenshot to open it full screen before approving.',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: cs.onSurface.withValues(alpha: 0.75),
-              ),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall!
+                  .copyWith(color: cs.onSurface.withValues(alpha: 0.75)),
             ),
           ],
         ],
@@ -693,10 +672,9 @@ class _SettlementScreenState extends State<SettlementScreen>
                 top: 20,
                 right: 20,
                 child: SafeArea(
-                  child: IconButton(
+                  child: PremiumIconButton(
                     onPressed: () => Navigator.pop(ctx),
-                    icon:
-                        const Icon(Icons.close_rounded, color: Colors.white),
+                    icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),
                 ),
               ),
@@ -714,7 +692,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Settlement approved!'),
-            backgroundColor: DhanWiserColors.mint,
+            backgroundColor: DhanWiserColors.of(context).mint,
           ),
         );
       }
@@ -724,7 +702,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to approve: $e'),
-            backgroundColor: DhanWiserColors.coral,
+            backgroundColor: DhanWiserColors.of(context).coral,
           ),
         );
       }
@@ -739,7 +717,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Settlement rejected'),
-            backgroundColor: DhanWiserColors.coral,
+            backgroundColor: DhanWiserColors.of(context).coral,
           ),
         );
       }
@@ -749,7 +727,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to reject: $e'),
-            backgroundColor: DhanWiserColors.coral,
+            backgroundColor: DhanWiserColors.of(context).coral,
           ),
         );
       }

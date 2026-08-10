@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
 import '../providers/server_provider.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class FriendDiscoveryScreen extends StatefulWidget {
-  const FriendDiscoveryScreen({super.key});
+  final bool isRootTab;
+  const FriendDiscoveryScreen({super.key, this.isRootTab = false});
 
   @override
   State<FriendDiscoveryScreen> createState() => _FriendDiscoveryScreenState();
@@ -86,7 +88,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Create a group first before inviting friends'),
-          backgroundColor: DhanWiserColors.coral,
+          backgroundColor: DhanWiserColors.of(context).coral,
         ),
       );
       return;
@@ -104,23 +106,19 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
               SizedBox(height: 8),
               Text(
                 'Invite ${user.fullName}',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
+                style: DhanWiserTextStyles.buttonLarge(context)
+                    .copyWith(color: cs.onSurface),
               ),
               const SizedBox(height: 4),
               Text(
                 'Select a group to invite @${user.username} to:',
-                style:
-                    GoogleFonts.inter(fontSize: 14, color: cs.onSurfaceVariant),
+                style: DhanWiserTextStyles.caption(context)
+                    .copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
               ...servers.map((server) {
-                final initial = server.name.isNotEmpty
-                    ? server.name[0].toUpperCase()
-                    : 'G';
+                final initial =
+                    server.name.isNotEmpty ? server.name[0].toUpperCase() : 'G';
                 return ListTile(
                   leading: Container(
                     width: 44,
@@ -132,26 +130,24 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                     child: Center(
                       child: Text(
                         initial,
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          color: cs.primary,
-                          fontSize: 18,
-                        ),
+                        style: DhanWiserTextStyles.buttonLarge(context)
+                            .copyWith(color: cs.primary),
                       ),
                     ),
                   ),
                   title: Text(
                     server.name,
-                    style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface,
-                      fontSize: 15,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium!
+                        .copyWith(color: cs.onSurface),
                   ),
                   subtitle: Text(
                     '${server.memberCount} members',
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: cs.onSurfaceVariant),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall!
+                        .copyWith(color: cs.onSurfaceVariant),
                   ),
                   trailing: Icon(Icons.arrow_forward_ios_rounded,
                       size: 16, color: cs.onSurfaceVariant),
@@ -180,7 +176,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Invited ${user.fullName} to $serverName'),
-              backgroundColor: DhanWiserColors.mint,
+              backgroundColor: DhanWiserColors.of(context).mint,
             ),
           );
         } else {
@@ -188,7 +184,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(serverProv.error ?? 'Failed to invite'),
-              backgroundColor: DhanWiserColors.coral,
+              backgroundColor: DhanWiserColors.of(context).coral,
             ),
           );
         }
@@ -199,7 +195,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed: $e'),
-            backgroundColor: DhanWiserColors.coral,
+            backgroundColor: DhanWiserColors.of(context).coral,
           ),
         );
       }
@@ -215,27 +211,25 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: DhanWiserColors.background.withValues(alpha: 0.8),
+        backgroundColor: DhanWiserColors.of(context).background.withValues(alpha: 0.8),
         scrolledUnderElevation: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textSecondary),
+        leading: widget.isRootTab ? null : PremiumIconButton(
+          icon: Icon(Icons.arrow_back_rounded,
+              color: DhanWiserColors.of(context).textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Discover Friends',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: DhanWiserColors.primary,
-          ),
+          style: DhanWiserTextStyles.buttonLarge(context)
+              .copyWith(color: DhanWiserColors.of(context).primary),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
-            color: DhanWiserColors.surfaceContainer.withValues(alpha: 0.5),
+            color: DhanWiserColors.of(context).surfaceContainer.withValues(alpha: 0.5),
             height: 1,
           ),
         ),
@@ -248,25 +242,33 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
             padding: const EdgeInsets.all(20),
             child: TextField(
               controller: _searchController,
-              style: GoogleFonts.inter(color: DhanWiserColors.primary, fontSize: 16),
+              style: DhanWiserTextStyles.bodyRegular(context)
+                  .copyWith(color: DhanWiserColors.of(context).primary),
               decoration: InputDecoration(
                 hintText: 'Search by name, @username or email...',
-                hintStyle: GoogleFonts.inter(color: DhanWiserColors.textDisabled, fontSize: 16),
-                prefixIcon: Icon(Icons.search_rounded, color: DhanWiserColors.textDisabled),
+                hintStyle: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textDisabled),
+                prefixIcon: Icon(Icons.search_rounded,
+                    color: DhanWiserColors.of(context).textDisabled),
                 filled: true,
-                fillColor: DhanWiserColors.surfaceContainerLow,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                fillColor: DhanWiserColors.of(context).surfaceContainerLow,
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: DhanWiserColors.surfaceContainer),
+                  borderSide:
+                      BorderSide(color: DhanWiserColors.of(context).surfaceContainer),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: DhanWiserColors.surfaceContainer),
+                  borderSide:
+                      BorderSide(color: DhanWiserColors.of(context).surfaceContainer),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: DhanWiserColors.primaryFixed.withValues(alpha: 0.5)),
+                  borderSide: BorderSide(
+                      color:
+                          DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.5)),
                 ),
               ),
               onChanged: (q) {
@@ -275,7 +277,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
               onSubmitted: _performSearch,
             ),
           ),
-          
+
           Expanded(child: _buildResults()),
         ],
       ),
@@ -289,13 +291,14 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: DhanWiserColors.surfaceContainerHighest,
+          color: DhanWiserColors.of(context).surfaceContainerHighest,
           borderRadius: BorderRadius.circular(999),
         ),
         child: SizedBox(
           width: 18,
           height: 18,
-          child: CircularProgressIndicator(color: DhanWiserColors.primary, strokeWidth: 2),
+          child: CircularProgressIndicator(
+              color: DhanWiserColors.of(context).primary, strokeWidth: 2),
         ),
       );
     }
@@ -304,16 +307,14 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: DhanWiserColors.surfaceContainerLowest,
+          color: DhanWiserColors.of(context).surfaceContainerLowest,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: DhanWiserColors.surfaceContainer),
+          border: Border.all(color: DhanWiserColors.of(context).surfaceContainer),
         ),
         child: Text(
           'Requested',
-          style: GoogleFonts.inter(
-            color: DhanWiserColors.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+          style: DhanWiserTextStyles.overline(context).copyWith(
+            color: DhanWiserColors.of(context).textSecondary,
           ),
         ),
       );
@@ -324,15 +325,13 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: DhanWiserColors.primaryFixed,
+          color: DhanWiserColors.of(context).primaryFixed,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
           'Invite',
-          style: GoogleFonts.inter(
-            color: DhanWiserColors.onPrimaryFixed, 
-            fontSize: 13, 
-            fontWeight: FontWeight.w600,
+          style: DhanWiserTextStyles.overline(context).copyWith(
+            color: DhanWiserColors.of(context).onPrimaryFixed,
           ),
         ),
       ),
@@ -341,7 +340,8 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
 
   Widget _buildResults() {
     if (_isSearching) {
-      return Center(child: CircularProgressIndicator(color: DhanWiserColors.primary));
+      return Center(
+          child: CircularProgressIndicator(color: DhanWiserColors.of(context).primary));
     }
 
     if (_searchError != null) {
@@ -349,10 +349,12 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded, color: DhanWiserColors.error, size: 32),
+            Icon(Icons.warning_amber_rounded,
+                color: DhanWiserColors.of(context).error, size: 32),
             SizedBox(height: 12),
             Text(_searchError!,
-                style: GoogleFonts.inter(color: DhanWiserColors.textSecondary, fontSize: 14)),
+                style: DhanWiserTextStyles.caption(context)
+                    .copyWith(color: DhanWiserColors.of(context).textSecondary)),
           ],
         ),
       );
@@ -367,24 +369,23 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: DhanWiserColors.surfaceContainer,
+                color: DhanWiserColors.of(context).surfaceContainer,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(Icons.search_off_rounded, color: DhanWiserColors.textDisabled, size: 28),
+              child: Icon(Icons.search_off_rounded,
+                  color: DhanWiserColors.of(context).textDisabled, size: 28),
             ),
             SizedBox(height: 16),
             Text(
               'No users found',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: DhanWiserColors.textPrimary,
-              ),
+              style: DhanWiserTextStyles.buttonLarge(context)
+                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
             ),
             SizedBox(height: 4),
             Text(
               'Try a different search term',
-              style: GoogleFonts.inter(fontSize: 14, color: DhanWiserColors.textDisabled),
+              style: DhanWiserTextStyles.caption(context)
+                  .copyWith(color: DhanWiserColors.of(context).textDisabled),
             ),
           ],
         ),
@@ -393,7 +394,7 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
 
     if (_searchResults.isEmpty) {
       // Could show suggested users here if we had them
-      return const SizedBox.shrink(); 
+      return const SizedBox.shrink();
     }
 
     return Column(
@@ -403,11 +404,10 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Search Results',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: DhanWiserColors.textSecondary,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium!
+                .copyWith(color: DhanWiserColors.of(context).textSecondary),
           ),
         ),
         SizedBox(height: 12),
@@ -417,15 +417,17 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
             itemCount: _searchResults.length,
             itemBuilder: (context, index) {
               final user = _searchResults[index];
-              final initial = user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?';
+              final initial = user.fullName.isNotEmpty
+                  ? user.fullName[0].toUpperCase()
+                  : '?';
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.card,
+                  color: DhanWiserColors.of(context).card,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: DhanWiserColors.surfaceContainer),
+                  border: Border.all(color: DhanWiserColors.of(context).surfaceContainer),
                 ),
                 child: Row(
                   children: [
@@ -433,18 +435,16 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.surfaceVariant,
+                        color: DhanWiserColors.of(context).surfaceVariant,
                         shape: BoxShape.circle,
-                        border: Border.all(color: DhanWiserColors.surfaceBright),
+                        border:
+                            Border.all(color: DhanWiserColors.of(context).surfaceBright),
                       ),
                       child: Center(
                         child: Text(
                           initial,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w600,
-                            color: DhanWiserColors.textSecondary,
-                            fontSize: 20,
-                          ),
+                          style: DhanWiserTextStyles.buttonLarge(context)
+                              .copyWith(color: DhanWiserColors.of(context).textSecondary),
                         ),
                       ),
                     ),
@@ -455,16 +455,15 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                         children: [
                           Text(
                             user.fullName,
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w500,
-                              color: DhanWiserColors.primary,
-                              fontSize: 16,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium!
+                                .copyWith(color: DhanWiserColors.of(context).primary),
                           ),
                           Text(
                             '@${user.username}',
-                            style: GoogleFonts.inter(
-                                fontSize: 13, color: DhanWiserColors.textSecondary),
+                            style: DhanWiserTextStyles.caption(context)
+                                .copyWith(color: DhanWiserColors.of(context).textSecondary),
                           ),
                         ],
                       ),

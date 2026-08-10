@@ -33,7 +33,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Unable to reach the server. Check your internet connection and try again.',
+        message:
+            'Unable to reach the server. Check your internet connection and try again.',
       );
     } on HandshakeException {
       throw ApiException(
@@ -51,7 +52,8 @@ class ApiClient {
   }
 
   // Token management with web & SharedPreferences fallback
-  static Future<void> saveTokens(String accessToken, String refreshToken) async {
+  static Future<void> saveTokens(
+      String accessToken, String refreshToken) async {
     try {
       await _storage.write(key: _accessTokenKey, value: accessToken);
       await _storage.write(key: _refreshTokenKey, value: refreshToken);
@@ -148,7 +150,8 @@ class ApiClient {
     );
 
     // Auto-refresh on 401 or 403
-    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) &&
+        withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -176,7 +179,8 @@ class ApiClient {
       ),
     );
 
-    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) &&
+        withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -205,7 +209,8 @@ class ApiClient {
       ),
     );
 
-    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) &&
+        withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -233,7 +238,8 @@ class ApiClient {
       ),
     );
 
-    if ((response.statusCode == 401 || response.statusCode == 403) && withAuth) {
+    if ((response.statusCode == 401 || response.statusCode == 403) &&
+        withAuth) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         final newHeaders = await _headers(withAuth: true);
@@ -253,8 +259,9 @@ class ApiClient {
   static Map<String, dynamic> _processResponse(http.Response response) {
     final dynamic decodedBody;
     try {
-      decodedBody =
-          response.body.isNotEmpty ? jsonDecode(response.body) : <String, dynamic>{};
+      decodedBody = response.body.isNotEmpty
+          ? jsonDecode(response.body)
+          : <String, dynamic>{};
     } on FormatException {
       throw ApiException(
         statusCode: response.statusCode,
@@ -262,9 +269,8 @@ class ApiClient {
       );
     }
 
-    final body = decodedBody is Map<String, dynamic>
-        ? decodedBody
-        : <String, dynamic>{};
+    final body =
+        decodedBody is Map<String, dynamic> ? decodedBody : <String, dynamic>{};
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;

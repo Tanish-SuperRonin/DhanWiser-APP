@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 /// A swipeable row widget that reveals Edit and Delete actions
 /// when swiped left. Matches the gesture system from the new
@@ -90,7 +91,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (ctx) => AlertDialog(
-        backgroundColor: DhanWiserColors.surfaceContainerHigh,
+        backgroundColor: DhanWiserColors.of(context).surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -99,40 +100,34 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: DhanWiserColors.negativeSoft,
+                color: DhanWiserColors.of(context).negativeSoft,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.warning_rounded,
-                color: DhanWiserColors.negative,
+                color: DhanWiserColors.of(context).negative,
                 size: 32,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               'Delete Expense?',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: DhanWiserColors.textPrimary,
-              ),
+              style: DhanWiserTextStyles.buttonLarge(context)
+                  .copyWith(color: DhanWiserColors.of(context).textPrimary),
             ),
             const SizedBox(height: 8),
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: GoogleFonts.dmSans(
-                  fontSize: 14,
-                  color: DhanWiserColors.textSecondary,
-                  height: 1.5,
-                ),
+                style: DhanWiserTextStyles.caption(context).copyWith(
+                    color: DhanWiserColors.of(context).textSecondary, height: 1.5),
                 children: [
                   const TextSpan(text: 'Are you sure you want to delete '),
                   TextSpan(
                     text: "'${widget.title}'",
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.textPrimary,
+                      color: DhanWiserColors.of(context).textPrimary,
                     ),
                   ),
                   const TextSpan(text: '? This action cannot be undone.'),
@@ -145,24 +140,22 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                 Expanded(
                   child: SizedBox(
                     height: 48,
-                    child: OutlinedButton(
+                    child: PremiumOutlinedButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
                         _close();
                       },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: DhanWiserColors.outline),
+                        side: BorderSide(color: DhanWiserColors.of(context).outline),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
                         'Cancel',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: DhanWiserColors.textPrimary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall!
+                            .copyWith(color: DhanWiserColors.of(context).textPrimary),
                       ),
                     ),
                   ),
@@ -171,23 +164,20 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                 Expanded(
                   child: SizedBox(
                     height: 48,
-                    child: FilledButton(
+                    child: PremiumFilledButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
                         widget.onDelete();
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: DhanWiserColors.negative,
+                        backgroundColor: DhanWiserColors.of(context).negative,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
                         'Delete',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall!,
                       ),
                     ),
                   ),
@@ -209,7 +199,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
           // Background action buttons (revealed on swipe)
           Positioned.fill(
             child: Container(
-              color: DhanWiserColors.surfaceContainer,
+              color: DhanWiserColors.of(context).surfaceContainer,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -229,26 +219,26 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: DhanWiserColors.surfaceContainerHighest,
+                              color: DhanWiserColors.of(context).surfaceContainerHighest,
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: DhanWiserColors.outline),
+                              border:
+                                  Border.all(color: DhanWiserColors.of(context).outline),
                             ),
                             child: Icon(
                               Icons.edit_rounded,
-                              color: DhanWiserColors.textPrimary,
+                              color: DhanWiserColors.of(context).textPrimary,
                               size: 20,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'EDIT',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: DhanWiserColors.textSecondary,
-                              letterSpacing: 0.5,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(
+                                    color: DhanWiserColors.of(context).textSecondary,
+                                    letterSpacing: 0.5),
                           ),
                         ],
                       ),
@@ -267,7 +257,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: DhanWiserColors.negative,
+                              color: DhanWiserColors.of(context).negative,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -279,12 +269,12 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                           const SizedBox(height: 4),
                           Text(
                             'DELETE',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: DhanWiserColors.negative,
-                              letterSpacing: 0.5,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(
+                                    color: DhanWiserColors.of(context).negative,
+                                    letterSpacing: 0.5),
                           ),
                         ],
                       ),
@@ -314,7 +304,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
               onHorizontalDragEnd: _handleDragEnd,
               child: Container(
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.background,
+                  color: DhanWiserColors.of(context).background,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: widget.child,

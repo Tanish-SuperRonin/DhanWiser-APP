@@ -29,10 +29,11 @@ class AppNotification {
       message: json['message'] ?? '',
       isRead: parseBoolValue(json['isRead']),
       relatedId: parseNullableIntValue(json['relatedId']),
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+      createdAt:
+          json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      amount: json['amount'] != null
+          ? double.tryParse(json['amount'].toString())
           : null,
-      amount: json['amount'] != null ? double.tryParse(json['amount'].toString()) : null,
     );
   }
 }

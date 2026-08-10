@@ -11,8 +11,8 @@ class ShimmerLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: DhanWiserColors.surfaceContainerHigh,
-      highlightColor: DhanWiserColors.surfaceContainerHighest,
+      baseColor: DhanWiserColors.of(context).surfaceContainerHigh,
+      highlightColor: DhanWiserColors.of(context).surfaceContainerHighest,
       period: const Duration(milliseconds: 1200), // Fast, fluid wave
       child: child,
     );
@@ -81,7 +81,7 @@ class ExpenseListShimmer extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: DhanWiserColors.surfaceContainer,
+              color: DhanWiserColors.of(context).surfaceContainer,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Row(

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -56,45 +57,40 @@ class _SignupScreenState extends State<SignupScreen> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.dmSans(
-        color: DhanWiserColors.textDisabled,
-        fontSize: 16,
-      ),
+      hintStyle: DhanWiserTextStyles.bodyRegular(context)
+          .copyWith(color: DhanWiserColors.of(context).textDisabled),
       prefixIcon: prefix,
       suffixIcon: suffix,
       filled: true,
-      fillColor: DhanWiserColors.surfaceContainer,
+      fillColor: DhanWiserColors.of(context).surfaceContainer,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.outline),
+        borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.outline),
+        borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            BorderSide(color: DhanWiserColors.primary, width: 2),
+        borderSide: BorderSide(color: DhanWiserColors.of(context).primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.negative),
+        borderSide: BorderSide(color: DhanWiserColors.of(context).negative),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide:
-            BorderSide(color: DhanWiserColors.negative, width: 2),
+        borderSide: BorderSide(color: DhanWiserColors.of(context).negative, width: 2),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -111,17 +107,14 @@ class _SignupScreenState extends State<SignupScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: DhanWiserColors.primary,
+                      color: DhanWiserColors.of(context).primary,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: Text(
                         'D',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: DhanWiserColors.background,
-                        ),
+                        style: DhanWiserTextStyles.headline2(context)
+                            .copyWith(color: DhanWiserColors.of(context).background),
                       ),
                     ),
                   ),
@@ -130,11 +123,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 Center(
                   child: Text(
                     'DhanWiser',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: DhanWiserColors.textPrimary,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge!
+                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   ),
                 ),
                 SizedBox(height: 32),
@@ -142,19 +134,16 @@ class _SignupScreenState extends State<SignupScreen> {
                 // ── Title ──
                 Text(
                   'Create account.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: DhanWiserColors.textPrimary,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium!
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                 ),
                 SizedBox(height: 6),
                 Text(
                   'Join your friends on DhanWiser',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 15,
-                    color: DhanWiserColors.textSecondary,
-                  ),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textSecondary),
                 ),
                 SizedBox(height: 28),
 
@@ -167,21 +156,20 @@ class _SignupScreenState extends State<SignupScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.negativeSoft,
+                        color: DhanWiserColors.of(context).negativeSoft,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
                           Icon(Icons.info_outline_rounded,
-                              color: DhanWiserColors.negative, size: 18),
+                              color: DhanWiserColors.of(context).negative, size: 18),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               auth.error!,
-                              style: GoogleFonts.dmSans(
-                                color: DhanWiserColors.negative,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                              style: DhanWiserTextStyles.overline(context)
+                                  .copyWith(
+                                color: DhanWiserColors.of(context).negative,
                               ),
                             ),
                           ),
@@ -196,8 +184,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(height: 8),
                 TextFormField(
                   controller: _fullNameController,
-                  style: GoogleFonts.dmSans(
-                      color: DhanWiserColors.textPrimary, fontSize: 16),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   decoration: _inputDeco(hint: 'e.g. Smit Nayi'),
                   validator: (v) =>
                       v == null || v.isEmpty ? 'Full name is required' : null,
@@ -209,18 +197,16 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _usernameController,
-                  style: GoogleFonts.dmSans(
-                      color: DhanWiserColors.textPrimary, fontSize: 16),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   decoration: _inputDeco(
                     hint: '@smitnayi',
                     prefix: Padding(
                       padding: const EdgeInsets.only(left: 16, right: 0),
                       child: Text(
                         '@',
-                        style: GoogleFonts.dmSans(
-                          color: DhanWiserColors.textDisabled,
-                          fontSize: 16,
-                        ),
+                        style: DhanWiserTextStyles.bodyRegular(context)
+                            .copyWith(color: DhanWiserColors.of(context).textDisabled),
                       ),
                     ),
                   ),
@@ -236,10 +222,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(height: 4),
                 Text(
                   'Others find you by this',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
-                    color: DhanWiserColors.textDisabled,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
                 ),
                 SizedBox(height: 16),
 
@@ -249,8 +235,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.dmSans(
-                      color: DhanWiserColors.textPrimary, fontSize: 16),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   decoration: _inputDeco(hint: 'smit@example.com'),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Email is required';
@@ -266,16 +252,16 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: GoogleFonts.dmSans(
-                      color: DhanWiserColors.textPrimary, fontSize: 16),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   decoration: _inputDeco(
                     hint: '••••••••',
-                    suffix: IconButton(
+                    suffix: PremiumIconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_off_outlined
                             : Icons.visibility_outlined,
-                        color: DhanWiserColors.textDisabled,
+                        color: DhanWiserColors.of(context).textDisabled,
                         size: 22,
                       ),
                       onPressed: () =>
@@ -293,27 +279,23 @@ class _SignupScreenState extends State<SignupScreen> {
                 // ── UPI ID (optional) — highlighted in amber ──
                 Text(
                   'UPI ID (OPTIONAL)',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: DhanWiserColors.primary,
-                    letterSpacing: 1,
-                  ),
+                  style: DhanWiserTextStyles.overline(context).copyWith(
+                      color: DhanWiserColors.of(context).primary, letterSpacing: 1),
                 ),
                 SizedBox(height: 8),
                 TextFormField(
                   controller: _upiController,
-                  style: GoogleFonts.dmSans(
-                      color: DhanWiserColors.textPrimary, fontSize: 16),
+                  style: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   decoration: _inputDeco(hint: 'name@okbank'),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Add later in settings. We encrypt and never expose this.',
-                  style: GoogleFonts.dmSans(
-                    fontSize: 12,
-                    color: DhanWiserColors.textDisabled,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
                 ),
                 SizedBox(height: 28),
 
@@ -323,13 +305,13 @@ class _SignupScreenState extends State<SignupScreen> {
                     return SizedBox(
                       width: double.infinity,
                       height: 56,
-                      child: FilledButton(
+                      child: PremiumFilledButton(
                         onPressed: auth.isLoading ? null : _signup,
                         style: FilledButton.styleFrom(
-                          backgroundColor: DhanWiserColors.primary,
-                          foregroundColor: DhanWiserColors.background,
+                          backgroundColor: DhanWiserColors.of(context).primary,
+                          foregroundColor: DhanWiserColors.of(context).background,
                           disabledBackgroundColor:
-                              DhanWiserColors.primary.withValues(alpha: 0.5),
+                              DhanWiserColors.of(context).primary.withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14)),
                         ),
@@ -338,16 +320,13 @@ class _SignupScreenState extends State<SignupScreen> {
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  color: DhanWiserColors.background,
+                                  color: DhanWiserColors.of(context).background,
                                   strokeWidth: 2.5,
                                 ),
                               )
                             : Text(
                                 'Continue',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: Theme.of(context).textTheme.titleMedium!,
                               ),
                       ),
                     );
@@ -361,10 +340,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     Text(
                       'Already have an account?',
-                      style: GoogleFonts.dmSans(
-                        color: DhanWiserColors.textSecondary,
-                        fontSize: 14,
-                      ),
+                      style: DhanWiserTextStyles.caption(context)
+                          .copyWith(color: DhanWiserColors.of(context).textSecondary),
                     ),
                     SizedBox(width: 6),
                     GestureDetector(
@@ -372,11 +349,10 @@ class _SignupScreenState extends State<SignupScreen> {
                           Navigator.pushReplacementNamed(context, '/login'),
                       child: Text(
                         'Sign In',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: DhanWiserColors.primary,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall!
+                            .copyWith(color: DhanWiserColors.of(context).primary),
                       ),
                     ),
                   ],
@@ -393,12 +369,8 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget _buildLabel(String label) {
     return Text(
       label,
-      style: GoogleFonts.plusJakartaSans(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: DhanWiserColors.textSecondary,
-        letterSpacing: 1,
-      ),
+      style: DhanWiserTextStyles.overline(context)
+          .copyWith(color: DhanWiserColors.of(context).textSecondary, letterSpacing: 1),
     );
   }
 }

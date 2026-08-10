@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/server_provider.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class CreateServerScreen extends StatefulWidget {
   const CreateServerScreen({super.key});
@@ -31,22 +32,20 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       appBar: AppBar(
-        backgroundColor: DhanWiserColors.background,
+        backgroundColor: DhanWiserColors.of(context).background,
         scrolledUnderElevation: 0,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: DhanWiserColors.textSecondary),
+        leading: PremiumIconButton(
+          icon: Icon(Icons.arrow_back_rounded,
+              color: DhanWiserColors.of(context).textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Create Group',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: DhanWiserColors.primary,
-          ),
+          style: DhanWiserTextStyles.buttonLarge(context)
+              .copyWith(color: DhanWiserColors.of(context).primary),
         ),
       ),
       body: SingleChildScrollView(
@@ -61,10 +60,11 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: DhanWiserColors.surface,
+                    color: DhanWiserColors.of(context).surface,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: DhanWiserColors.primaryContainer.withValues(alpha: 0.3),
+                      color: DhanWiserColors.of(context).primaryContainer
+                          .withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -81,7 +81,8 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: DhanWiserColors.primaryContainer.withValues(alpha: 0.05),
+                                  color: DhanWiserColors.of(context).primaryContainer
+                                      .withValues(alpha: 0.05),
                                   blurRadius: 15,
                                   spreadRadius: 5,
                                 )
@@ -91,7 +92,8 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                           Icon(
                             Icons.add_photo_alternate_outlined,
                             size: 32,
-                            color: DhanWiserColors.primaryContainer.withValues(alpha: 0.7),
+                            color: DhanWiserColors.of(context).primaryContainer
+                                .withValues(alpha: 0.7),
                           ),
                         ],
                       ),
@@ -101,10 +103,8 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                 SizedBox(height: 8),
                 Text(
                   'Add Group Photo',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: DhanWiserColors.textSecondary,
-                  ),
+                  style: DhanWiserTextStyles.caption(context)
+                      .copyWith(color: DhanWiserColors.of(context).textSecondary),
                 ),
               ],
             ),
@@ -113,34 +113,38 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
             // Form Fields
             Text(
               'Group Name',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: DhanWiserColors.textSecondary,
-              ),
+              style: DhanWiserTextStyles.overline(context).copyWith(
+                  letterSpacing: 0.5, color: DhanWiserColors.of(context).textSecondary),
             ),
             SizedBox(height: 8),
             TextField(
               controller: _serverNameController,
-              style: GoogleFonts.inter(color: DhanWiserColors.primary, fontSize: 16),
+              style: DhanWiserTextStyles.bodyRegular(context)
+                  .copyWith(color: DhanWiserColors.of(context).primary),
               decoration: InputDecoration(
                 hintText: 'e.g. Paris Trip 2024',
-                hintStyle: GoogleFonts.inter(color: DhanWiserColors.textDisabled, fontSize: 16),
+                hintStyle: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textDisabled),
                 filled: true,
-                fillColor: DhanWiserColors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                fillColor: DhanWiserColors.of(context).surface,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                      color: DhanWiserColors.of(context).outlineVariant
+                          .withValues(alpha: 0.3)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                      color: DhanWiserColors.of(context).outlineVariant
+                          .withValues(alpha: 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.primaryContainer),
+                  borderSide:
+                      BorderSide(color: DhanWiserColors.of(context).primaryContainer),
                 ),
               ),
             ),
@@ -148,35 +152,39 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
 
             Text(
               'Description (Optional)',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: DhanWiserColors.textSecondary,
-              ),
+              style: DhanWiserTextStyles.overline(context).copyWith(
+                  letterSpacing: 0.5, color: DhanWiserColors.of(context).textSecondary),
             ),
             SizedBox(height: 8),
             TextField(
               controller: _serverDescController,
-              style: GoogleFonts.inter(color: DhanWiserColors.primary, fontSize: 16),
+              style: DhanWiserTextStyles.bodyRegular(context)
+                  .copyWith(color: DhanWiserColors.of(context).primary),
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: "What's this group for?",
-                hintStyle: GoogleFonts.inter(color: DhanWiserColors.textDisabled, fontSize: 16),
+                hintStyle: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textDisabled),
                 filled: true,
-                fillColor: DhanWiserColors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                fillColor: DhanWiserColors.of(context).surface,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                      color: DhanWiserColors.of(context).outlineVariant
+                          .withValues(alpha: 0.3)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                      color: DhanWiserColors.of(context).outlineVariant
+                          .withValues(alpha: 0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: DhanWiserColors.primaryContainer),
+                  borderSide:
+                      BorderSide(color: DhanWiserColors.of(context).primaryContainer),
                 ),
               ),
             ),
@@ -185,12 +193,8 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
             // Category Selector
             Text(
               'Category',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: DhanWiserColors.textSecondary,
-              ),
+              style: DhanWiserTextStyles.overline(context).copyWith(
+                  letterSpacing: 0.5, color: DhanWiserColors.of(context).textSecondary),
             ),
             SizedBox(height: 8),
             SingleChildScrollView(
@@ -220,26 +224,39 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                       onTap: () => setState(() => _selectedCategory = category),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? DhanWiserColors.surfaceContainerHigh : DhanWiserColors.surface,
+                          color: isSelected
+                              ? DhanWiserColors.of(context).surfaceContainerHigh
+                              : DhanWiserColors.of(context).surface,
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color: isSelected ? DhanWiserColors.primaryContainer.withValues(alpha: 0.5) : DhanWiserColors.outlineVariant.withValues(alpha: 0.3),
+                            color: isSelected
+                                ? DhanWiserColors.of(context).primaryContainer
+                                    .withValues(alpha: 0.5)
+                                : DhanWiserColors.of(context).outlineVariant
+                                    .withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(icon, size: 16, color: isSelected ? DhanWiserColors.primaryContainer : DhanWiserColors.textSecondary),
+                            Icon(icon,
+                                size: 16,
+                                color: isSelected
+                                    ? DhanWiserColors.of(context).primaryContainer
+                                    : DhanWiserColors.of(context).textSecondary),
                             SizedBox(width: 8),
                             Text(
                               category,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: isSelected ? DhanWiserColors.primaryContainer : DhanWiserColors.textSecondary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall!
+                                  .copyWith(
+                                      color: isSelected
+                                          ? DhanWiserColors.of(context).primaryContainer
+                                          : DhanWiserColors.of(context).textSecondary),
                             ),
                           ],
                         ),
@@ -254,40 +271,50 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
             // Currency Selector
             Text(
               'Base Currency',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-                color: DhanWiserColors.textSecondary,
-              ),
+              style: DhanWiserTextStyles.overline(context).copyWith(
+                  letterSpacing: 0.5, color: DhanWiserColors.of(context).textSecondary),
             ),
             SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: DhanWiserColors.surface,
+                color: DhanWiserColors.of(context).surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color:
+                        DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.3)),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedCurrency,
-                  dropdownColor: DhanWiserColors.surfaceContainerHigh,
-                  icon: Icon(Icons.expand_more_rounded, color: DhanWiserColors.textSecondary),
+                  dropdownColor: DhanWiserColors.of(context).surfaceContainerHigh,
+                  icon: Icon(Icons.expand_more_rounded,
+                      color: DhanWiserColors.of(context).textSecondary),
                   isExpanded: true,
                   items: _currencies.map((currency) {
                     String symbol = '';
                     switch (currency) {
-                      case 'USD': symbol = '\$'; break;
-                      case 'EUR': symbol = '€'; break;
-                      case 'GBP': symbol = '£'; break;
-                      case 'INR': symbol = '₹'; break;
+                      case 'USD':
+                        symbol = '\$';
+                        break;
+                      case 'EUR':
+                        symbol = '€';
+                        break;
+                      case 'GBP':
+                        symbol = '£';
+                        break;
+                      case 'INR':
+                        symbol = '₹';
+                        break;
                     }
                     return DropdownMenuItem(
                       value: currency,
                       child: Text(
                         '$currency ($symbol)',
-                        style: GoogleFonts.inter(color: DhanWiserColors.primary, fontSize: 16, fontWeight: FontWeight.w500),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium!
+                            .copyWith(color: DhanWiserColors.of(context).primary),
                       ),
                     );
                   }).toList(),
@@ -303,14 +330,16 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
             SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
+              child: PremiumElevatedButton(
                 onPressed: _isCreating
                     ? null
                     : () async {
                         final name = _serverNameController.text.trim();
                         if (name.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: const Text('Enter a group name'), backgroundColor: DhanWiserColors.coral),
+                            SnackBar(
+                                content: const Text('Enter a group name'),
+                                backgroundColor: DhanWiserColors.of(context).coral),
                           );
                           return;
                         }
@@ -320,25 +349,35 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                         final nav = Navigator.of(context);
 
                         try {
-                          final serverProv = Provider.of<ServerProvider>(context, listen: false);
+                          final serverProv = Provider.of<ServerProvider>(
+                              context,
+                              listen: false);
                           // We pass _isPrivate: false by default as the UI doesn't have it anymore
-                          final success = await serverProv.createServer(name, isPrivate: false);
+                          final success = await serverProv.createServer(name,
+                              isPrivate: false);
                           if (mounted) {
                             if (success) {
                               scaffold.showSnackBar(
-                                SnackBar(content: Text('$name created!'), backgroundColor: DhanWiserColors.mint),
+                                SnackBar(
+                                    content: Text('$name created!'),
+                                    backgroundColor: DhanWiserColors.of(context).mint),
                               );
                               nav.pop();
                             } else {
                               scaffold.showSnackBar(
-                                SnackBar(content: Text(serverProv.error ?? 'Failed to create group'), backgroundColor: DhanWiserColors.coral),
+                                SnackBar(
+                                    content: Text(serverProv.error ??
+                                        'Failed to create group'),
+                                    backgroundColor: DhanWiserColors.of(context).coral),
                               );
                             }
                           }
                         } catch (e) {
                           if (mounted) {
                             scaffold.showSnackBar(
-                              SnackBar(content: Text('Failed: $e'), backgroundColor: DhanWiserColors.coral),
+                              SnackBar(
+                                  content: Text('Failed: $e'),
+                                  backgroundColor: DhanWiserColors.of(context).coral),
                             );
                           }
                         } finally {
@@ -348,22 +387,26 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DhanWiserColors.primaryContainer,
-                  foregroundColor: DhanWiserColors.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                  backgroundColor: DhanWiserColors.of(context).primaryContainer,
+                  foregroundColor: DhanWiserColors.of(context).onPrimary,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999)),
                   elevation: 4,
-                  shadowColor: DhanWiserColors.primaryContainer.withValues(alpha: 0.2),
+                  shadowColor:
+                      DhanWiserColors.of(context).primaryContainer.withValues(alpha: 0.2),
                 ),
                 child: _isCreating
                     ? SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(color: DhanWiserColors.onPrimary, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                            color: DhanWiserColors.of(context).onPrimary, strokeWidth: 2),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Create Group', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                          Text('Create Group',
+                              style: Theme.of(context).textTheme.titleMedium!),
                           const SizedBox(width: 8),
                           const Icon(Icons.arrow_forward_rounded, size: 20),
                         ],

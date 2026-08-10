@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -54,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: DhanWiserColors.negative,
+        backgroundColor: DhanWiserColors.of(context).negative,
       ),
     );
   }
@@ -62,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -77,17 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: DhanWiserColors.primary,
+                    color: DhanWiserColors.of(context).primary,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       'D',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w800,
-                        color: DhanWiserColors.background,
-                      ),
+                      style: DhanWiserTextStyles.headline1(context)
+                          .copyWith(color: DhanWiserColors.of(context).background),
                     ),
                   ),
                 ),
@@ -98,12 +96,8 @@ class _LoginScreenState extends State<LoginScreen> {
               Center(
                 child: Text(
                   'DhanWiser',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: DhanWiserColors.textPrimary,
-                    letterSpacing: -0.5,
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                      color: DhanWiserColors.of(context).textPrimary, letterSpacing: -0.5),
                 ),
               ),
               const SizedBox(height: 40),
@@ -111,66 +105,53 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Welcome Title ──
               Text(
                 'Welcome back.',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: DhanWiserColors.textPrimary,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium!
+                    .copyWith(color: DhanWiserColors.of(context).textPrimary),
               ),
               const SizedBox(height: 6),
               Text(
                 'Sign in to your account',
-                style: GoogleFonts.dmSans(
-                  fontSize: 15,
-                  color: DhanWiserColors.textSecondary,
-                ),
+                style: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textSecondary),
               ),
               const SizedBox(height: 36),
 
               // ── Email Field ──
               Text(
                 'EMAIL',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.textSecondary,
-                  letterSpacing: 1,
-                ),
+                style: DhanWiserTextStyles.overline(context).copyWith(
+                    color: DhanWiserColors.of(context).textSecondary, letterSpacing: 1),
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                style: GoogleFonts.dmSans(
-                  color: DhanWiserColors.textPrimary,
-                  fontSize: 16,
-                ),
+                style: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textPrimary),
                 decoration: InputDecoration(
                   hintText: 'smit@example.com',
-                  hintStyle: GoogleFonts.dmSans(
-                    color: DhanWiserColors.textDisabled,
-                    fontSize: 16,
-                  ),
+                  hintStyle: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
                   filled: true,
-                  fillColor: DhanWiserColors.surfaceContainer,
+                  fillColor: DhanWiserColors.of(context).surfaceContainer,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.outline),
+                    borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.outline),
+                    borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: DhanWiserColors.of(context).primary, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
               ),
               const SizedBox(height: 20),
@@ -178,12 +159,8 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Password Field ──
               Text(
                 'PASSWORD',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: DhanWiserColors.textSecondary,
-                  letterSpacing: 1,
-                ),
+                style: DhanWiserTextStyles.overline(context).copyWith(
+                    color: DhanWiserColors.of(context).textSecondary, letterSpacing: 1),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -191,24 +168,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: _obscurePassword,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _login(),
-                style: GoogleFonts.dmSans(
-                  color: DhanWiserColors.textPrimary,
-                  fontSize: 16,
-                ),
+                style: DhanWiserTextStyles.bodyRegular(context)
+                    .copyWith(color: DhanWiserColors.of(context).textPrimary),
                 decoration: InputDecoration(
                   hintText: '••••••••',
-                  hintStyle: GoogleFonts.dmSans(
-                    color: DhanWiserColors.textDisabled,
-                    fontSize: 16,
-                  ),
+                  hintStyle: DhanWiserTextStyles.bodyRegular(context)
+                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
                   filled: true,
-                  fillColor: DhanWiserColors.surfaceContainer,
-                  suffixIcon: IconButton(
+                  fillColor: DhanWiserColors.of(context).surfaceContainer,
+                  suffixIcon: PremiumIconButton(
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: DhanWiserColors.textDisabled,
+                      color: DhanWiserColors.of(context).textDisabled,
                       size: 22,
                     ),
                     onPressed: () =>
@@ -216,21 +189,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.outline),
+                    borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.outline),
+                    borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                        color: DhanWiserColors.primary, width: 2),
+                    borderSide:
+                        BorderSide(color: DhanWiserColors.of(context).primary, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 16),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
               ),
               const SizedBox(height: 12),
@@ -238,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Forgot Password ──
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton(
+                child: PremiumTextButton(
                   onPressed: () {},
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
@@ -247,11 +218,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Text(
                     'Forgot password?',
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: DhanWiserColors.primary,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall!
+                        .copyWith(color: DhanWiserColors.of(context).primary),
                   ),
                 ),
               ),
@@ -260,13 +230,13 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Sign In Button ──
               SizedBox(
                 height: 56,
-                child: FilledButton(
+                child: PremiumFilledButton(
                   onPressed: _isSubmitting ? null : _login,
                   style: FilledButton.styleFrom(
-                    backgroundColor: DhanWiserColors.primary,
-                    foregroundColor: DhanWiserColors.background,
+                    backgroundColor: DhanWiserColors.of(context).primary,
+                    foregroundColor: DhanWiserColors.of(context).background,
                     disabledBackgroundColor:
-                        DhanWiserColors.primary.withValues(alpha: 0.5),
+                        DhanWiserColors.of(context).primary.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
@@ -275,16 +245,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                            color: DhanWiserColors.background,
+                            color: DhanWiserColors.of(context).background,
                             strokeWidth: 2.5,
                           ),
                         )
                       : Text(
                           'Sign In',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium!,
                         ),
                 ),
               ),
@@ -293,20 +260,16 @@ class _LoginScreenState extends State<LoginScreen> {
               // ── Divider ──
               Row(
                 children: [
-                  Expanded(
-                      child: Divider(color: DhanWiserColors.outline)),
+                  Expanded(child: Divider(color: DhanWiserColors.of(context).outline)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'or',
-                      style: GoogleFonts.dmSans(
-                        color: DhanWiserColors.textDisabled,
-                        fontSize: 14,
-                      ),
+                      style: DhanWiserTextStyles.caption(context)
+                          .copyWith(color: DhanWiserColors.of(context).textDisabled),
                     ),
                   ),
-                  Expanded(
-                      child: Divider(color: DhanWiserColors.outline)),
+                  Expanded(child: Divider(color: DhanWiserColors.of(context).outline)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -317,10 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     "Don't have an account?",
-                    style: GoogleFonts.dmSans(
-                      fontSize: 14,
-                      color: DhanWiserColors.textSecondary,
-                    ),
+                    style: DhanWiserTextStyles.caption(context)
+                        .copyWith(color: DhanWiserColors.of(context).textSecondary),
                   ),
                   const SizedBox(width: 6),
                   GestureDetector(
@@ -328,11 +289,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         Navigator.pushReplacementNamed(context, '/signup'),
                     child: Text(
                       'Sign up',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: DhanWiserColors.primary,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall!
+                          .copyWith(color: DhanWiserColors.of(context).primary),
                     ),
                   ),
                 ],
@@ -346,47 +306,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      border: Border.all(
-                          color: DhanWiserColors.outline),
+                      border: Border.all(color: DhanWiserColors.of(context).outline),
                       borderRadius: BorderRadius.circular(12),
-                      color: DhanWiserColors.surfaceContainer,
+                      color: DhanWiserColors.of(context).surfaceContainer,
                     ),
                     child: Column(
                       children: [
                         Text(
                           '⚠️  Server down?',
-                          style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            color: DhanWiserColors.warning,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: DhanWiserTextStyles.overline(context)
+                              .copyWith(color: DhanWiserColors.of(context).warning),
                         ),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
                           height: 44,
-                          child: OutlinedButton.icon(
+                          child: PremiumOutlinedButtonIcon(
                             onPressed: () {
-                              final auth = Provider.of<AuthProvider>(
-                                  context,
+                              final auth = Provider.of<AuthProvider>(context,
                                   listen: false);
                               auth.loginAsGuest();
-                              Navigator.pushReplacementNamed(
-                                  context, '/home');
+                              Navigator.pushReplacementNamed(context, '/home');
                             },
-                            icon: const Icon(Icons.science_rounded,
-                                size: 18),
+                            icon: const Icon(Icons.science_rounded, size: 18),
                             label: Text(
                               'Skip Login (Testing Mode)',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: DhanWiserTextStyles.overline(context),
                             ),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: DhanWiserColors.warning,
+                              foregroundColor: DhanWiserColors.of(context).warning,
                               side: BorderSide(
-                                  color: DhanWiserColors.warning
+                                  color: DhanWiserColors.of(context).warning
                                       .withValues(alpha: 0.5)),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10)),

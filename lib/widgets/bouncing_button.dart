@@ -36,7 +36,8 @@ class _BouncingButtonState extends State<BouncingButton>
       duration: widget.duration,
       reverseDuration: widget.duration,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleFactor).animate(
+    _scaleAnimation =
+        Tween<double>(begin: 1.0, end: widget.scaleFactor).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
   }
@@ -87,6 +88,319 @@ class _BouncingButtonState extends State<BouncingButton>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: widget.child,
+      ),
+    );
+  }
+}
+
+
+// ============================================================================
+// PREMIUM BUTTON WRAPPERS
+// ============================================================================
+
+class PremiumElevatedButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget child;
+
+  const PremiumElevatedButton({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: ElevatedButton(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumElevatedButtonIcon extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget icon;
+  final Widget label;
+
+  const PremiumElevatedButtonIcon({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: ElevatedButton.icon(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          icon: icon,
+          label: label,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumTextButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget child;
+
+  const PremiumTextButton({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: TextButton(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumTextButtonIcon extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget icon;
+  final Widget label;
+
+  const PremiumTextButtonIcon({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: TextButton.icon(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          icon: icon,
+          label: label,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumOutlinedButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget child;
+
+  const PremiumOutlinedButton({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: OutlinedButton(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumOutlinedButtonIcon extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget icon;
+  final Widget label;
+
+  const PremiumOutlinedButtonIcon({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: OutlinedButton.icon(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          icon: icon,
+          label: label,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumFilledButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget child;
+
+  const PremiumFilledButton({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: FilledButton(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumFilledButtonIcon extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
+  final ButtonStyle? style;
+  final Widget icon;
+  final Widget label;
+
+  const PremiumFilledButtonIcon({
+    super.key,
+    required this.onPressed,
+    this.onLongPress,
+    this.style,
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      onLongPress: onLongPress,
+      child: IgnorePointer(
+        child: FilledButton.icon(
+          onPressed: onPressed != null ? () {} : null,
+          onLongPress: onLongPress != null ? () {} : null,
+          style: style,
+          icon: icon,
+          label: label,
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumIconButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final Widget icon;
+  final Color? color;
+  final double? iconSize;
+  final double? splashRadius;
+  final EdgeInsetsGeometry? padding;
+  final BoxConstraints? constraints;
+  final AlignmentGeometry? alignment;
+  final String? tooltip;
+  final ButtonStyle? style;
+
+  const PremiumIconButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    this.color,
+    this.iconSize,
+    this.splashRadius,
+    this.padding,
+    this.constraints,
+    this.alignment,
+    this.tooltip,
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
+      onTap: onPressed,
+      child: IgnorePointer(
+        child: IconButton(
+          onPressed: onPressed != null ? () {} : null,
+          icon: icon,
+          color: color,
+          iconSize: iconSize,
+          splashRadius: splashRadius,
+          padding: padding,
+          constraints: constraints,
+          alignment: alignment,
+          tooltip: tooltip,
+          style: style,
+        ),
       ),
     );
   }

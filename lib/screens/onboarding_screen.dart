@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/colors.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,25 +20,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'badge': 'SMART BILL SPLITTING',
       'title1': 'Group Expenses,\n',
       'title2': 'Solved Intelligently.',
-      'subtitle': 'Add shared bills in seconds. DhanWiser handles complex splits and calculates exact balances automatically.',
+      'subtitle':
+          'Add shared bills in seconds. DhanWiser handles complex splits and calculates exact balances automatically.',
       'icon': Icons.account_balance_wallet_rounded,
-      'color': Color(0xFF6366F1),
     },
     {
       'badge': 'DEBT SIMPLIFICATION',
       'title1': 'Fewer Transfers,\n',
       'title2': 'Zero Confusion.',
-      'subtitle': 'Our settlement algorithm consolidates debts across your group into minimal direct payments.',
+      'subtitle':
+          'Our settlement algorithm consolidates debts across your group into minimal direct payments.',
       'icon': Icons.hub_rounded,
-      'color': Color(0xFF10B981),
     },
     {
       'badge': 'INSTANT UPI VERIFICATION',
       'title1': 'Direct Payments,\n',
       'title2': 'Verified Instantly.',
-      'subtitle': 'Upload payment proofs, verify UPI transactions, and keep group finances 100% transparent.',
+      'subtitle':
+          'Upload payment proofs, verify UPI transactions, and keep group finances 100% transparent.',
       'icon': Icons.verified_user_rounded,
-      'color': Color(0xFFF43F5E),
     },
   ];
 
@@ -59,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DhanWiserColors.background,
+      backgroundColor: DhanWiserColors.of(context).background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,35 +76,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: DhanWiserColors.primary,
+                          color: DhanWiserColors.of(context).primary,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           Icons.account_balance_wallet_rounded,
-                          color: DhanWiserColors.onPrimary,
+                          color: DhanWiserColors.of(context).onPrimary,
                           size: 20,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         'DhanWiser',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: DhanWiserColors.textPrimary,
-                        ),
+                        style: DhanWiserTextStyles.buttonLarge(context)
+                            .copyWith(color: DhanWiserColors.of(context).textPrimary),
                       ),
                     ],
                   ),
-                  TextButton(
+                  PremiumTextButton(
                     onPressed: () => _completeOnboarding(context),
                     child: Text(
                       'Skip',
-                      style: GoogleFonts.inter(
-                        color: DhanWiserColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                      style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                            color: DhanWiserColors.of(context).textSecondary,
+                          ),
                     ),
                   ),
                 ],
@@ -121,13 +117,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   final itemColor = item['color'] as Color;
 
                   return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: DhanWiserColors.surface,
+                      color: DhanWiserColors.of(context).surface,
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: DhanWiserColors.outlineVariant.withValues(alpha: 0.5),
+                        color: DhanWiserColors.of(context).outlineVariant
+                            .withValues(alpha: 0.5),
                       ),
                     ),
                     child: Column(
@@ -139,7 +137,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           decoration: BoxDecoration(
                             color: itemColor.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
-                            border: Border.all(color: itemColor.withValues(alpha: 0.3)),
+                            border: Border.all(
+                                color: itemColor.withValues(alpha: 0.3)),
                           ),
                           child: Icon(
                             item['icon'] as IconData,
@@ -149,31 +148,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         const SizedBox(height: 24),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 4),
                           decoration: BoxDecoration(
                             color: itemColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             item['badge'] as String,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: itemColor,
-                              letterSpacing: 0.8,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(color: itemColor, letterSpacing: 0.8),
                           ),
                         ),
                         const SizedBox(height: 16),
                         RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w800,
-                              color: DhanWiserColors.textPrimary,
-                              height: 1.2,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium!
+                                .copyWith(
+                                    color: DhanWiserColors.of(context).textPrimary,
+                                    height: 1.2),
                             children: [
                               TextSpan(text: item['title1'] as String),
                               TextSpan(
@@ -187,11 +185,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           item['subtitle'] as String,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: DhanWiserColors.textSecondary,
-                            height: 1.5,
-                          ),
+                          style: DhanWiserTextStyles.caption(context).copyWith(
+                              color: DhanWiserColors.of(context).textSecondary,
+                              height: 1.5),
                         ),
                       ],
                     ),
@@ -211,7 +207,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: isActive ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: isActive ? DhanWiserColors.primary : DhanWiserColors.outlineVariant,
+                    color: isActive
+                        ? DhanWiserColors.of(context).primary
+                        : DhanWiserColors.of(context).outlineVariant,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -227,7 +225,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SizedBox(
                     height: 52,
-                    child: FilledButton(
+                    child: PremiumFilledButton(
                       onPressed: () {
                         if (_currentPage < _slides.length - 1) {
                           _pageController.nextPage(
@@ -239,35 +237,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         }
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: DhanWiserColors.primary,
-                        foregroundColor: DhanWiserColors.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        backgroundColor: DhanWiserColors.of(context).primary,
+                        foregroundColor: DhanWiserColors.of(context).onPrimary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
                       child: Text(
-                        _currentPage == _slides.length - 1 ? 'Get Started' : 'Continue',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        _currentPage == _slides.length - 1
+                            ? 'Get Started'
+                            : 'Continue',
+                        style: Theme.of(context).textTheme.titleMedium!,
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 52,
-                    child: OutlinedButton(
+                    child: PremiumOutlinedButton(
                       onPressed: () => _completeOnboarding(context),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: DhanWiserColors.textPrimary,
-                        side: BorderSide(color: DhanWiserColors.outlineVariant),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        foregroundColor: DhanWiserColors.of(context).textPrimary,
+                        side: BorderSide(color: DhanWiserColors.of(context).outlineVariant),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
                       ),
                       child: Text(
                         'Log In',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium!,
                       ),
                     ),
                   ),

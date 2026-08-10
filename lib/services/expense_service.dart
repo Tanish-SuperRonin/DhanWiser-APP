@@ -57,18 +57,16 @@ class ExpenseService {
 
   // Get server balances (not paginated — always returns all members)
   static Future<Map<String, dynamic>> getServerBalances(int serverId) async {
-    final response =
-        await ApiClient.get('/expenses/server/$serverId/balances');
+    final response = await ApiClient.get('/expenses/server/$serverId/balances');
     final data = response['data'];
 
     final balances = (data['balances'] as List<dynamic>)
         .map((b) => BalanceModel.fromJson(b))
         .toList();
 
-    final suggestions =
-        (data['suggestedSettlements'] as List<dynamic>)
-            .map((s) => SuggestedSettlement.fromJson(s))
-            .toList();
+    final suggestions = (data['suggestedSettlements'] as List<dynamic>)
+        .map((s) => SuggestedSettlement.fromJson(s))
+        .toList();
 
     return {
       'balances': balances,

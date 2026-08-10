@@ -48,7 +48,8 @@ class ServerService {
   }
 
   // Respond to invitation (accept/reject)
-  static Future<void> respondToInvitation(int invitationId, String action) async {
+  static Future<void> respondToInvitation(
+      int invitationId, String action) async {
     await ApiClient.post('/servers/invitations/$invitationId/respond', body: {
       'action': action,
     });
@@ -66,7 +67,8 @@ class ServerService {
 
   // Get reminder settings
   static Future<Map<String, dynamic>> getReminderSettings(int serverId) async {
-    final response = await ApiClient.get('/servers/$serverId/reminder-settings');
+    final response =
+        await ApiClient.get('/servers/$serverId/reminder-settings');
     return response['data'] as Map<String, dynamic>;
   }
 

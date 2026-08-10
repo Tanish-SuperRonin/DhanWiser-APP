@@ -15,6 +15,7 @@ import "package:dhanwiser_fixed/screens/onboarding_screen.dart";
 import "package:dhanwiser_fixed/screens/login_screen.dart";
 import "package:dhanwiser_fixed/screens/signup_screen.dart";
 import "package:dhanwiser_fixed/screens/home_screen.dart";
+import "package:dhanwiser_fixed/screens/main_shell.dart";
 import "package:dhanwiser_fixed/screens/create_server_screen.dart";
 import "package:dhanwiser_fixed/screens/server_detail_screen.dart";
 import "package:dhanwiser_fixed/screens/add_expense_screen.dart";
@@ -27,6 +28,7 @@ import "package:dhanwiser_fixed/screens/settings_screen.dart";
 import "package:dhanwiser_fixed/screens/expense_detail_screen.dart";
 import "package:dhanwiser_fixed/screens/settlement_successful_screen.dart";
 import "package:dhanwiser_fixed/screens/group_settings_screen.dart";
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 void main() {
   // Prevent white screen crashes by rendering a graceful error boundary UI
@@ -40,11 +42,15 @@ void main() {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 56),
+                const Icon(Icons.error_outline_rounded,
+                    color: Color(0xFFF87171), size: 56),
                 const SizedBox(height: 16),
                 const Text(
                   'Something went wrong',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -52,20 +58,24 @@ void main() {
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 ),
                 const SizedBox(height: 24),
                 Builder(
                   builder: (ctx) {
-                    return ElevatedButton.icon(
+                    return PremiumElevatedButtonIcon(
                       onPressed: () {
-                        Navigator.of(ctx).pushNamedAndRemoveUntil('/home', (r) => false);
+                        Navigator.of(ctx)
+                            .pushNamedAndRemoveUntil('/home', (r) => false);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF10B981),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       icon: const Icon(Icons.home_rounded, size: 20),
                       label: const Text('Back to Home'),
@@ -120,7 +130,7 @@ class MyApp extends StatelessWidget {
           routes: {
             '/login': (context) => const LoginScreen(),
             '/signup': (context) => const SignupScreen(),
-            '/home': (context) => const HomeScreen(),
+            '/home': (context) => const MainShell(),
             '/create-server': (context) => const CreateServerScreen(),
             '/profile': (context) => const ProfileScreen(),
             '/friend-discovery': (context) => const FriendDiscoveryScreen(),
@@ -198,7 +208,7 @@ class MyApp extends StatelessWidget {
             if (page != null) {
               return _buildM3PageRoute(page, settings);
             }
-            return _buildM3PageRoute(const HomeScreen(), settings);
+            return _buildM3PageRoute(const MainShell(), settings);
           },
         ),
       ),

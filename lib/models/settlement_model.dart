@@ -33,9 +33,7 @@ class SettlementModel {
   String get receiverFullName => receiver?['fullName'] ?? 'Unknown';
   int? get receiverId =>
       parseNullableIntValue(receiver?['id'] ?? receiver?['userId']);
-  int? get payerId =>
-      parseNullableIntValue(payer?['id'] ?? payer?['userId']);
-
+  int? get payerId => parseNullableIntValue(payer?['id'] ?? payer?['userId']);
 
   factory SettlementModel.fromJson(Map<String, dynamic> json) {
     return SettlementModel(

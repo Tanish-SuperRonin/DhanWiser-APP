@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../widgets/shimmer_loading.dart';
 import '../widgets/dhanwiser_ui.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
@@ -17,16 +16,19 @@ import '../theme/design_tokens.dart';
 import 'friend_discovery_screen.dart';
 import 'activity_screen.dart';
 import 'profile_screen.dart';
+import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(int) onNavigateTab;
+  const HomeScreen({super.key, required this.onNavigateTab});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+  
   bool _loadingBalanceSummary = true;
   double _netBalance = 0;
   double _youOwe = 0;
@@ -200,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
         await CacheService.invalidate('servers_list');
         await _loadData();
       },
-      color: DhanWiserColors.primaryFixed,
+      color: DhanWiserColors.of(context).primaryFixed,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
@@ -223,93 +225,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
 
-    final tabIndexMap = _selectedIndex == 2 ? 0 : (_selectedIndex > 2 ? _selectedIndex - 1 : _selectedIndex);
-
     return Scaffold(
-      extendBody: true,
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: tabIndexMap,
-          children: [
-            homeContent,
-            const FriendDiscoveryScreen(),
-            const ActivityScreen(),
-            const ProfileScreen(),
-          ],
-        ),
-      ),
-
-      // Floating Glass NavigationBar (Matching Airbnb UX Standards)
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(9999),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: DhanWiserColors.surface.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(9999),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-              ),
-              child: NavigationBar(
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                height: 68,
-                selectedIndex: _selectedIndex,
-                onDestinationSelected: (index) {
-                  if (index == 2) {
-                    _navigateAndRefresh('/add-expense');
-                  } else {
-                    setState(() => _selectedIndex = index);
-                  }
-                },
-                destinations: [
-                  const NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_filled),
-                    label: 'Home',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.search_rounded),
-                    selectedIcon: Icon(Icons.search_rounded),
-                    label: 'Explore',
-                  ),
-                  NavigationDestination(
-                    icon: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.primaryFixed,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.add_rounded,
-                        color: DhanWiserColors.onPrimaryFixed,
-                        size: 28,
-                      ),
-                    ),
-                    label: '',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.notifications_outlined),
-                    selectedIcon: Icon(Icons.notifications_rounded),
-                    label: 'Activity',
-                  ),
-                  const NavigationDestination(
-                    icon: Icon(Icons.person_outline_rounded),
-                    selectedIcon: Icon(Icons.person_rounded),
-                    label: 'Profile',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: DhanWiserColors.of(context).background,
+      body: homeContent,
     );
   }
 
@@ -326,22 +244,20 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Profile avatar left
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/profile'),
+              onTap: () => widget.onNavigateTab(4),
               child: Container(
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.surface,
+                  color: DhanWiserColors.of(context).surface,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     initial,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: DhanWiserColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                          color: DhanWiserColors.of(context).textPrimary,
+                        ),
                   ),
                 ),
               ),
@@ -353,20 +269,16 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   _getGreeting(),
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: DhanWiserColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: DhanWiserTextStyles.overline(context)
+                      .copyWith(color: DhanWiserColors.of(context).textSecondary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   name.split(' ')[0],
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    color: DhanWiserColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium!
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                 ),
               ],
             ),
@@ -381,17 +293,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.surface,
+                        color: DhanWiserColors.of(context).surface,
                         shape: BoxShape.circle,
                         border:
-                            Border.all(color: DhanWiserColors.outlineVariant),
+                            Border.all(color: DhanWiserColors.of(context).outlineVariant),
                       ),
-                      child: IconButton(
+                      child: PremiumIconButton(
                         onPressed: () =>
-                            Navigator.pushNamed(context, '/activity'),
+                            widget.onNavigateTab(3),
                         icon:
                             const Icon(Icons.notifications_outlined, size: 20),
-                        color: DhanWiserColors.textPrimary,
+                        color: DhanWiserColors.of(context).textPrimary,
                       ),
                     ),
                     if (notif.unreadCount > 0)
@@ -402,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: DhanWiserColors.primaryFixed,
+                            color: DhanWiserColors.of(context).primaryFixed,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -419,17 +331,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBalanceCard(ColorScheme cs, bool isDark) {
     final netColor = _netBalance < -0.01
-        ? DhanWiserColors.error
+        ? DhanWiserColors.of(context).error
         : _netBalance > 0.01
-            ? DhanWiserColors.tertiary
-            : DhanWiserColors.textPrimary;
+            ? DhanWiserColors.of(context).tertiary
+            : DhanWiserColors.of(context).textPrimary;
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: DhanWiserColors.surface,
+        color: DhanWiserColors.of(context).surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+            color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
@@ -438,15 +351,12 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'NET BALANCE',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11,
-                  letterSpacing: 1.0,
-                  fontWeight: FontWeight.w700,
-                  color: DhanWiserColors.textSecondary,
-                ),
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                    letterSpacing: 1.0, color: DhanWiserColors.of(context).textSecondary),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: netColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -457,11 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       : _netBalance > 0.01
                           ? 'You Get Back'
                           : 'Settled',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: netColor,
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall!
+                      .copyWith(color: netColor),
                 ),
               ),
             ],
@@ -473,16 +382,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _formatCurrency(_netBalance, withDecimals: true),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 44,
-                      fontWeight: FontWeight.w800,
-                      color: netColor,
-                      letterSpacing: -1.0,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium!
+                        .copyWith(color: netColor, letterSpacing: -1.0),
                   ),
                 ),
           const SizedBox(height: 20),
-          Divider(color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3), height: 1),
+          Divider(
+              color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.3),
+              height: 1),
           const SizedBox(height: 16),
 
           // Detailed Owed / Owe split pills
@@ -494,30 +403,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.arrow_downward_rounded, size: 14, color: DhanWiserColors.tertiary),
+                        Icon(Icons.arrow_downward_rounded,
+                            size: 14, color: DhanWiserColors.of(context).tertiary),
                         const SizedBox(width: 4),
                         Text(
                           'Owed to you',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: DhanWiserColors.textSecondary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall!
+                              .copyWith(color: DhanWiserColors.of(context).textSecondary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _formatCurrency(_owedToYou),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: DhanWiserColors.tertiary,
-                      ),
+                      style: DhanWiserTextStyles.buttonLarge(context)
+                          .copyWith(color: DhanWiserColors.of(context).tertiary),
                     ),
                   ],
                 ),
               ),
-              Container(width: 1, height: 36, color: DhanWiserColors.outlineVariant.withValues(alpha: 0.3)),
+              Container(
+                  width: 1,
+                  height: 36,
+                  color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.3)),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -525,25 +435,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.arrow_upward_rounded, size: 14, color: DhanWiserColors.error),
+                        Icon(Icons.arrow_upward_rounded,
+                            size: 14, color: DhanWiserColors.of(context).error),
                         const SizedBox(width: 4),
                         Text(
                           'You owe',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: DhanWiserColors.textSecondary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall!
+                              .copyWith(color: DhanWiserColors.of(context).textSecondary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _formatCurrency(_youOwe),
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: DhanWiserColors.error,
-                      ),
+                      style: DhanWiserTextStyles.buttonLarge(context)
+                          .copyWith(color: DhanWiserColors.of(context).error),
                     ),
                   ],
                 ),
@@ -559,11 +467,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildQuickActionsGrid(ColorScheme cs, bool isDark) {
     final actions = [
       _QuickAction('Create', Icons.group_add_rounded,
-          DhanWiserColors.primaryFixed, '/create-server'),
+          DhanWiserColors.of(context).primaryFixed, '/create-server'),
       _QuickAction('Expense', Icons.receipt_long_rounded,
-          DhanWiserColors.secondary, '/add-expense'),
+          DhanWiserColors.of(context).secondary, '/add-expense'),
       _QuickAction('Settle', Icons.handshake_rounded,
-          DhanWiserColors.tertiaryFixed, '/settlement'),
+          DhanWiserColors.of(context).tertiaryFixed, '/settlement'),
     ];
 
     return Row(
@@ -580,11 +488,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 8),
                 Text(
                   action.label,
-                  style: GoogleFonts.manrope(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: DhanWiserColors.textPrimary,
-                  ),
+                  style: DhanWiserTextStyles.overline(context)
+                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -673,11 +578,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.primaryFixed.withValues(alpha: 0.15),
+                  color: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(groupIcon,
-                    color: DhanWiserColors.primaryFixed, size: 24),
+                    color: DhanWiserColors.of(context).primaryFixed, size: 24),
               ),
             ),
             const SizedBox(width: 16),
@@ -690,11 +595,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Flexible(
                         child: Text(
                           name,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: DhanWiserColors.textPrimary,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium!
+                              .copyWith(color: DhanWiserColors.of(context).textPrimary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -705,17 +609,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: DhanWiserColors.secondary
+                            color: DhanWiserColors.of(context).secondary
                                 .withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Admin',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: DhanWiserColors.secondary,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall!
+                                .copyWith(color: DhanWiserColors.of(context).secondary),
                           ),
                         ),
                       ],
@@ -724,18 +627,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     members,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: DhanWiserColors.textSecondary,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    style: DhanWiserTextStyles.caption(context)
+                        .copyWith(color: DhanWiserColors.of(context).textSecondary),
                   ),
                 ],
               ),
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: DhanWiserColors.textDisabled,
+              color: DhanWiserColors.of(context).textDisabled,
               size: 24,
             ),
           ],
@@ -767,24 +667,18 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           Text(
             'No groups yet',
-            style: GoogleFonts.manrope(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: cs.onSurface,
-            ),
+            style: DhanWiserTextStyles.buttonLarge(context)
+                .copyWith(color: cs.onSurface),
           ),
           const SizedBox(height: 6),
           Text(
             'Create a group and start splitting expenses\nwith friends and flatmates',
             textAlign: TextAlign.center,
-            style: GoogleFonts.manrope(
-              fontSize: 14,
-              color: cs.onSurfaceVariant,
-              height: 1.5,
-            ),
+            style: DhanWiserTextStyles.caption(context)
+                .copyWith(color: cs.onSurfaceVariant, height: 1.5),
           ),
           const SizedBox(height: 20),
-          FilledButton(
+          PremiumFilledButton(
             onPressed: () => _navigateAndRefresh('/create-server'),
             child: const Text('Create Your First Group'),
           ),
