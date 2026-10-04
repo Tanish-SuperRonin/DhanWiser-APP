@@ -42,16 +42,4 @@ app.*.map.json
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile
-*.hprof
-
-# Node / Backend
-node_modules/
-**/node_modules/
-.env
-**/.env
-*.env
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-tmpclaude-*
-**/tmpclaude-*
+/android/app/release
