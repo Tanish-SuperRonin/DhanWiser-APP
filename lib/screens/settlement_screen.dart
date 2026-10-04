@@ -2,6 +2,10 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../theme/iconly_icons.dart';
+import '../utils/validators.dart';
+import 'package:dhanwiser_fixed/utils/formatters.dart';
+
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
@@ -62,7 +66,8 @@ class _SettlementScreenState extends State<SettlementScreen>
       appBar: AppBar(
         title: const Text('Settlements'),
         leading: PremiumIconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          semanticLabel: 'Back',
+          icon: const Icon(IconlyLight.arrowLeft2),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
@@ -130,7 +135,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                 borderRadius: BorderRadius.circular(20),
               ),
               child:
-                  Icon(Icons.check_circle_rounded, color: cs.primary, size: 32),
+                  Icon(IconlyBold.shieldDone, color: cs.primary, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
@@ -201,14 +206,14 @@ class _SettlementScreenState extends State<SettlementScreen>
                           s.payerUsername, DhanWiserColors.of(context).coral, cs),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: Icon(Icons.arrow_forward_rounded,
+                        child: Icon(IconlyLight.arrowRight2,
                             size: 16, color: cs.onSurfaceVariant),
                       ),
                       _buildUserChip(
                           s.receiverUsername, DhanWiserColors.of(context).teal, cs),
                       const Spacer(),
                       Text(
-                        '₹${s.amount.toStringAsFixed(0)}',
+                        CurrencyFormatter.formatCompact(s.amount),
                         style: DhanWiserTextStyles.buttonLarge(context)
                             .copyWith(color: cs.onSurface),
                       ),
@@ -270,6 +275,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                       children: [
                         Expanded(
                           child: PremiumOutlinedButton(
+                            semanticLabel: 'Reject settlement request',
                             onPressed: () => _showRejectDialog(s),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: DhanWiserColors.of(context).coral,
@@ -284,6 +290,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: PremiumFilledButton(
+                            semanticLabel: 'Approve settlement request',
                             onPressed: () => _showApproveDialog(s),
                             style: FilledButton.styleFrom(
                               backgroundColor: DhanWiserColors.of(context).mint,
@@ -320,7 +327,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.receipt_long_rounded, size: 14, color: cs.primary),
+              Icon(IconlyLight.document, size: 14, color: cs.primary),
               const SizedBox(width: 6),
               Text(
                 'Payment Proof',
@@ -349,7 +356,7 @@ class _SettlementScreenState extends State<SettlementScreen>
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          icon: Icon(Icons.check_circle_outline_rounded,
+          icon: Icon(IconlyBold.shieldDone,
               color: DhanWiserColors.of(context).mint, size: 32),
           title: const Text('Confirm Payment'),
           content: Column(
@@ -357,7 +364,7 @@ class _SettlementScreenState extends State<SettlementScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${settlement.payerFullName} says they paid you ₹${settlement.amount.toStringAsFixed(0)}.',
+                '${settlement.payerFullName} says they paid you ${CurrencyFormatter.formatCompact(settlement.amount)}.',
               ),
               if (settlement.notes != null && settlement.notes!.isNotEmpty) ...[
                 const SizedBox(height: 14),
@@ -378,10 +385,12 @@ class _SettlementScreenState extends State<SettlementScreen>
           ),
           actions: [
             PremiumTextButton(
+              semanticLabel: 'Cancel dialog',
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
             PremiumFilledButton(
+              semanticLabel: 'Confirm action',
               onPressed: () {
                 Navigator.pop(ctx);
                 _handleApprove(settlement.id);
@@ -406,7 +415,7 @@ class _SettlementScreenState extends State<SettlementScreen>
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          icon: Icon(Icons.cancel_outlined,
+          icon: Icon(IconlyBold.shieldFail,
               color: DhanWiserColors.of(context).coral, size: 32),
           title: const Text('Reject Settlement'),
           content: Column(
@@ -414,11 +423,12 @@ class _SettlementScreenState extends State<SettlementScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${settlement.payerFullName} claims to have paid ₹${settlement.amount.toStringAsFixed(0)}.',
+                '${settlement.payerFullName} claims to have paid ${CurrencyFormatter.formatCompact(settlement.amount)}.',
               ),
               const SizedBox(height: 14),
-              TextField(
+              TextFormField(
                 controller: reasonController,
+                  validator: (v) => Validators.notEmpty(v, 'Reason'),
                 maxLines: 3,
                 decoration: const InputDecoration(
                   labelText: 'Reason for rejection',
@@ -429,10 +439,12 @@ class _SettlementScreenState extends State<SettlementScreen>
           ),
           actions: [
             PremiumTextButton(
+              semanticLabel: 'Cancel dialog',
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
             PremiumFilledButton(
+              semanticLabel: 'Confirm action',
               onPressed: () {
                 Navigator.pop(ctx);
                 _handleReject(settlement.id,
@@ -541,6 +553,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                     const SizedBox(height: 20),
                     if (servers.isNotEmpty)
                       PremiumOutlinedButtonIcon(
+                        semanticLabel: 'View server details',
                         onPressed: () {
                           Navigator.pushNamed(context, '/server-detail',
                               arguments: {
@@ -550,7 +563,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                                     '${servers.first.memberCount} members',
                               });
                         },
-                        icon: const Icon(Icons.groups_rounded, size: 18),
+                        icon: const Icon(IconlyBold.user2, size: 18),
                         label: Text('View ${servers.first.name} History'),
                       ),
                   ],
@@ -595,7 +608,7 @@ class _SettlementScreenState extends State<SettlementScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.image_outlined, size: 16, color: cs.primary),
+              Icon(IconlyLight.image, size: 16, color: cs.primary),
               const SizedBox(width: 6),
               Text(
                 'Payment screenshot',
@@ -673,6 +686,7 @@ class _SettlementScreenState extends State<SettlementScreen>
                 right: 20,
                 child: SafeArea(
                   child: PremiumIconButton(
+                    semanticLabel: 'Close image',
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),

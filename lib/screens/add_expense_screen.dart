@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../utils/validators.dart';
+import 'package:dhanwiser_fixed/utils/formatters.dart';
+
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/server_provider.dart';
@@ -172,7 +175,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       }
       if ((sum - amount).abs() > 0.01) {
         _showError(
-            'Custom amounts (₹${sum.toStringAsFixed(2)}) must equal total (₹${amount.toStringAsFixed(2)})');
+            'Custom amounts (${CurrencyFormatter.formatDecimal(sum)}) must equal total (${CurrencyFormatter.formatDecimal(amount)})');
         return;
       }
     }
@@ -216,7 +219,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added ₹${amount.toStringAsFixed(0)} to $title'),
+            content: Text('Added ${CurrencyFormatter.formatCompact(amount)} to $title'),
             backgroundColor: DhanWiserColors.of(context).mint,
           ),
         );
@@ -277,6 +280,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: PremiumIconButton(
+          semanticLabel: 'Back',
           icon: Icon(Icons.arrow_back_rounded,
               color: DhanWiserColors.of(context).textPrimary),
           onPressed: () => Navigator.pop(context),
@@ -289,6 +293,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         centerTitle: true,
         actions: [
           PremiumIconButton(
+            semanticLabel: 'More options',
             icon: Icon(Icons.more_vert_rounded,
                 color: DhanWiserColors.of(context).textPrimary),
             onPressed: () {},
@@ -331,8 +336,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                       ),
                       const SizedBox(width: 8),
                       IntrinsicWidth(
-                        child: TextField(
+                        child: TextFormField(
                           controller: _amountController,
+                            validator: Validators.amount,
                           focusNode: _amountFocusNode,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
@@ -417,7 +423,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                 color: DhanWiserColors.of(context).textSecondary, size: 20),
                             SizedBox(width: 12),
                             Expanded(
-                              child: TextField(
+                              child: TextFormField(
                                 controller: _noteController,
                                 style: DhanWiserTextStyles.bodyRegular(context)
                                     .copyWith(
@@ -668,6 +674,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                           color: DhanWiserColors.of(context).textSecondary),
                                 ),
                                 PremiumTextButton(
+                                  semanticLabel: 'Split equally',
                                   onPressed: () {
                                     final members = _getMembers();
                                     setState(() {
@@ -826,7 +833,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                                                     .copyWith(
                                                         color: DhanWiserColors.of(context).textSecondary)),
                                             Text(
-                                              '₹${remaining.toStringAsFixed(2)}',
+                                              CurrencyFormatter.formatDecimal(remaining),
                                               style: Theme.of(context)
                                                   .textTheme
                                                   .titleSmall!
@@ -856,6 +863,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         width: double.infinity,
                         height: 56,
                         child: PremiumElevatedButton(
+                          semanticLabel: 'Save Expense',
                           onPressed: _isSaving ? null : _saveExpense,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: DhanWiserColors.of(context).tertiaryFixed,
@@ -1033,7 +1041,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                             else
                               SizedBox(
                                 width: 60,
-                                child: TextField(
+                                child: TextFormField(
                                   controller:
                                       _customAmountControllers[member.userId],
                                   keyboardType:

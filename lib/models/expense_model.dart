@@ -38,6 +38,7 @@ class ExpenseModel {
   final int id;
   final String title;
   final String? description;
+  final String? category;
   final double totalAmount;
   final DateTime expenseDate;
   final Map<String, dynamic>? channel;
@@ -49,6 +50,7 @@ class ExpenseModel {
     required this.id,
     required this.title,
     this.description,
+    this.category,
     required this.totalAmount,
     required this.expenseDate,
     this.channel,
@@ -64,6 +66,7 @@ class ExpenseModel {
       id: parseIntValue(json['id']),
       title: json['title'] ?? '',
       description: json['description'],
+      category: json['category'] ?? (json['channel'] is Map ? json['channel']['name'] : null),
       totalAmount: parseDoubleValue(json['totalAmount']),
       expenseDate: DateTime.parse(
           json['expenseDate'] ?? DateTime.now().toIso8601String()),

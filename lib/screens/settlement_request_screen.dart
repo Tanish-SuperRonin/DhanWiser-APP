@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../utils/validators.dart';
+
 import '../models/settlement_model.dart';
 import '../services/settlement_service.dart';
 import '../theme/colors.dart';
@@ -121,8 +123,9 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
           icon: Icon(Icons.cancel_outlined,
               color: DhanWiserColors.of(context).coral, size: 32),
           title: const Text('Reject Settlement'),
-          content: TextField(
+          content: TextFormField(
             controller: reasonController,
+              validator: (v) => Validators.notEmpty(v, 'Reason'),
             maxLines: 3,
             decoration: const InputDecoration(
               labelText: 'Reason for rejection',
@@ -131,10 +134,12 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
           ),
           actions: [
             PremiumTextButton(
+              semanticLabel: 'Cancel dialog',
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Cancel'),
             ),
             PremiumFilledButton(
+              semanticLabel: 'Confirm action',
               onPressed: () {
                 Navigator.pop(ctx);
                 _reject(reasonController.text.trim());
@@ -178,6 +183,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 Align(
                   alignment: Alignment.topLeft,
                   child: PremiumIconButton(
+                    semanticLabel: 'Back',
                     padding: const EdgeInsets.all(20),
                     icon: Icon(Icons.arrow_back_rounded,
                         color: DhanWiserColors.of(context).textPrimary),
@@ -259,16 +265,6 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Drag Handle Indicator
-              Container(
-                width: 48,
-                height: 6,
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  color: DhanWiserColors.of(context).surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
 
               // Avatar & Header
               Container(
@@ -422,6 +418,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 width: double.infinity,
                 height: 56,
                 child: PremiumElevatedButton(
+                  semanticLabel: 'Approve request',
                   onPressed: _isSubmitting ? null : _approve,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: DhanWiserColors.of(context).primaryFixed,
@@ -450,6 +447,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 width: double.infinity,
                 height: 56,
                 child: PremiumOutlinedButton(
+                  semanticLabel: 'Reject request',
                   onPressed: _isSubmitting ? null : _showRejectDialog,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
@@ -536,6 +534,7 @@ class _SettlementRequestScreenState extends State<SettlementRequestScreen> {
                 right: 20,
                 child: SafeArea(
                   child: PremiumIconButton(
+                    semanticLabel: 'Close image',
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(Icons.close_rounded, color: Colors.white),
                   ),

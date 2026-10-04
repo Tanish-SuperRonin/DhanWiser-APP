@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dhanwiser_fixed/utils/formatters.dart';
+
 import '../theme/colors.dart';
 import 'package:dhanwiser_fixed/theme/text_styles.dart';
 import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
@@ -219,7 +221,7 @@ class ExpenseDetailScreen extends StatelessWidget {
                             final owed = amountOwed is num
                                 ? amountOwed.toDouble()
                                 : double.tryParse(amountOwed.toString()) ?? 0;
-                            displayAmount = '₹${owed.toStringAsFixed(2)}';
+                            displayAmount = CurrencyFormatter.formatDecimal(owed);
                           } else {
                             displayAmount = splitAmount.startsWith('₹')
                                 ? splitAmount

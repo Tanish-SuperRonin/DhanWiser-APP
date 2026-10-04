@@ -15,14 +15,15 @@ abstract final class DhanWiserTokens {
   static const EdgeInsets pagePaddingWide =
       EdgeInsets.symmetric(horizontal: 24);
 
-  static const BorderRadius radiusSmall = BorderRadius.all(Radius.circular(10));
+  static const BorderRadius radiusSmall = BorderRadius.all(Radius.circular(12));
   static const BorderRadius radiusMedium =
-      BorderRadius.all(Radius.circular(16));
+      BorderRadius.all(Radius.circular(18));
   static const BorderRadius radiusLarge = BorderRadius.all(Radius.circular(24));
+  static const BorderRadius radiusPill = BorderRadius.all(Radius.circular(100));
   static const BorderRadius radiusSheet =
-      BorderRadius.vertical(top: Radius.circular(28));
+      BorderRadius.vertical(top: Radius.circular(32));
 
-  static const Duration motionFast = Duration(milliseconds: 160);
-  static const Duration motionStandard = Duration(milliseconds: 240);
+  static const Duration motionFast = Duration(milliseconds: 180);
+  static const Duration motionStandard = Duration(milliseconds: 280);
   static const Curve motionCurve = Curves.easeOutCubic;
 }

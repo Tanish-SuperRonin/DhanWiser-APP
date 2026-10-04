@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import '../theme/iconly_icons.dart';
 import '../theme/colors.dart';
-import 'package:dhanwiser_fixed/theme/text_styles.dart';
+import '../theme/text_styles.dart';
 import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
 /// A swipeable row widget that reveals Edit and Delete actions
@@ -104,7 +105,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.warning_rounded,
+                IconlyBold.danger,
                 color: DhanWiserColors.of(context).negative,
                 size: 32,
               ),
@@ -225,7 +226,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                                   Border.all(color: DhanWiserColors.of(context).outline),
                             ),
                             child: Icon(
-                              Icons.edit_rounded,
+                              IconlyBold.edit,
                               color: DhanWiserColors.of(context).textPrimary,
                               size: 20,
                             ),
@@ -261,7 +262,7 @@ class _SwipeableExpenseRowState extends State<SwipeableExpenseRow>
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
-                              Icons.delete_rounded,
+                              IconlyBold.delete,
                               color: Colors.white,
                               size: 20,
                             ),

@@ -255,6 +255,26 @@ class ApiClient {
     return _processResponse(response);
   }
 
+
+  static Timer? _keepAliveTimer;
+
+  static void startKeepAlive() {
+    _keepAliveTimer?.cancel();
+    // Ping every 10 minutes (600 seconds)
+    _keepAliveTimer = Timer.periodic(const Duration(minutes: 10), (_) async {
+      try {
+        await http.get(Uri.parse('$baseUrl/health')).timeout(const Duration(seconds: 10));
+      } catch (_) {
+        // Ignore errors for the keep-alive ping
+      }
+    });
+  }
+
+  static void stopKeepAlive() {
+    _keepAliveTimer?.cancel();
+    _keepAliveTimer = null;
+  }
+
   // Process response
   static Map<String, dynamic> _processResponse(http.Response response) {
     final dynamic decodedBody;

@@ -32,19 +32,31 @@ class _DhanWiserSurfaceState extends State<DhanWiserSurface> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = DhanWiserColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final surface = Container(
       margin: widget.margin,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: widget.tint ?? DhanWiserColors.of(context).surfaceContainer,
+        color: widget.tint ?? colors.surfaceContainer,
         borderRadius: widget.radius,
-        border: Border.all(color: DhanWiserColors.of(context).outlineVariant),
+        border: Border.all(color: colors.outlineVariant, width: 1.0),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: const Color(0x060F172A),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: widget.child,
     );
     if (widget.onTap == null) return surface;
     return AnimatedScale(
-      scale: _pressed ? .985 : 1,
+      scale: _pressed ? .982 : 1,
       duration: DhanWiserTokens.motionFast,
       curve: DhanWiserTokens.motionCurve,
       child: Material(
@@ -53,8 +65,8 @@ class _DhanWiserSurfaceState extends State<DhanWiserSurface> {
           onTap: widget.onTap,
           onHighlightChanged: (pressed) => setState(() => _pressed = pressed),
           borderRadius: widget.radius,
-          splashColor: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.08),
-          highlightColor: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.04),
+          splashColor: colors.primaryFixed.withValues(alpha: 0.08),
+          highlightColor: colors.primaryFixed.withValues(alpha: 0.04),
           child: surface,
         ),
       ),

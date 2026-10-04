@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dhanwiser_fixed/utils/formatters.dart';
+
 import '../theme/colors.dart';
 import 'package:dhanwiser_fixed/theme/text_styles.dart';
 import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
@@ -103,7 +105,7 @@ class SettlementSuccessfulScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '₹${amount.toStringAsFixed(0)}',
+                              CurrencyFormatter.formatCompact(amount),
                               style: DhanWiserTextStyles.displayLarge(context)
                                   .copyWith(
                                       color: DhanWiserColors.of(context).primary,

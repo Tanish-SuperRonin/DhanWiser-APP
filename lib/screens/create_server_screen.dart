@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme/colors.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../models/server_model.dart';
 import '../providers/server_provider.dart';
-import 'package:dhanwiser_fixed/theme/text_styles.dart';
-import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
+import '../theme/colors.dart';
+import '../theme/iconly_icons.dart';
+import '../theme/text_styles.dart';
+import '../widgets/bouncing_button.dart';
 
 class CreateServerScreen extends StatefulWidget {
   const CreateServerScreen({super.key});
@@ -346,23 +351,24 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
                         setState(() => _isCreating = true);
 
                         final scaffold = ScaffoldMessenger.of(context);
-                        final nav = Navigator.of(context);
 
                         try {
                           final serverProv = Provider.of<ServerProvider>(
                               context,
                               listen: false);
-                          // We pass _isPrivate: false by default as the UI doesn't have it anymore
                           final success = await serverProv.createServer(name,
                               isPrivate: false);
                           if (mounted) {
                             if (success) {
-                              scaffold.showSnackBar(
-                                SnackBar(
-                                    content: Text('$name created!'),
-                                    backgroundColor: DhanWiserColors.of(context).mint),
-                              );
-                              nav.pop();
+                              ServerModel? created;
+                              for (final s in serverProv.servers) {
+                                if (s.name.toLowerCase() == name.toLowerCase()) {
+                                  created = s;
+                                  break;
+                                }
+                              }
+                              final newId = created?.id ?? 0;
+                              _showGroupCreatedCelebration(context, newId, name);
                             } else {
                               scaffold.showSnackBar(
                                 SnackBar(
@@ -417,6 +423,211 @@ class _CreateServerScreenState extends State<CreateServerScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showGroupCreatedCelebration(BuildContext context, int serverId, String groupName) {
+    final colors = DhanWiserColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [colors.primaryFixed, colors.secondary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colors.primaryFixed.withValues(alpha: 0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(IconlyBold.shieldDone, color: Colors.white, size: 34),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Group Ready!',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '“$groupName” was created. Invite friends now so everyone is in sync.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    color: colors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                // Option 1: Find & Invite Friends on DhanWiser
+                Material(
+                  color: isDark ? colors.surfaceContainer : colors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.pop(context);
+                      Navigator.pushNamed(
+                        context,
+                        '/friend-discovery',
+                        arguments: {
+                          'serverId': serverId,
+                          'serverName': groupName,
+                        },
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: colors.primaryFixed.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(IconlyBold.addUser, color: colors.primaryFixed, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Invite Friends by @Username',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  'Search & send instant in-app invites',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(IconlyLight.arrowRight2, size: 18, color: colors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Option 2: Share Invite Link
+                Material(
+                  color: isDark ? colors.surfaceContainer : colors.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      Share.share(
+                        'Join my "$groupName" group on DhanWiser to split expenses easily!\n'
+                        'Group code: $serverId\n'
+                        'Download or join here: https://dhanwiser.vercel.app/join/$serverId',
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: colors.emerald.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(Icons.share_rounded, color: colors.emerald, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Share Invite Link / Code',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  'Share code #$serverId via WhatsApp or Messages',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(IconlyLight.arrowRight2, size: 18, color: colors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                // Button 3: Open Group Directly
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.pop(context);
+                      Navigator.pushNamed(
+                        context,
+                        '/server-detail',
+                        arguments: {
+                          'serverId': serverId,
+                          'serverName': groupName,
+                          'members': '1 member',
+                        },
+                      );
+                    },
+                    child: const Text('Go to Group'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

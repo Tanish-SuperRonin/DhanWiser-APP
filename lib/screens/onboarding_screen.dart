@@ -176,7 +176,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               TextSpan(text: item['title1'] as String),
                               TextSpan(
                                 text: item['title2'] as String,
-                                style: TextStyle(color: itemColor),
+                                style: DhanWiserTextStyles.headline2(context).copyWith(color: itemColor),
                               ),
                             ],
                           ),

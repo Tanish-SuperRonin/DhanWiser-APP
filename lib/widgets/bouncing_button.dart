@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 /// Shrinks slightly (to 96%) very quickly (100ms) with light haptic feedback.
 class BouncingButton extends StatefulWidget {
   final Widget child;
+  final String? semanticLabel;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final double scaleFactor;
@@ -13,6 +14,7 @@ class BouncingButton extends StatefulWidget {
   const BouncingButton({
     super.key,
     required this.child,
+    this.semanticLabel,
     this.onTap,
     this.onLongPress,
     this.scaleFactor = 0.96, // Very subtle scale, not cheap/exaggerated
@@ -85,10 +87,20 @@ class _BouncingButtonState extends State<BouncingButton>
           widget.onLongPress!();
         }
       },
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
-      ),
+      child: widget.semanticLabel != null 
+          ? Semantics(
+              label: widget.semanticLabel,
+              button: true,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: widget.child,
+              ),
+            )
+          : ScaleTransition(
+              scale: _scaleAnimation,
+              child: widget.child,
+            ),
+
     );
   }
 }
@@ -99,6 +111,7 @@ class _BouncingButtonState extends State<BouncingButton>
 // ============================================================================
 
 class PremiumElevatedButton extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -106,6 +119,7 @@ class PremiumElevatedButton extends StatelessWidget {
 
   const PremiumElevatedButton({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -115,6 +129,7 @@ class PremiumElevatedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -130,6 +145,7 @@ class PremiumElevatedButton extends StatelessWidget {
 }
 
 class PremiumElevatedButtonIcon extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -138,6 +154,7 @@ class PremiumElevatedButtonIcon extends StatelessWidget {
 
   const PremiumElevatedButtonIcon({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -148,6 +165,7 @@ class PremiumElevatedButtonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -164,6 +182,7 @@ class PremiumElevatedButtonIcon extends StatelessWidget {
 }
 
 class PremiumTextButton extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -171,6 +190,7 @@ class PremiumTextButton extends StatelessWidget {
 
   const PremiumTextButton({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -180,6 +200,7 @@ class PremiumTextButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -195,6 +216,7 @@ class PremiumTextButton extends StatelessWidget {
 }
 
 class PremiumTextButtonIcon extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -203,6 +225,7 @@ class PremiumTextButtonIcon extends StatelessWidget {
 
   const PremiumTextButtonIcon({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -213,6 +236,7 @@ class PremiumTextButtonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -229,6 +253,7 @@ class PremiumTextButtonIcon extends StatelessWidget {
 }
 
 class PremiumOutlinedButton extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -236,6 +261,7 @@ class PremiumOutlinedButton extends StatelessWidget {
 
   const PremiumOutlinedButton({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -245,6 +271,7 @@ class PremiumOutlinedButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -260,6 +287,7 @@ class PremiumOutlinedButton extends StatelessWidget {
 }
 
 class PremiumOutlinedButtonIcon extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -268,6 +296,7 @@ class PremiumOutlinedButtonIcon extends StatelessWidget {
 
   const PremiumOutlinedButtonIcon({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -278,6 +307,7 @@ class PremiumOutlinedButtonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -294,6 +324,7 @@ class PremiumOutlinedButtonIcon extends StatelessWidget {
 }
 
 class PremiumFilledButton extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -301,6 +332,7 @@ class PremiumFilledButton extends StatelessWidget {
 
   const PremiumFilledButton({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -310,6 +342,7 @@ class PremiumFilledButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -325,6 +358,7 @@ class PremiumFilledButton extends StatelessWidget {
 }
 
 class PremiumFilledButtonIcon extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final VoidCallback? onLongPress;
   final ButtonStyle? style;
@@ -333,6 +367,7 @@ class PremiumFilledButtonIcon extends StatelessWidget {
 
   const PremiumFilledButtonIcon({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     this.onLongPress,
     this.style,
@@ -343,6 +378,7 @@ class PremiumFilledButtonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BouncingButton(
+      semanticLabel: semanticLabel,
       onTap: onPressed,
       onLongPress: onLongPress,
       child: IgnorePointer(
@@ -359,6 +395,7 @@ class PremiumFilledButtonIcon extends StatelessWidget {
 }
 
 class PremiumIconButton extends StatelessWidget {
+  final String? semanticLabel;
   final VoidCallback? onPressed;
   final Widget icon;
   final Color? color;
@@ -372,6 +409,7 @@ class PremiumIconButton extends StatelessWidget {
 
   const PremiumIconButton({
     super.key,
+    this.semanticLabel,
     required this.onPressed,
     required this.icon,
     this.color,

@@ -29,6 +29,11 @@ class ServerService {
     return ServerDetail.fromJson(response['data']);
   }
 
+  // Join a server directly via invite link
+  static Future<Map<String, dynamic>> joinServer(int serverId) async {
+    return await ApiClient.post('/servers/$serverId/join', body: {});
+  }
+
   // Invite a user to server
   static Future<Map<String, dynamic>> inviteUser({
     required int serverId,

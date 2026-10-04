@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import '../theme/colors.dart';
@@ -96,14 +98,10 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
     );
   }
 
-  void _copyInviteLink() {
-    Clipboard.setData(
-        ClipboardData(text: 'https://dhanwiser.app/join/${widget.serverId}'));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Invite link copied to clipboard'),
-        backgroundColor: DhanWiserColors.of(context).primaryContainer,
-      ),
+  void _shareInviteLink() {
+    Share.share(
+      'Join my group on DhanWiser! https://dhanwiser.vercel.app/join/${widget.serverId}',
+      subject: 'Join my DhanWiser group',
     );
   }
 
@@ -147,9 +145,9 @@ class _GroupSettingsScreenState extends State<GroupSettingsScreen> {
             },
           ),
           _buildSettingsItem(
-            icon: Icons.link_rounded,
-            title: 'Copy Invite Link',
-            onTap: _copyInviteLink,
+            icon: Icons.share_rounded,
+            title: 'Share Invite Link',
+            onTap: _shareInviteLink,
           ),
           if (widget.isAdmin) ...[
             SizedBox(height: 24),

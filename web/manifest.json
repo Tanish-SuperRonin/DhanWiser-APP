@@ -1,11 +1,11 @@
 {
-    "name": "dhanwiser_fixed",
-    "short_name": "dhanwiser_fixed",
+    "name": "DhanWiser",
+    "short_name": "DhanWiser",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Split expenses seamlessly with your groups on DhanWiser.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

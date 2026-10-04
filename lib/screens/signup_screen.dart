@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../theme/iconly_icons.dart';
 import 'package:provider/provider.dart';
+import '../utils/validators.dart';
 import '../providers/auth_provider.dart';
 import '../theme/colors.dart';
-import 'package:dhanwiser_fixed/theme/text_styles.dart';
-import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
+import '../theme/text_styles.dart';
+import '../widgets/bouncing_button.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -52,313 +54,372 @@ class _SignupScreenState extends State<SignupScreen> {
 
   InputDecoration _inputDeco({
     required String hint,
+    required DhanWiserColors colors,
     Widget? prefix,
     Widget? suffix,
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: DhanWiserTextStyles.bodyRegular(context)
-          .copyWith(color: DhanWiserColors.of(context).textDisabled),
       prefixIcon: prefix,
       suffixIcon: suffix,
       filled: true,
-      fillColor: DhanWiserColors.of(context).surfaceContainer,
+      fillColor: colors.surfaceContainer,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.cardBorder),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.of(context).outline),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.cardBorder),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.of(context).primary, width: 2),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.of(context).negative),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.carmine),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: DhanWiserColors.of(context).negative, width: 2),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: colors.carmine, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = DhanWiserColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: DhanWiserColors.of(context).background,
+      backgroundColor: colors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 20),
-
-                // ── D Logo (centered) ──
-                Center(
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: DhanWiserColors.of(context).primary,
-                      shape: BoxShape.circle,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Form(
+              key: _formKey,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ── Brand Monogram & Header ──
+                    Center(
+                      child: Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark ? colors.card : const Color(0xFF0F172A),
+                          border: Border.all(
+                            color: colors.cardBorder,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'D',
+                            style: DhanWiserTextStyles.headline1(context).copyWith(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? colors.primary : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: Center(
+                    const SizedBox(height: 12),
+                    Center(
                       child: Text(
-                        'D',
-                        style: DhanWiserTextStyles.headline2(context)
-                            .copyWith(color: DhanWiserColors.of(context).background),
+                        'DhanWiser',
+                        style: DhanWiserTextStyles.headline2(context).copyWith(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    'DhanWiser',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge!
-                        .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  ),
-                ),
-                SizedBox(height: 32),
+                    const SizedBox(height: 28),
 
-                // ── Title ──
-                Text(
-                  'Create account.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium!
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Join your friends on DhanWiser',
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textSecondary),
-                ),
-                SizedBox(height: 28),
-
-                // ── Error ──
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    if (auth.error == null) return const SizedBox.shrink();
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 20),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                    // ── Sign Up Card Container ──
+                    Container(
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: DhanWiserColors.of(context).negativeSoft,
-                        borderRadius: BorderRadius.circular(12),
+                        color: colors.card,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: colors.cardBorder),
+                        boxShadow: isDark
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline_rounded,
-                              color: DhanWiserColors.of(context).negative, size: 18),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              auth.error!,
-                              style: DhanWiserTextStyles.overline(context)
-                                  .copyWith(
-                                color: DhanWiserColors.of(context).negative,
+                          Text(
+                            'Create Account',
+                            style: DhanWiserTextStyles.title1(context).copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Join your friends and manage group splits seamlessly',
+                            style: DhanWiserTextStyles.caption(context).copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // ── Error Banner ──
+                          Consumer<AuthProvider>(
+                            builder: (context, auth, _) {
+                              if (auth.error == null) return const SizedBox.shrink();
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 18),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: colors.carmine.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: colors.carmine.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error_outline_rounded, color: colors.carmine, size: 18),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        auth.error!,
+                                        style: DhanWiserTextStyles.caption(context).copyWith(
+                                          color: colors.carmine,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+
+                          // ── Full Name ──
+                          _buildLabel('FULL NAME', colors),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _fullNameController,
+                            style: DhanWiserTextStyles.bodyRegular(context).copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDeco(
+                              hint: 'Alex Sharma',
+                              colors: colors,
+                              prefix: Icon(IconlyLight.profile, color: colors.textSecondary, size: 20),
+                            ),
+                            validator: (v) => Validators.notEmpty(v, 'Full Name'),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── Username ──
+                          _buildLabel('USERNAME', colors),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _usernameController,
+                            style: DhanWiserTextStyles.bodyRegular(context).copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDeco(
+                              hint: 'alexsharma',
+                              colors: colors,
+                              prefix: Padding(
+                                padding: const EdgeInsets.only(left: 14, right: 8, top: 13),
+                                child: Text(
+                                  '@',
+                                  style: DhanWiserTextStyles.bodyBold(context).copyWith(
+                                    color: colors.textSecondary,
+                                    fontSize: 16,
+                                  ),
+                                ),
                               ),
                             ),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Username is required';
+                              if (v.length < 3) return 'At least 3 characters';
+                              if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) {
+                                return 'Letters, numbers, and underscores only';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── Email ──
+                          _buildLabel('EMAIL ADDRESS', colors),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            style: DhanWiserTextStyles.bodyRegular(context).copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDeco(
+                              hint: 'alex@example.com',
+                              colors: colors,
+                              prefix: Icon(IconlyLight.message, color: colors.textSecondary, size: 20),
+                            ),
+                            validator: Validators.email,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── Password ──
+                          _buildLabel('PASSWORD', colors),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: DhanWiserTextStyles.bodyRegular(context).copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDeco(
+                              hint: '••••••••',
+                              colors: colors,
+                              prefix: Icon(IconlyLight.lock, color: colors.textSecondary, size: 20),
+                              suffix: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? IconlyLight.hide : IconlyLight.show,
+                                  color: colors.textSecondary,
+                                  size: 20,
+                                ),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ),
+                            validator: Validators.password,
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── UPI ID (Optional) ──
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildLabel('UPI ID', colors),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colors.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'OPTIONAL',
+                                  style: DhanWiserTextStyles.overline(context).copyWith(
+                                    color: colors.primary,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _upiController,
+                            style: DhanWiserTextStyles.bodyRegular(context).copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDeco(
+                              hint: 'alex@okhdfcbank',
+                              colors: colors,
+                              prefix: Icon(IconlyLight.wallet, color: colors.emerald, size: 20),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // ── Continue Action Button ──
+                          Consumer<AuthProvider>(
+                            builder: (context, auth, _) {
+                              return BouncingButton(
+                                onTap: auth.isLoading ? null : _signup,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    color: isDark ? colors.primary : const Color(0xFF0F172A),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: (isDark ? colors.primary : const Color(0xFF0F172A))
+                                            .withValues(alpha: 0.2),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: auth.isLoading
+                                      ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.2,
+                                            color: isDark ? colors.background : Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          'Create My Account',
+                                          style: DhanWiserTextStyles.buttonLarge(context).copyWith(
+                                            color: isDark ? colors.background : Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
-                    );
-                  },
-                ),
-
-                // ── Full Name ──
-                _buildLabel('FULL NAME'),
-                SizedBox(height: 8),
-                TextFormField(
-                  controller: _fullNameController,
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  decoration: _inputDeco(hint: 'e.g. Smit Nayi'),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Full name is required' : null,
-                ),
-                SizedBox(height: 16),
-
-                // ── Username ──
-                _buildLabel('USERNAME'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _usernameController,
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  decoration: _inputDeco(
-                    hint: '@smitnayi',
-                    prefix: Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 0),
-                      child: Text(
-                        '@',
-                        style: DhanWiserTextStyles.bodyRegular(context)
-                            .copyWith(color: DhanWiserColors.of(context).textDisabled),
-                      ),
                     ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Username is required';
-                    if (v.length < 3) return 'At least 3 characters';
-                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(v)) {
-                      return 'Only letters, numbers, and underscores';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Others find you by this',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall!
-                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
-                ),
-                SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                // ── Email ──
-                _buildLabel('EMAIL'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  decoration: _inputDeco(hint: 'smit@example.com'),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Email is required';
-                    if (!v.contains('@')) return 'Enter a valid email';
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // ── Password ──
-                _buildLabel('PASSWORD'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  decoration: _inputDeco(
-                    hint: '••••••••',
-                    suffix: PremiumIconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: DhanWiserColors.of(context).textDisabled,
-                        size: 22,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Password is required';
-                    if (v.length < 6) return 'At least 6 characters';
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // ── UPI ID (optional) — highlighted in amber ──
-                Text(
-                  'UPI ID (OPTIONAL)',
-                  style: DhanWiserTextStyles.overline(context).copyWith(
-                      color: DhanWiserColors.of(context).primary, letterSpacing: 1),
-                ),
-                SizedBox(height: 8),
-                TextFormField(
-                  controller: _upiController,
-                  style: DhanWiserTextStyles.bodyRegular(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  decoration: _inputDeco(hint: 'name@okbank'),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Add later in settings. We encrypt and never expose this.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall!
-                      .copyWith(color: DhanWiserColors.of(context).textDisabled),
-                ),
-                SizedBox(height: 28),
-
-                // ── Continue Button ──
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: PremiumFilledButton(
-                        onPressed: auth.isLoading ? null : _signup,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: DhanWiserColors.of(context).primary,
-                          foregroundColor: DhanWiserColors.of(context).background,
-                          disabledBackgroundColor:
-                              DhanWiserColors.of(context).primary.withValues(alpha: 0.5),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                    // ── Sign In Navigation ──
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Already have an account?',
+                          style: DhanWiserTextStyles.caption(context).copyWith(
+                            color: colors.textSecondary,
+                          ),
                         ),
-                        child: auth.isLoading
-                            ? SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  color: DhanWiserColors.of(context).background,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Text(
-                                'Continue',
-                                style: Theme.of(context).textTheme.titleMedium!,
-                              ),
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(height: 24),
-
-                // ── Login link ──
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account?',
-                      style: DhanWiserTextStyles.caption(context)
-                          .copyWith(color: DhanWiserColors.of(context).textSecondary),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                          child: Text(
+                            'Sign In',
+                            style: DhanWiserTextStyles.caption(context).copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () =>
-                          Navigator.pushReplacementNamed(context, '/login'),
-                      child: Text(
-                        'Sign In',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall!
-                            .copyWith(color: DhanWiserColors.of(context).primary),
-                      ),
-                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
-                SizedBox(height: 32),
-              ],
+              ),
             ),
           ),
         ),
@@ -366,11 +427,13 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _buildLabel(String label) {
+  Widget _buildLabel(String text, DhanWiserColors colors) {
     return Text(
-      label,
-      style: DhanWiserTextStyles.overline(context)
-          .copyWith(color: DhanWiserColors.of(context).textSecondary, letterSpacing: 1),
+      text,
+      style: DhanWiserTextStyles.overline(context).copyWith(
+        color: colors.textSecondary,
+        letterSpacing: 0.8,
+      ),
     );
   }
 }

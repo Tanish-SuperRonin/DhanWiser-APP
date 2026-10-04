@@ -1,12 +1,20 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
+import 'package:dhanwiser_fixed/utils/formatters.dart';
+import 'package:dhanwiser_fixed/widgets/backend_connection_view.dart';
+import 'package:dhanwiser_fixed/widgets/dhanwiser_charts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
-import '../widgets/bouncing_button.dart';
-import '../widgets/shimmer_loading.dart';
+import '../theme/design_tokens.dart';
+import '../theme/iconly_icons.dart';
 import '../utils/json_parsers.dart';
 import '../providers/server_provider.dart';
 import '../providers/auth_provider.dart';
@@ -59,7 +67,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_onTabChanged);
     _expenseScrollController.addListener(_onExpenseScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -80,11 +88,11 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     final index = _tabController.index;
     if (!_loadedTabs.contains(index)) {
       _loadedTabs.add(index);
-      if (index == 1) {
+      if (index == 2) {
         // Balances tab
         _loadBalances();
       }
-      // Tab 2 (Members) data comes from server details which is already loaded
+      // Tab 1 (Analytics) uses expenses list, Tab 3 (Members) uses server details
     }
   }
 
@@ -128,7 +136,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     _loadingExpenses = false;
 
     // Load balances only if that tab has been visited, otherwise defer
-    if (_loadedTabs.contains(1)) {
+    if (_loadedTabs.contains(2)) {
       await _loadBalances();
     } else {
       _loadingBalances = false;
@@ -430,18 +438,6 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? DhanWiserColors.of(context).outlineVariant
-                            : DhanWiserColors.of(context).outline,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 20),
                   Text(
                     'Settle Up',
@@ -450,7 +446,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'You owe ₹${suggestion.amount.toStringAsFixed(0)} to ${suggestion.toUsername}',
+                    'You owe ${CurrencyFormatter.formatCompact(suggestion.amount)} to ${suggestion.toUsername}',
                     style: DhanWiserTextStyles.bodyRegular(context)
                         .copyWith(color: sub),
                   ),
@@ -776,7 +772,46 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
               ),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+                  child: GestureDetector(
+                    onTap: () async {
+                      await Navigator.pushNamed(
+                        context,
+                        '/friend-discovery',
+                        arguments: {
+                          'serverId': widget.serverId,
+                          'serverName': widget.serverName,
+                        },
+                      );
+                      await _loadData();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(IconlyBold.addUser,
+                              color: Colors.white, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Invite',
+                            style:
+                                DhanWiserTextStyles.overline(context).copyWith(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
                   child: GestureDetector(
                     onTap: () async {
                       await Navigator.pushNamed(
@@ -840,7 +875,22 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                           ),
                         ),
                         onSelected: (value) {
-                          if (value == 'reminder-settings') {
+                          if (value == 'invite-members') {
+                            Navigator.pushNamed(
+                              context,
+                              '/friend-discovery',
+                              arguments: {
+                                'serverId': widget.serverId,
+                                'serverName': groupName,
+                              },
+                            );
+                          } else if (value == 'share-link') {
+                            Share.share(
+                              'Join my "$groupName" group on DhanWiser to split expenses easily!\n'
+                              'Group code: ${widget.serverId}\n'
+                              'Download or join here: https://dhanwiser.vercel.app/join/${widget.serverId}',
+                            );
+                          } else if (value == 'reminder-settings') {
                             _showReminderSettingsSheet();
                           } else if (value == 'delete-group') {
                             _confirmDeleteOrLeave(
@@ -855,6 +905,33 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                           }
                         },
                         itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'invite-members',
+                            child: Row(
+                              children: [
+                                Icon(IconlyBold.addUser, size: 18, color: DhanWiserColors.of(context).primary),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Invite Friends',
+                                  style: DhanWiserTextStyles.caption(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'share-link',
+                            child: Row(
+                              children: [
+                                Icon(Icons.share_rounded, size: 18, color: DhanWiserColors.of(context).emerald),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Share Group Link',
+                                  style: DhanWiserTextStyles.caption(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuDivider(),
                           if (isAdmin)
                             PopupMenuItem(
                               value: 'reminder-settings',
@@ -974,10 +1051,17 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     indicatorWeight: 3,
                     indicatorSize: TabBarIndicatorSize.label,
                     dividerColor: Colors.transparent,
-                    labelStyle: Theme.of(context).textTheme.titleSmall!,
-                    unselectedLabelStyle: DhanWiserTextStyles.caption(context),
+                    labelStyle: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                     tabs: const [
                       Tab(text: 'Expenses'),
+                      Tab(text: 'Analytics'),
                       Tab(text: 'Balances'),
                       Tab(text: 'Members'),
                     ],
@@ -991,6 +1075,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
           controller: _tabController,
           children: [
             _buildExpensesTab(isDark, surface, text, sub),
+            _buildAnalyticsTab(isDark, surface, text, sub),
             _buildBalancesTab(isDark, surface, text, sub),
             _buildMembersTab(isDark, surface, text, sub),
           ],
@@ -999,21 +1084,183 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
     );
   }
 
+  // ── GROUP ANALYTICS TAB ──
+  Widget _buildAnalyticsTab(bool isDark, Color surface, Color text, Color sub) {
+    if (_loadingExpenses && _expenses.isEmpty) {
+      return BackendConnectionView(
+        title: 'Loading group analytics...',
+        onRetry: _loadData,
+      );
+    }
+
+    if (_expenses.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.insights_rounded,
+        title: 'No group analytics yet',
+        subtitle: 'Add expenses to see spending trends and category breakdown for this group',
+      );
+    }
+
+    // Compute category breakdown and metrics
+    final Map<String, double> categoryMap = {};
+    double totalSpend = 0;
+    double highestExpense = 0;
+
+    for (final exp in _expenses) {
+      totalSpend += exp.totalAmount;
+      if (exp.totalAmount > highestExpense) {
+        highestExpense = exp.totalAmount;
+      }
+      final cat = exp.category != null && exp.category!.isNotEmpty
+          ? exp.category!
+          : _inferCategory(exp.title);
+      categoryMap[cat] = (categoryMap[cat] ?? 0) + exp.totalAmount;
+    }
+
+    final sortedExpenses = List<ExpenseModel>.from(_expenses)
+      ..sort((a, b) => a.expenseDate.compareTo(b.expenseDate));
+
+    final spots = <FlSpot>[];
+    final labels = <String>[];
+    for (int i = 0; i < sortedExpenses.length && i < 7; i++) {
+      spots.add(FlSpot(i.toDouble(), sortedExpenses[i].totalAmount));
+      final d = sortedExpenses[i].expenseDate;
+      labels.add('${d.day}/${d.month}');
+    }
+
+    final colors = DhanWiserColors.of(context);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Stat summary cards
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainer,
+                    borderRadius: DhanWiserTokens.radiusMedium,
+                    border: Border.all(color: colors.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TOTAL SPENT',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '₹${totalSpend.toStringAsFixed(0)}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: colors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainer,
+                    borderRadius: DhanWiserTokens.radiusMedium,
+                    border: Border.all(color: colors.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'LARGEST BILL',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '₹${highestExpense.toStringAsFixed(0)}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: colors.catFood,
+                          letterSpacing: -0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Spending Trend Area Chart
+          SpendingTrendChart(
+            spots: spots.isNotEmpty ? spots : null,
+            xLabels: labels.isNotEmpty ? labels : null,
+            totalAmount: totalSpend,
+            periodLabel: 'Group History',
+            percentageChange: null,
+          ),
+          const SizedBox(height: 20),
+
+          // Category Donut Chart
+          CategoryDonutChart(
+            categoryAmounts: categoryMap,
+            totalAmount: totalSpend,
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  String _inferCategory(String title) {
+    final lower = title.toLowerCase();
+    if (lower.contains('food') || lower.contains('lunch') || lower.contains('dinner') || lower.contains('pizza') || lower.contains('burger') || lower.contains('cafe')) {
+      return 'Food & Dining';
+    }
+    if (lower.contains('cab') || lower.contains('uber') || lower.contains('ola') || lower.contains('flight') || lower.contains('train') || lower.contains('fuel')) {
+      return 'Transport';
+    }
+    if (lower.contains('rent') || lower.contains('flat') || lower.contains('house') || lower.contains('maintenance')) {
+      return 'Rent & Housing';
+    }
+    if (lower.contains('milk') || lower.contains('groc') || lower.contains('supermarket')) {
+      return 'Groceries';
+    }
+    if (lower.contains('wifi') || lower.contains('electric') || lower.contains('bill') || lower.contains('water')) {
+      return 'Utilities';
+    }
+    return 'General & Fun';
+  }
+
   // ── EXPENSES TAB ──
   Widget _buildExpensesTab(bool isDark, Color surface, Color text, Color sub) {
     final cs = Theme.of(context).colorScheme;
     if (_loadingExpenses && _expensePage == 1) {
-      return ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        itemCount: 6,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, __) => ShimmerLoading(
-          child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18))),
-        ),
+      return BackendConnectionView(
+        title: 'Loading expenses...',
+        onRetry: _loadData,
       );
     }
 
@@ -1098,7 +1345,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
               onTap: () {
                 Navigator.pushNamed(context, '/expense-detail', arguments: {
                   'title': e.title,
-                  'amount': '₹${e.totalAmount.toStringAsFixed(2)}',
+                  'amount': CurrencyFormatter.formatDecimal(e.totalAmount),
                   'date':
                       '${e.expenseDate.day}/${e.expenseDate.month}/${e.expenseDate.year}',
                   'paidBy': e.createdByUsername,
@@ -1160,7 +1407,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                       ),
                     ),
                     Text(
-                      '₹${e.totalAmount.toStringAsFixed(0)}',
+                      CurrencyFormatter.formatCompact(e.totalAmount),
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium!
@@ -1187,7 +1434,10 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
   Widget _buildBalancesTab(bool isDark, Color surface, Color text, Color sub) {
     final cs = Theme.of(context).colorScheme;
     if (_loadingBalances) {
-      return Center(child: CircularProgressIndicator(color: cs.primary));
+      return BackendConnectionView(
+        title: 'Loading balances...',
+        onRetry: _loadBalances,
+      );
     }
 
     final authProv = Provider.of<AuthProvider>(context, listen: false);
@@ -1375,7 +1625,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₹${b.balance.abs().toStringAsFixed(0)}',
+                        CurrencyFormatter.formatCompact(b.balance.abs()),
                         style: DhanWiserTextStyles.buttonLarge(context)
                             .copyWith(color: color),
                       ),
@@ -1481,7 +1731,7 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
                         ),
                       ),
                       Text(
-                        '₹${s.amount.toStringAsFixed(0)}',
+                        CurrencyFormatter.formatCompact(s.amount),
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium!
@@ -1514,18 +1764,16 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
   // ── MEMBERS TAB ──
   Widget _buildMembersTab(bool isDark, Color surface, Color text, Color sub) {
-    final cs = Theme.of(context).colorScheme;
     return Consumer2<ServerProvider, AuthProvider>(
       builder: (context, serverProv, authProv, _) {
         if (serverProv.isLoading) {
-          return Center(child: CircularProgressIndicator(color: cs.primary));
+          return BackendConnectionView(
+            title: 'Loading group details...',
+            onRetry: () => serverProv.fetchServerDetails(widget.serverId),
+          );
         }
 
         final members = serverProv.currentServerDetail?.members ?? [];
-        final currentUserId = authProv.currentUser?.id;
-        final isAdmin = members.any(
-          (m) => m.userId == currentUserId && m.role == 'admin',
-        );
 
         if (members.isEmpty) {
           return _buildEmptyState(
@@ -1545,40 +1793,107 @@ class _ServerDetailScreenState extends State<ServerDetailScreen>
 
         return Column(
           children: [
-            // ── Invite button (admin only) ──
-            if (isAdmin)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: PremiumElevatedButtonIcon(
-                    onPressed: () async {
-                      await Navigator.pushNamed(
-                        context,
-                        '/friend-discovery',
-                        arguments: {
-                          'serverId': widget.serverId,
-                          'serverName': widget.serverName
-                        },
+            // ── Invite & Share Actions (Available to all members) ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 46,
+                          child: PremiumElevatedButtonIcon(
+                            onPressed: () async {
+                              await Navigator.pushNamed(
+                                context,
+                                '/friend-discovery',
+                                arguments: {
+                                  'serverId': widget.serverId,
+                                  'serverName': widget.serverName
+                                },
+                              );
+                              await _loadData();
+                            },
+                            icon: const Icon(IconlyBold.addUser, size: 18),
+                            label: Text(
+                              'Invite Friends',
+                              style: Theme.of(context).textTheme.titleSmall!,
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: DhanWiserColors.of(context).primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 46,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Share.share(
+                              'Join my "${widget.serverName}" group on DhanWiser to split expenses easily!\n'
+                              'Group code: ${widget.serverId}\n'
+                              'Download or join here: https://dhanwiser.vercel.app/join/${widget.serverId}',
+                            );
+                          },
+                          icon: const Icon(Icons.share_rounded, size: 18),
+                          label: const Text('Share Link'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: DhanWiserColors.of(context).primary,
+                            side: BorderSide(
+                              color: DhanWiserColors.of(context).primary.withValues(alpha: 0.4),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: widget.serverId.toString()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Group code #${widget.serverId} copied to clipboard!'),
+                          backgroundColor: DhanWiserColors.of(context).mint,
+                          duration: const Duration(seconds: 2),
+                        ),
                       );
-                      await _loadData();
                     },
-                    icon: const Icon(Icons.person_add_rounded, size: 18),
-                    label: Text(
-                      'Invite Members',
-                      style: Theme.of(context).textTheme.titleSmall!,
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: DhanWiserColors.of(context).primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: DhanWiserColors.of(context).primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(IconlyLight.document, size: 14, color: DhanWiserColors.of(context).primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Group Code: #${widget.serverId} (Tap to copy)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: DhanWiserColors.of(context).primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
+            ),
 
             Expanded(
               child: ListView.builder(

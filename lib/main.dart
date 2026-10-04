@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
-import "package:google_fonts/google_fonts.dart";
 import "package:shared_preferences/shared_preferences.dart";
 import "package:dhanwiser_fixed/theme/app_theme.dart";
 
@@ -14,7 +13,6 @@ import "package:dhanwiser_fixed/providers/theme_provider.dart";
 import "package:dhanwiser_fixed/screens/onboarding_screen.dart";
 import "package:dhanwiser_fixed/screens/login_screen.dart";
 import "package:dhanwiser_fixed/screens/signup_screen.dart";
-import "package:dhanwiser_fixed/screens/home_screen.dart";
 import "package:dhanwiser_fixed/screens/main_shell.dart";
 import "package:dhanwiser_fixed/screens/create_server_screen.dart";
 import "package:dhanwiser_fixed/screens/server_detail_screen.dart";
@@ -29,8 +27,17 @@ import "package:dhanwiser_fixed/screens/expense_detail_screen.dart";
 import "package:dhanwiser_fixed/screens/settlement_successful_screen.dart";
 import "package:dhanwiser_fixed/screens/group_settings_screen.dart";
 import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
+import 'package:dhanwiser_fixed/widgets/backend_connection_view.dart';
+import 'package:dhanwiser_fixed/services/deep_link_service.dart';
+import 'package:dhanwiser_fixed/screens/join_group_screen.dart';
+import 'package:dhanwiser_fixed/widgets/offline_banner.dart';
+
+
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  DeepLinkService().initialize();
+
   // Prevent white screen crashes by rendering a graceful error boundary UI
   ErrorWidget.builder = (FlutterErrorDetails details) {
     return Material(
@@ -107,6 +114,7 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProv, _) => MaterialApp(
+          navigatorKey: DeepLinkService().navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'DhanWiser',
 
@@ -116,13 +124,15 @@ class MyApp extends StatelessWidget {
           themeMode: themeProv.themeMode,
 
           builder: (context, child) {
-            return ScrollConfiguration(
-              behavior: const MaterialScrollBehavior().copyWith(
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
+            return OfflineBanner(
+              child: ScrollConfiguration(
+                behavior: const MaterialScrollBehavior().copyWith(
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
                 ),
+                child: child!,
               ),
-              child: child!,
             );
           },
 
@@ -154,6 +164,12 @@ class MyApp extends StatelessWidget {
               return 0.0;
             }
 
+            if (settings.name == '/join') {
+              final args = settings.arguments as Map<String, dynamic>?;
+              page = JoinGroupScreen(
+                serverId: args?['serverId'] ?? 0,
+              );
+            }
             if (settings.name == '/server-detail') {
               final args = settings.arguments as Map<String, dynamic>?;
               page = ServerDetailScreen(
@@ -253,28 +269,11 @@ class AppStartup extends StatefulWidget {
   State<AppStartup> createState() => _AppStartupState();
 }
 
-class _AppStartupState extends State<AppStartup>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulseController;
-  late final Animation<double> _pulseAnimation;
-
+class _AppStartupState extends State<AppStartup> {
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
     _initialize();
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -311,57 +310,11 @@ class _AppStartupState extends State<AppStartup>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: cs.surface,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // M3 branded icon with surface tint
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: cs.onPrimaryContainer,
-                  size: 40,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'DhanWiser',
-              style: GoogleFonts.inter(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: cs.onSurface,
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(
-                color: cs.primary,
-                strokeWidth: 3,
-              ),
-            ),
-          ],
-        ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: BackendConnectionView(
+        onRetry: _initialize,
+        title: 'Starting DhanWiser...',
       ),
     );
   }

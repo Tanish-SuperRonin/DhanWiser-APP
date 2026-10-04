@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/iconly_icons.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
@@ -17,7 +18,7 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Settings'),
         leading: PremiumIconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const Icon(IconlyLight.arrowLeft2),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -76,11 +77,11 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 ListTile(
                   leading:
-                      Icon(Icons.person_outline_rounded, color: cs.primary),
+                      Icon(IconlyLight.profile, color: cs.primary),
                   title: Text('Profile',
                       style: Theme.of(context).textTheme.titleSmall!),
-                  trailing: Icon(Icons.chevron_right_rounded,
-                      color: cs.onSurfaceVariant),
+                  trailing: Icon(IconlyLight.arrowRight2,
+                      color: cs.onSurfaceVariant, size: 18),
                   onTap: () => Navigator.pushNamed(context, '/profile'),
                 ),
                 Divider(
@@ -90,11 +91,11 @@ class SettingsScreen extends StatelessWidget {
                     color: cs.outlineVariant),
                 ListTile(
                   leading:
-                      Icon(Icons.notifications_outlined, color: cs.primary),
+                      Icon(IconlyLight.notification, color: cs.primary),
                   title: Text('Notifications',
                       style: Theme.of(context).textTheme.titleSmall!),
-                  trailing: Icon(Icons.chevron_right_rounded,
-                      color: cs.onSurfaceVariant),
+                  trailing: Icon(IconlyLight.arrowRight2,
+                      color: cs.onSurfaceVariant, size: 18),
                   onTap: () => Navigator.pushNamed(context, '/activity'),
                 ),
               ],
@@ -114,11 +115,11 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: Icon(Icons.handshake_outlined, color: cs.primary),
+                  leading: Icon(IconlyLight.swap, color: cs.primary),
                   title: Text('Settlements',
                       style: Theme.of(context).textTheme.titleSmall!),
-                  trailing: Icon(Icons.chevron_right_rounded,
-                      color: cs.onSurfaceVariant),
+                  trailing: Icon(IconlyLight.arrowRight2,
+                      color: cs.onSurfaceVariant, size: 18),
                   onTap: () => Navigator.pushNamed(context, '/settlement'),
                 ),
                 Divider(
@@ -127,7 +128,7 @@ class SettingsScreen extends StatelessWidget {
                     endIndent: 16,
                     color: cs.outlineVariant),
                 ListTile(
-                  leading: Icon(Icons.info_outline_rounded, color: cs.primary),
+                  leading: Icon(IconlyLight.infoSquare, color: cs.primary),
                   title: Text('About DhanWiser',
                       style: Theme.of(context).textTheme.titleSmall!),
                   subtitle: Text(
@@ -137,8 +138,8 @@ class SettingsScreen extends StatelessWidget {
                         .bodySmall!
                         .copyWith(color: cs.onSurfaceVariant),
                   ),
-                  trailing: Icon(Icons.chevron_right_rounded,
-                      color: cs.onSurfaceVariant),
+                  trailing: Icon(IconlyLight.arrowRight2,
+                      color: cs.onSurfaceVariant, size: 18),
                   onTap: () {
                     showAboutDialog(
                       context: context,
@@ -153,7 +154,7 @@ class SettingsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          Icons.account_balance_wallet_rounded,
+                          IconlyBold.wallet,
                           color: cs.onPrimaryContainer,
                           size: 24,
                         ),
@@ -176,7 +177,7 @@ class SettingsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: ListTile(
-              leading: Icon(Icons.logout_rounded, color: cs.error),
+              leading: Icon(IconlyLight.logout, color: cs.error),
               title: Text(
                 'Sign Out',
                 style: Theme.of(context)

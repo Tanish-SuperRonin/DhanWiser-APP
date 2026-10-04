@@ -1,8 +1,13 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../widgets/shimmer_loading.dart';
+import '../theme/iconly_icons.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../services/streak_service.dart';
+import '../widgets/daily_streak_card.dart';
 import '../widgets/dhanwiser_ui.dart';
+import '../widgets/hero_balance_card.dart';
+import '../widgets/dhanwiser_charts.dart';
 import 'package:provider/provider.dart';
 import '../theme/colors.dart';
 import '../providers/auth_provider.dart';
@@ -11,11 +16,10 @@ import '../providers/notification_provider.dart';
 import '../services/expense_service.dart';
 import '../services/cache_service.dart';
 import '../models/balance_model.dart';
+import '../models/expense_model.dart';
+import '../models/paginated_response.dart';
 import '../models/server_model.dart';
 import '../theme/design_tokens.dart';
-import 'friend_discovery_screen.dart';
-import 'activity_screen.dart';
-import 'profile_screen.dart';
 import 'package:dhanwiser_fixed/theme/text_styles.dart';
 import 'package:dhanwiser_fixed/widgets/bouncing_button.dart';
 
@@ -28,11 +32,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  
   bool _loadingBalanceSummary = true;
   double _netBalance = 0;
   double _youOwe = 0;
   double _owedToYou = 0;
+  List<ExpenseModel> _expenses = [];
+  bool _loadingExpenses = true;
+
+  // Analytics chart state
+  int _activeAnalyticsTab = 0; // 0: Trend, 1: Category Breakdown
+  int _chartPeriodIndex = 0; // 0: 7D, 1: 30D, 2: 90D
+  DailyStreakInfo? _streakInfo;
 
   // Debounce refresh
   DateTime? _lastRefreshTime;
@@ -83,7 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       await Future.wait(futures);
-      await _loadBalanceSummary(serverProvider.servers, authProvider);
+      await Future.wait([
+        _loadBalanceSummary(serverProvider.servers, authProvider),
+        _loadExpenseSummary(serverProvider.servers),
+      ]);
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -91,8 +104,44 @@ class _HomeScreenState extends State<HomeScreen> {
         _youOwe = 0;
         _owedToYou = 0;
         _loadingBalanceSummary = false;
+        _loadingExpenses = false;
       });
     }
+  }
+
+  Future<void> _loadExpenseSummary(List<ServerModel> servers) async {
+    if (servers.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _expenses = [];
+          _loadingExpenses = false;
+        });
+      }
+      return;
+    }
+
+    final pages = await Future.wait(servers.map((server) async {
+      try {
+        return await ExpenseService.getServerExpenses(server.id, limit: 100);
+      } catch (_) {
+        return null;
+      }
+    }));
+    final latest = pages
+        .whereType<PaginatedResponse<ExpenseModel>>()
+        .expand((page) => page.items)
+        .toList()
+      ..sort((a, b) => b.expenseDate.compareTo(a.expenseDate));
+
+    if (!mounted) return;
+    setState(() {
+      _expenses = latest;
+      _loadingExpenses = false;
+    });
+
+    StreakService.recordDailyCheckIn(youOwe: _youOwe, owedToYou: _owedToYou).then((info) {
+      if (mounted) setState(() => _streakInfo = info);
+    });
   }
 
   /// Load cached balance summary for instant display.
@@ -187,6 +236,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _owedToYou = owedTotal;
       _loadingBalanceSummary = false;
     });
+
+    StreakService.recordDailyCheckIn(youOwe: oweTotal, owedToYou: owedTotal).then((info) {
+      if (mounted) setState(() => _streakInfo = info);
+    });
   }
 
   @override
@@ -212,10 +265,40 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 16),
               _buildHeader(cs),
-              const SizedBox(height: 32),
-              _buildBalanceCard(cs, isDark),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+              HeroBalanceCard(
+                netBalance: _netBalance,
+                owedToYou: _owedToYou,
+                youOwe: _youOwe,
+                isLoading: _loadingBalanceSummary,
+                onSettleTap: () => _navigateAndRefresh('/settlement'),
+                onAddExpenseTap: () => _navigateAndRefresh('/add-expense'),
+              )
+                  .animate()
+                  .fade(duration: 300.ms)
+                  .slideY(begin: 0.05, end: 0, curve: Curves.easeOutCubic),
+              if (_owedToYou > 0.01 || _youOwe > 0.01) ...[
+                const SizedBox(height: 14),
+                BalanceRatioBar(
+                  owedToYou: _owedToYou,
+                  youOwe: _youOwe,
+                ).animate().fade(duration: 350.ms),
+              ],
+              const SizedBox(height: 16),
+              DailyStreakCard(
+                streakInfo: _streakInfo,
+                onActionTap: () {
+                  if (_youOwe > 0.01 || _owedToYou > 0.01) {
+                    _navigateAndRefresh('/settlement');
+                  } else {
+                    _navigateAndRefresh('/friend-discovery');
+                  }
+                },
+              ).animate().fade(duration: 350.ms).slideY(begin: 0.04, end: 0),
+              const SizedBox(height: 24),
               _buildQuickActionsGrid(cs, isDark),
+              const SizedBox(height: 32),
+              _buildAnalyticsSection(cs, isDark),
               const SizedBox(height: 32),
               _buildGroupsSection(cs, isDark),
               const SizedBox(height: 120),
@@ -238,90 +321,105 @@ class _HomeScreenState extends State<HomeScreen> {
         final initial = (auth.currentUser?.fullName ?? 'U').isNotEmpty
             ? (auth.currentUser?.fullName ?? 'U')[0].toUpperCase()
             : 'U';
+        final firstName = name.split(' ').first;
+
+        final colors = DhanWiserColors.of(context);
 
         return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Profile avatar left
-            GestureDetector(
-              onTap: () => widget.onNavigateTab(4),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: DhanWiserColors.of(context).surface,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getGreeting(),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    firstName,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 29,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.8,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Consumer<NotificationProvider>(
+              builder: (context, notif, _) => Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainer,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.outlineVariant),
+                    ),
+                    child: IconButton(
+                      tooltip: 'Activity and notifications',
+                      onPressed: () => widget.onNavigateTab(2),
+                      icon: Icon(
+                          notif.unreadCount > 0
+                              ? IconlyBold.notification
+                              : IconlyLight.notification,
+                          size: 21,
+                          color: colors.textPrimary),
+                    ),
+                  ),
+                  if (notif.unreadCount > 0)
+                    Positioned(
+                      top: 9,
+                      right: 9,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colors.primaryFixed,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: colors.surface, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Semantics(
+              label: 'Go to Profile',
+              button: true,
+              child: GestureDetector(
+                onTap: () => widget.onNavigateTab(3),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colors.primaryFixed.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: colors.primaryFixed.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  alignment: Alignment.center,
                   child: Text(
                     initial,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          color: DhanWiserColors.of(context).textPrimary,
-                        ),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: colors.textPrimary,
+                    ),
                   ),
                 ),
               ),
-            ),
-
-            // Greeting center
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  _getGreeting(),
-                  style: DhanWiserTextStyles.overline(context)
-                      .copyWith(color: DhanWiserColors.of(context).textSecondary),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  name.split(' ')[0],
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium!
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                ),
-              ],
-            ),
-
-            // Notification bell right
-            Consumer<NotificationProvider>(
-              builder: (context, notif, _) {
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: DhanWiserColors.of(context).surface,
-                        shape: BoxShape.circle,
-                        border:
-                            Border.all(color: DhanWiserColors.of(context).outlineVariant),
-                      ),
-                      child: PremiumIconButton(
-                        onPressed: () =>
-                            widget.onNavigateTab(3),
-                        icon:
-                            const Icon(Icons.notifications_outlined, size: 20),
-                        color: DhanWiserColors.of(context).textPrimary,
-                      ),
-                    ),
-                    if (notif.unreadCount > 0)
-                      Positioned(
-                        top: 10,
-                        right: 12,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: DhanWiserColors.of(context).primaryFixed,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
             ),
           ],
         );
@@ -329,174 +427,256 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceCard(ColorScheme cs, bool isDark) {
-    final netColor = _netBalance < -0.01
-        ? DhanWiserColors.of(context).error
-        : _netBalance > 0.01
-            ? DhanWiserColors.of(context).tertiary
-            : DhanWiserColors.of(context).textPrimary;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: DhanWiserColors.of(context).surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'NET BALANCE',
-                style: Theme.of(context).textTheme.labelSmall!.copyWith(
-                    letterSpacing: 1.0, color: DhanWiserColors.of(context).textSecondary),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: netColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _netBalance < -0.01
-                      ? 'You Owe'
-                      : _netBalance > 0.01
-                          ? 'You Get Back'
-                          : 'Settled',
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall!
-                      .copyWith(color: netColor),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _loadingBalanceSummary
-              ? const ShimmerBox(width: 200, height: 48, borderRadius: 12)
-              : Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    _formatCurrency(_netBalance, withDecimals: true),
-                    style: Theme.of(context)
-                        .textTheme
-                        .displayMedium!
-                        .copyWith(color: netColor, letterSpacing: -1.0),
-                  ),
-                ),
-          const SizedBox(height: 20),
-          Divider(
-              color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.3),
-              height: 1),
-          const SizedBox(height: 16),
-
-          // Detailed Owed / Owe split pills
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.arrow_downward_rounded,
-                            size: 14, color: DhanWiserColors.of(context).tertiary),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Owed to you',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall!
-                              .copyWith(color: DhanWiserColors.of(context).textSecondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatCurrency(_owedToYou),
-                      style: DhanWiserTextStyles.buttonLarge(context)
-                          .copyWith(color: DhanWiserColors.of(context).tertiary),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                  width: 1,
-                  height: 36,
-                  color: DhanWiserColors.of(context).outlineVariant.withValues(alpha: 0.3)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.arrow_upward_rounded,
-                            size: 14, color: DhanWiserColors.of(context).error),
-                        const SizedBox(width: 4),
-                        Text(
-                          'You owe',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall!
-                              .copyWith(color: DhanWiserColors.of(context).textSecondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatCurrency(_youOwe),
-                      style: DhanWiserTextStyles.buttonLarge(context)
-                          .copyWith(color: DhanWiserColors.of(context).error),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    ).animate().fade(duration: 300.ms).slideY(
-        begin: 0.1, end: 0, curve: Curves.easeOutCubic, duration: 300.ms);
-  }
-
   Widget _buildQuickActionsGrid(ColorScheme cs, bool isDark) {
+    final colors = DhanWiserColors.of(context);
     final actions = [
-      _QuickAction('Create', Icons.group_add_rounded,
-          DhanWiserColors.of(context).primaryFixed, '/create-server'),
-      _QuickAction('Expense', Icons.receipt_long_rounded,
-          DhanWiserColors.of(context).secondary, '/add-expense'),
-      _QuickAction('Settle', Icons.handshake_rounded,
-          DhanWiserColors.of(context).tertiaryFixed, '/settlement'),
+      _QuickAction('Find Friends', IconlyBold.addUser, colors.primaryFixed,
+          '/friend-discovery'),
+      _QuickAction('New Group', IconlyBold.user2, colors.secondary,
+          '/create-server'),
+      _QuickAction('Expense', Icons.add_rounded, colors.emerald,
+          '/add-expense'),
+      _QuickAction(
+          'Settle Up', IconlyBold.swap, colors.tertiary, '/settlement'),
     ];
 
     return Row(
       children: actions.map((action) {
         return Expanded(
-          child: DhanWiserSurface(
-            onTap: () => _navigateAndRefresh(action.route),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(action.icon, color: action.color, size: 28),
-                const SizedBox(height: 8),
-                Text(
-                  action.label,
-                  style: DhanWiserTextStyles.overline(context)
-                      .copyWith(color: DhanWiserColors.of(context).textPrimary),
-                  textAlign: TextAlign.center,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: Semantics(
+              label: '${action.label} quick action',
+              button: true,
+              child: DhanWiserSurface(
+                onTap: () => _navigateAndRefresh(action.route),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                radius: DhanWiserTokens.radiusMedium,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: action.color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(action.icon, color: action.color, size: 22),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      action.label,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                        letterSpacing: -0.1,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildAnalyticsSection(ColorScheme cs, bool isDark) {
+    final colors = DhanWiserColors.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'INSIGHTS & TRENDS',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+                color: colors.textSecondary,
+              ),
+            ),
+            // Segmented pill control
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                    color: colors.outlineVariant.withValues(alpha: 0.6)),
+              ),
+              child: Row(
+                children: [
+                  _buildTabOption(0, 'Trends', colors),
+                  _buildTabOption(1, 'Categories', colors),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _loadingExpenses
+              ? _buildInsightsLoading(colors)
+              : _expenses.isEmpty
+                  ? _buildInsightsEmpty(colors)
+                  : _activeAnalyticsTab == 0
+                      ? _buildSpendingTrend()
+                      : _buildCategoryBreakdown(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpendingTrend() {
+    final days = [7, 30, 90][_chartPeriodIndex];
+    final today = DateTime.now();
+    final end = DateTime(today.year, today.month, today.day, 23, 59, 59);
+    final start = DateTime(today.year, today.month, today.day)
+        .subtract(Duration(days: days - 1));
+    final inRange = _expenses
+        .where((expense) =>
+            !expense.expenseDate.isBefore(start) &&
+            !expense.expenseDate.isAfter(end))
+        .toList();
+    const bucketCount = 7;
+    final spots = <FlSpot>[];
+    final labels = <String>[];
+    for (var i = 0; i < bucketCount; i++) {
+      final from = start.add(Duration(days: (days * i / bucketCount).floor()));
+      final to = i == bucketCount - 1
+          ? end.add(const Duration(seconds: 1))
+          : start.add(Duration(days: (days * (i + 1) / bucketCount).floor()));
+      final amount = inRange
+          .where((expense) =>
+              !expense.expenseDate.isBefore(from) &&
+              expense.expenseDate.isBefore(to))
+          .fold<double>(0, (sum, expense) => sum + expense.totalAmount);
+      spots.add(FlSpot(i.toDouble(), amount));
+      final date = from;
+      labels.add(days == 7
+          ? const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][date.weekday - 1]
+          : '${date.day}/${date.month}');
+    }
+    final total =
+        inRange.fold<double>(0, (sum, expense) => sum + expense.totalAmount);
+
+    return SpendingTrendChart(
+      key: const ValueKey('trend_chart'),
+      spots: spots,
+      xLabels: labels,
+      totalAmount: total,
+      periodLabel: 'Last $days days',
+      percentageChange: null,
+      selectedPeriodIndex: _chartPeriodIndex,
+      onPeriodChanged: (idx) => setState(() => _chartPeriodIndex = idx),
+    );
+  }
+
+  Widget _buildCategoryBreakdown() {
+    final from = DateTime.now().subtract(const Duration(days: 90));
+    final amounts = <String, double>{};
+    for (final expense in _expenses) {
+      if (expense.expenseDate.isBefore(from)) continue;
+      final category = expense.category?.trim().isNotEmpty == true
+          ? expense.category!.trim()
+          : 'Other';
+      amounts[category] = (amounts[category] ?? 0) + expense.totalAmount;
+    }
+    final total = amounts.values.fold<double>(0, (sum, amount) => sum + amount);
+    return CategoryDonutChart(
+      key: const ValueKey('donut_chart'),
+      categoryAmounts: amounts,
+      totalAmount: total,
+    );
+  }
+
+  Widget _buildInsightsLoading(DhanWiserColors colors) {
+    return DhanWiserSurface(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 12, width: 130, color: colors.surfaceContainerHigh),
+          const SizedBox(height: 16),
+          Container(height: 118, color: colors.surfaceContainerHigh),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightsEmpty(DhanWiserColors colors) {
+    return DhanWiserSurface(
+      padding: const EdgeInsets.all(22),
+      child: Row(
+        children: [
+          Icon(Icons.insights_outlined, color: colors.secondary, size: 24),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your spending story starts here',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: colors.textPrimary,
+                        )),
+                const SizedBox(height: 4),
+                Text('Add a shared expense to see real trends and categories.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.textSecondary,
+                        )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabOption(int index, String title, DhanWiserColors colors) {
+    final isSelected = _activeAnalyticsTab == index;
+    return GestureDetector(
+      onTap: () => setState(() => _activeAnalyticsTab = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (Theme.of(context).brightness == Brightness.dark
+                  ? colors.surfaceContainerHighest
+                  : Colors.white)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : [],
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? colors.textPrimary : colors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 
@@ -546,22 +726,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildGroupCard(BuildContext context, ColorScheme cs, bool isDark,
       int id, String name, String members, bool isAdmin) {
+    final colors = DhanWiserColors.of(context);
     final groupIcons = [
       Icons.home_rounded,
-      Icons.flight_rounded,
+      Icons.flight_takeoff_rounded,
       Icons.restaurant_rounded,
       Icons.work_rounded,
       Icons.sports_esports_rounded,
-      Icons.shopping_cart_rounded,
+      Icons.shopping_bag_rounded,
       Icons.celebration_rounded,
-      Icons.coffee_rounded
+      Icons.coffee_rounded,
+    ];
+
+    final gradientPairs = [
+      [colors.primaryFixed, colors.tertiary],
+      [colors.secondary, colors.catFun],
+      [colors.tertiary, colors.catTransport],
+      [colors.catFood, colors.warning],
+      [colors.catTransport, colors.secondary],
+      [colors.catFun, colors.primaryFixed],
     ];
 
     final idx = name.hashCode.abs();
     final groupIcon = groupIcons[idx % groupIcons.length];
+    final pair = gradientPairs[idx % gradientPairs.length];
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: DhanWiserSurface(
         onTap: () => _navigateAndRefresh('/server-detail', arguments: {
           'serverId': id,
@@ -569,23 +760,34 @@ class _HomeScreenState extends State<HomeScreen> {
           'members': members,
           'imageUrl': '',
         }),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        radius: DhanWiserTokens.radiusMedium,
         child: Row(
           children: [
             Hero(
               tag: 'server_avatar_$id',
               child: Container(
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: DhanWiserColors.of(context).primaryFixed.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      pair[0].withValues(alpha: 0.22),
+                      pair[1].withValues(alpha: 0.12),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: pair[0].withValues(alpha: 0.35),
+                    width: 1.0,
+                  ),
                 ),
-                child: Icon(groupIcon,
-                    color: DhanWiserColors.of(context).primaryFixed, size: 24),
+                child: Icon(groupIcon, color: pair[0], size: 22),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,10 +797,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Flexible(
                         child: Text(
                           name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium!
-                              .copyWith(color: DhanWiserColors.of(context).textPrimary),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                            color: colors.textPrimary,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -607,36 +811,61 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                              horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                            color: DhanWiserColors.of(context).secondary
-                                .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(8),
+                            color: colors.secondary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(100),
                           ),
                           child: Text(
-                            'Admin',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall!
-                                .copyWith(color: DhanWiserColors.of(context).secondary),
+                            'ADMIN',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: colors.secondary,
+                            ),
                           ),
                         ),
                       ],
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    members,
-                    style: DhanWiserTextStyles.caption(context)
-                        .copyWith(color: DhanWiserColors.of(context).textSecondary),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.people_outline_rounded,
+                        size: 13,
+                        color: colors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        members,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: DhanWiserColors.of(context).textDisabled,
-              size: 24,
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colors.outlineVariant.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color: colors.textSecondary,
+                size: 18,
+              ),
             ),
           ],
         ),
@@ -707,14 +936,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
-  }
-
-  String _formatCurrency(double value, {bool withDecimals = false}) {
-    final normalized = value.abs() < 0.01 ? 0.0 : value;
-    final number = withDecimals
-        ? normalized.toStringAsFixed(2)
-        : normalized.toStringAsFixed(0);
-    return '₹$number';
   }
 }
 
