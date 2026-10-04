@@ -1,8 +1,11 @@
 # ⚡ DhanWiser
 
 <div align="center">
-
-![DhanWiser Hero Banner](assets/screenshots/hero_banner.jpg)
+<p align="center">
+  <img src="assets/screenshots/screen_home.png" width="31%" alt="DhanWiser Home Screen & Daily Streak" />
+  <img src="assets/screenshots/screen_groups.png" width="31%" alt="Collaborative Groups & Spaces Hub" />
+  <img src="assets/screenshots/screen_profile.png" width="31%" alt="Profile, UPI & Badges" />
+</p>
 
 ### **Smart Expense Splitting. Effortless Balance. Built for the Modern Financier.**
 
@@ -47,13 +50,16 @@ Traditional group expense apps like Splitwise have become bloated with **intrusi
 
 ## 📱 Feature Showcase
 
-<div align="center">
+<p align="center">
+  <img src="assets/screenshots/screen_expense.png" width="23%" alt="Add Expense & Category Breakdown" />
+  <img src="assets/screenshots/screen_create_group.png" width="23%" alt="Create Group Space" />
+  <img src="assets/screenshots/screen_settle.png" width="23%" alt="Settlements & Debt Clearance" />
+  <img src="assets/screenshots/screen_activity.png" width="23%" alt="Live Real-time Activity Feed" />
+</p>
 
-![DhanWiser Feature Showcase](assets/screenshots/features_showcase.jpg)
-
-*Left: Daily Habit Streak & Hero Balance • Center: Collaborative Spaces & Quick Invites • Right: Verified Settle-Up with UPI Proof*
-
-</div>
+<p align="center">
+  <em>Captured live on Android • Left to right: Smart Expense Engine • Space Creation • Zero-Debt Settlement • Real-Time Activity Feed</em>
+</p>
 
 ---
 
@@ -108,7 +114,7 @@ dhanwiser_fixed/
 │   └── widgets/                 # Reusable UI components & Hero cards
 ├── assets/                      # Fonts (Iconly Pro) & screenshots
 │   ├── fonts/                   # IconlyBold, IconlyLight, IconlyBroken TTF fonts
-│   └── screenshots/             # High-res product mockups & launch assets
+│   └── screenshots/             # Real production screenshots captured live on Android
 ├── test/                        # Automated unit & widget test suites
 ├── backend/                     # Dedicated Node.js & Express REST API
 │   ├── server.js                # Server entry point with auto table migrations
