@@ -607,6 +607,9 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                         children: [
                           Text(
                             user.fullName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -616,6 +619,9 @@ class _FriendDiscoveryScreenState extends State<FriendDiscoveryScreen> {
                           const SizedBox(height: 2),
                           Text(
                             '@${user.username}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               color: colors.textSecondary,

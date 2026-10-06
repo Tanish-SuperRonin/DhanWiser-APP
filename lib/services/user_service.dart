@@ -4,7 +4,8 @@ import 'api_client.dart';
 class UserService {
   // Search users globally by username
   static Future<List<PublicUser>> searchUsers(String query) async {
-    final response = await ApiClient.get('/users/search?query=$query');
+    final encodedQuery = Uri.encodeQueryComponent(query);
+    final response = await ApiClient.get('/users/search?query=$encodedQuery');
     final users = response['data']['users'] as List<dynamic>;
     return users.map((u) => PublicUser.fromJson(u)).toList();
   }

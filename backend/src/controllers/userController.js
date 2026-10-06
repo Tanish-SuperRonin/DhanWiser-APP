@@ -159,7 +159,7 @@ export const userController = {
     }
   },
 
-  // Search users globally by username
+  // Search active users by username, full name, or email.
   async searchUsers(req, res) {
     try {
       const { query } = req.query;
@@ -172,11 +172,18 @@ export const userController = {
       }
 
       const result = await pool.query(
-        `SELECT id, username, full_name, profile_picture_url 
+        `SELECT id, username, full_name, profile_picture_url
          FROM users 
-         WHERE username ILIKE $1 AND is_active = true
+         WHERE (
+           username ILIKE $1
+           OR full_name ILIKE $1
+           OR email ILIKE $1
+         ) AND is_active = true
+         ORDER BY
+           CASE WHEN username ILIKE $2 THEN 0 ELSE 1 END,
+           username ASC
          LIMIT 20`,
-        [`%${query}%`]
+        [`%${query}%`, query]
       );
 
       res.json({
